@@ -33,7 +33,7 @@ abstract class Future<T> implements InterruptHandler {
   public static final <T> Future<T> exception(final RuntimeException ex) {
     return new ExceptionFuture<>(ex);
   }
-  
+
   public static final <T> Future<T> flatten(Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
@@ -111,6 +111,33 @@ abstract class Future<T> implements InterruptHandler {
       }
       return p;
     }
+  }
+
+  public static final <T> Future<Integer> selectIndex(List<Future<T>> list) {
+    Promise<Integer> p = new Promise<>(list);
+    int i = 0;
+    for (Future<?> f : list) {
+      final int ii = i;
+      f.ensure(() -> p.setResultIfEmpty(Future.value(ii)));
+      i++;
+    }
+    return p;
+  }
+
+  public static final <T> Future<Void> whileDo(Supplier<Boolean> cond, Supplier<Future<T>> f) {
+    return tailrec(() -> {
+      if (cond.get())
+        return f.get().flatMap(r -> whileDo(cond, f));
+      else
+        return VOID;
+    });
+  }
+
+  public static final <T> List<Future<T>> parallel(int n, Supplier<Future<T>> f) {
+    List<Future<T>> result = new ArrayList<>(n);
+    for (int i = 0; i < n; i++)
+      result.add(f.get());
+    return result;
   }
 
   /*** abstract ***/

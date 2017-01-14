@@ -41,23 +41,30 @@ public class Promise<T> extends Future<T> {
     return Unsafe.compareAndSwapObject(this, stateOffset, oldState, newState);
   }
 
-  @SuppressWarnings("unchecked")
   public final void setResult(final Future<T> result) {
-    if(result instanceof Continuation)
-      throw new IllegalArgumentException("A Continuation can't be set as a promise result.");
+    if (!setResultIfEmpty(result))
+      throw new IllegalStateException("Can't set result " + result + " for promise with state " + state);
+  }
+
+  @SuppressWarnings("unchecked")
+  public final boolean setResultIfEmpty(final Future<T> result) {
+
+    if (result instanceof Continuation)
+      throw new IllegalArgumentException("A `Continuation` can't be set as a promise result.");
+
     final Optional<?>[] oldContext = Local.save();
     Local.restore(savedContext);
     try {
       while (true) {
         final Object curr = state;
         if (curr instanceof SatisfiedFuture) // Done
-          throw new IllegalStateException("Promise already satisfied");
+          return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
           ((Promise<T>) curr).setResult(result);
-          return;
+          return true;
         } else if (cas(curr, result)) { // Waiting
           WaitQueue.flush(curr, result);
-          return;
+          return true;
         }
       }
     } finally {
