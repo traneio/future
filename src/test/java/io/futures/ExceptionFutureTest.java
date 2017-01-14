@@ -3,6 +3,7 @@ package io.futures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -10,16 +11,16 @@ import org.junit.Test;
 
 public class ExceptionFutureTest {
 
-  private <T> T get(Future<T> future) throws InterruptedException {
+  private <T> T get(Future<T> future) throws ExecutionException  {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
 
-  private RuntimeException ex = new RuntimeException();
+  private Throwable ex = new Throwable();
 
   /*** map ***/
 
   @Test
-  public void map() throws InterruptedException {
+  public void map() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(future, future.map(i -> i + 1));
   }
@@ -27,7 +28,7 @@ public class ExceptionFutureTest {
   /*** flatMap ***/
 
   @Test
-  public void flatMap() throws InterruptedException {
+  public void flatMap() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(future, future.flatMap(i -> Future.value(i + 1)));
   }
@@ -35,7 +36,7 @@ public class ExceptionFutureTest {
   /*** onSuccess ***/
 
   @Test
-  public void onSuccess() throws InterruptedException {
+  public void onSuccess() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(future, future.onSuccess(i -> {
     }));
@@ -43,16 +44,16 @@ public class ExceptionFutureTest {
 
   /*** onFailure ***/
 
-  @Test(expected = RuntimeException.class)
-  public void onFailure() throws InterruptedException {
-    AtomicReference<RuntimeException> exception = new AtomicReference<>();
+  @Test(expected = Throwable.class)
+  public void onFailure() throws ExecutionException {
+    AtomicReference<Throwable> exception = new AtomicReference<>();
     Future<Integer> future = Future.<Integer>exception(ex).onFailure(exception::set);
     assertEquals(ex, exception.get());
     get(future);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void onFailureException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void onFailureException() throws ExecutionException  {
     Future<Integer> future = Future.<Integer>exception(ex).onFailure(ex -> {
       throw new NullPointerException();
     });
@@ -61,20 +62,20 @@ public class ExceptionFutureTest {
 
   /*** get ***/
 
-  @Test(expected = RuntimeException.class)
-  public void get() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void get() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     future.get(1, TimeUnit.MILLISECONDS);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void getZeroTimeout() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void getZeroTimeout() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(new Integer(1), future.get(0, TimeUnit.MILLISECONDS));
   }
 
-  @Test(expected = RuntimeException.class)
-  public void getNegativeTimeout() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void getNegativeTimeout() throws ExecutionException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }

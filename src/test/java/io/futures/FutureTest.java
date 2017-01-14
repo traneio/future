@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,21 +20,21 @@ import org.junit.Test;
 
 public class FutureTest {
 
-  private <T> T get(Future<T> future) throws InterruptedException {
+  private <T> T get(Future<T> future) throws ExecutionException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
 
   /*** apply ***/
 
   @Test
-  public void applyValue() throws InterruptedException {
+  public void applyValue() throws ExecutionException {
     Integer value = 1;
     Future<Integer> future = Future.apply(() -> value);
     assertEquals(value, get(future));
   }
 
-  @Test(expected = ArithmeticException.class)
-  public void applyException() throws InterruptedException {
+  @Test(expected = ExecutionException.class)
+  public void applyException() throws ExecutionException {
     Future<Integer> future = Future.apply(() -> 1 / 0);
     get(future);
   }
@@ -41,7 +42,7 @@ public class FutureTest {
   /*** value ***/
 
   @Test
-  public void value() throws InterruptedException {
+  public void value() throws ExecutionException {
     Integer value = 1;
     Future<Integer> future = Future.value(value);
     assertEquals(value, get(future));
@@ -49,9 +50,9 @@ public class FutureTest {
 
   /*** exception ***/
 
-  @Test(expected = RuntimeException.class)
-  public void exception() throws InterruptedException {
-    RuntimeException ex = new RuntimeException();
+  @Test(expected = Throwable.class)
+  public void exception() throws ExecutionException {
+    Throwable ex = new Throwable();
     Future<Integer> future = Future.exception(ex);
     get(future);
   }
@@ -68,7 +69,7 @@ public class FutureTest {
   }
 
   @Test
-  public void tailrec() throws InterruptedException {
+  public void tailrec() throws ExecutionException {
     assertEquals(new Integer(10), get(tailrecLoop(200000)));
   }
 
@@ -80,20 +81,20 @@ public class FutureTest {
   }
 
   @Test(expected = StackOverflowError.class)
-  public void nonTailrec() throws InterruptedException {
+  public void nonTailrec() throws ExecutionException {
     nonTailrecLoop(200000);
   }
 
   /*** emptyList ***/
 
   @Test
-  public void emptyList() throws InterruptedException {
+  public void emptyList() throws ExecutionException {
     Future<List<String>> future = Future.emptyList();
     assertTrue(get(future).isEmpty());
   }
 
   @Test(expected = UnsupportedOperationException.class)
-  public void emptyListIsUnmodifiable() throws InterruptedException {
+  public void emptyListIsUnmodifiable() throws ExecutionException {
     Future<List<String>> future = Future.emptyList();
     get(future).add("s");
   }
@@ -107,21 +108,21 @@ public class FutureTest {
   }
 
   @Test
-  public void collectSatisfiedFutures() throws InterruptedException {
+  public void collectSatisfiedFutures() throws ExecutionException {
     Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.value(2)));
     Integer[] expected = { 1, 2 };
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = RuntimeException.class)
-  public void collectSatisfiedFuturesException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void collectSatisfiedFuturesException() throws ExecutionException {
     Future<List<Integer>> future = Future
-        .collect(Arrays.asList(Future.value(1), Future.exception(new RuntimeException())));
+        .collect(Arrays.asList(Future.value(1), Future.exception(new Throwable())));
     get(future);
   }
 
   @Test
-  public void collectPromises() throws InterruptedException {
+  public void collectPromises() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
@@ -131,18 +132,18 @@ public class FutureTest {
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = RuntimeException.class)
-  public void collectPromisesException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void collectPromisesException() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
     p1.setValue(1);
-    p2.setException(new RuntimeException());
+    p2.setException(new Throwable());
     get(future);
   }
 
   @Test
-  public void collectMixed() throws InterruptedException {
+  public void collectMixed() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
@@ -152,19 +153,19 @@ public class FutureTest {
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = RuntimeException.class)
-  public void collectMixedException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void collectMixedException() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    p2.setException(new RuntimeException());
+    p2.setException(new Throwable());
     Integer[] expected = { 1, 2, 3 };
     assertArrayEquals(expected, get(future).toArray());
   }
 
   @Test
-  public void collectConcurrentResults() throws InterruptedException {
+  public void collectConcurrentResults() throws ExecutionException {
     List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
@@ -184,9 +185,9 @@ public class FutureTest {
 
   @Test
   public void collectInterrupts() {
-    RuntimeException ex = new RuntimeException();
-    AtomicReference<Exception> p1Intr = new AtomicReference<>();
-    AtomicReference<Exception> p2Intr = new AtomicReference<>();
+    Throwable ex = new Throwable();
+    AtomicReference<Throwable> p1Intr = new AtomicReference<>();
+    AtomicReference<Throwable> p2Intr = new AtomicReference<>();
     Promise<Integer> p1 = new Promise<>(p1Intr::set);
     Promise<Integer> p2 = new Promise<>(p2Intr::set);
 
@@ -198,8 +199,8 @@ public class FutureTest {
     assertEquals(ex, p2Intr.get());
   }
 
-  @Test(expected = TimeoutException.class)
-  public void collectTimeout() throws InterruptedException {
+  @Test(expected = ExecutionException.class)
+  public void collectTimeout() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
@@ -216,19 +217,19 @@ public class FutureTest {
   }
 
   @Test
-  public void joinSatisfiedFutures() throws InterruptedException {
+  public void joinSatisfiedFutures() throws ExecutionException {
     Future<Void> future = Future.join(Arrays.asList(Future.value(1), Future.value(2)));
     get(future);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void joinSatisfiedFuturesException() throws InterruptedException {
-    Future<Void> future = Future.join(Arrays.asList(Future.value(1), Future.exception(new RuntimeException())));
+  @Test(expected = Throwable.class)
+  public void joinSatisfiedFuturesException() throws ExecutionException {
+    Future<Void> future = Future.join(Arrays.asList(Future.value(1), Future.exception(new Throwable())));
     get(future);
   }
 
   @Test
-  public void joinPromises() throws InterruptedException {
+  public void joinPromises() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
@@ -237,18 +238,18 @@ public class FutureTest {
     get(future);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void joinPromisesException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void joinPromisesException() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
     p1.setValue(1);
-    p2.setException(new RuntimeException());
+    p2.setException(new Throwable());
     get(future);
   }
 
   @Test
-  public void joinMixed() throws InterruptedException {
+  public void joinMixed() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
@@ -257,18 +258,18 @@ public class FutureTest {
     get(future);
   }
 
-  @Test(expected = RuntimeException.class)
-  public void joinMixedException() throws InterruptedException {
+  @Test(expected = Throwable.class)
+  public void joinMixedException() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    p2.setException(new RuntimeException());
+    p2.setException(new Throwable());
     get(future);
   }
 
   @Test
-  public void joinConcurrentResults() throws InterruptedException {
+  public void joinConcurrentResults() throws ExecutionException {
     List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
@@ -286,9 +287,9 @@ public class FutureTest {
 
   @Test
   public void joinInterrupts() {
-    RuntimeException ex = new RuntimeException();
-    AtomicReference<Exception> p1Intr = new AtomicReference<>();
-    AtomicReference<Exception> p2Intr = new AtomicReference<>();
+    Throwable ex = new Throwable();
+    AtomicReference<Throwable> p1Intr = new AtomicReference<>();
+    AtomicReference<Throwable> p2Intr = new AtomicReference<>();
     Promise<Integer> p1 = new Promise<>(p1Intr::set);
     Promise<Integer> p2 = new Promise<>(p2Intr::set);
 
@@ -300,8 +301,8 @@ public class FutureTest {
     assertEquals(ex, p2Intr.get());
   }
 
-  @Test(expected = TimeoutException.class)
-  public void joinTimeout() throws InterruptedException {
+  @Test(expected = ExecutionException.class)
+  public void joinTimeout() throws ExecutionException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
@@ -312,7 +313,7 @@ public class FutureTest {
   /*** delayed ***/
 
   @Test
-  public void delayed() throws InterruptedException {
+  public void delayed() throws ExecutionException {
     Timer timer = new Timer();
     Future<Integer> future = Future.value(1);
     long delay = 10;
@@ -325,8 +326,8 @@ public class FutureTest {
   @Test
   public void delayedInterrupt() {
     Timer timer = new Timer();
-    RuntimeException ex = new RuntimeException();
-    AtomicReference<Exception> intr = new AtomicReference<>();
+    Throwable ex = new Throwable();
+    AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = new Promise<>(intr::set);
 
     Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, timer);

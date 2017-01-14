@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -21,7 +22,7 @@ abstract class Future<T> implements InterruptHandler {
   public static final <T> Future<T> apply(final Supplier<T> s) {
     try {
       return new ValueFuture<>(s.get());
-    } catch (final RuntimeException ex) {
+    } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
@@ -30,7 +31,7 @@ abstract class Future<T> implements InterruptHandler {
     return new ValueFuture<>(v);
   }
 
-  public static final <T> Future<T> exception(final RuntimeException ex) {
+  public static final <T> Future<T> exception(final Throwable ex) {
     return new ExceptionFuture<>(ex);
   }
 
@@ -97,7 +98,7 @@ abstract class Future<T> implements InterruptHandler {
         if (count.decrementAndGet() == 0)
           p.setResult(VOID);
       };
-      final Consumer<RuntimeException> fail = ex -> {
+      final Consumer<Throwable> fail = ex -> {
         p.setException(ex);
       };
       for (final Future<T> f : list) {
@@ -150,15 +151,15 @@ abstract class Future<T> implements InterruptHandler {
 
   abstract Future<T> onSuccess(Consumer<T> c);
 
-  abstract Future<T> onFailure(Consumer<RuntimeException> c);
+  abstract Future<T> onFailure(Consumer<Throwable> c);
 
-  abstract Future<T> rescue(Function<RuntimeException, Future<T>> f);
+  abstract Future<T> rescue(Function<Throwable, Future<T>> f);
 
-  abstract Future<T> handle(Function<RuntimeException, T> f);
+  abstract Future<T> handle(Function<Throwable, T> f);
 
   abstract boolean isDefined();
 
-  abstract T get(long timeout, TimeUnit unit) throws InterruptedException;
+  abstract T get(long timeout, TimeUnit unit) throws ExecutionException;
 
   /*** concrete ***/
 

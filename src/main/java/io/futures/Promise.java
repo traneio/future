@@ -3,7 +3,9 @@ package io.futures;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -76,13 +78,13 @@ public class Promise<T> extends Future<T> {
     setResult(new ValueFuture<>(value));
   }
 
-  public final void setException(final RuntimeException ex) {
+  public final void setException(final Throwable ex) {
     setResult(new ExceptionFuture<T>(ex));
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public final void raise(final Exception ex) {
+  public final void raise(final Throwable ex) {
     if (state instanceof SatisfiedFuture) { // Done
       return;
     } else if (state instanceof Promise && !(state instanceof Continuation)) { // Linked
@@ -157,13 +159,17 @@ public class Promise<T> extends Future<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) throws InterruptedException {
+  protected final T get(final long timeout, final TimeUnit unit) throws ExecutionException {
     final CountDownLatch latch = new CountDownLatch(1);
     ensure(() -> latch.countDown());
+    try {
     if (latch.await(timeout, unit))
       return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
     else
       throw new TimeoutException();
+    } catch (Throwable ex) {
+      throw new ExecutionException(ex);
+    }
   }
 
   @Override
@@ -207,7 +213,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> onFailure(final Consumer<RuntimeException> c) {
+  final Future<T> onFailure(final Consumer<Throwable> c) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -217,7 +223,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> rescue(Function<RuntimeException, Future<T>> f) {
+  final Future<T> rescue(Function<Throwable, Future<T>> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -227,7 +233,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> handle(Function<RuntimeException, T> f) {
+  final Future<T> handle(Function<Throwable, T> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {

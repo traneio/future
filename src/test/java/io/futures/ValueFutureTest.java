@@ -3,6 +3,7 @@ package io.futures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -11,20 +12,20 @@ import org.junit.Test;
 
 public class ValueFutureTest {
 
-  private <T> T get(Future<T> future) throws InterruptedException {
+  private <T> T get(Future<T> future) throws ExecutionException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
 
   /*** map ***/
 
   @Test
-  public void map() throws InterruptedException {
+  public void map() throws ExecutionException {
     Future<Integer> future = Future.value(1).map(i -> i + 1);
     assertEquals(new Integer(2), get(future));
   }
 
-  @Test(expected = ArithmeticException.class)
-  public void mapException() throws InterruptedException {
+  @Test(expected = ExecutionException.class)
+  public void mapException() throws ExecutionException {
     Future<Integer> future = Future.value(1).map(i -> i / 0);
     get(future);
   }
@@ -32,13 +33,13 @@ public class ValueFutureTest {
   /*** flatMap ***/
 
   @Test
-  public void flatMap() throws InterruptedException {
+  public void flatMap() throws ExecutionException {
     Future<Integer> future = Future.value(1).flatMap(i -> Future.value(i + 1));
     assertEquals(new Integer(2), get(future));
   }
 
-  @Test(expected = ArithmeticException.class)
-  public void flatMapException() throws InterruptedException {
+  @Test(expected = ExecutionException.class)
+  public void flatMapException() throws ExecutionException {
     Future<Integer> future = Future.value(1).flatMap(i -> Future.value(i / 0));
     get(future);
   }
@@ -46,7 +47,7 @@ public class ValueFutureTest {
   /*** onSuccess ***/
 
   @Test
-  public void onSuccess() throws InterruptedException {
+  public void onSuccess() throws ExecutionException {
     AtomicInteger result = new AtomicInteger(0);
     Future<Integer> future = Future.value(1).onSuccess(i -> result.set(i));
     assertEquals(1, result.get());
@@ -54,7 +55,7 @@ public class ValueFutureTest {
   }
 
   @Test
-  public void onSuccessException() throws InterruptedException {
+  public void onSuccessException() throws ExecutionException {
     Future<Integer> future = Future.value(1).onSuccess(i -> {
       throw new RuntimeException();
     });
@@ -64,15 +65,15 @@ public class ValueFutureTest {
   /*** onFailure ***/
 
   @Test
-  public void onFailure() throws InterruptedException {
-    AtomicReference<RuntimeException> exception = new AtomicReference<>();
+  public void onFailure() throws ExecutionException {
+    AtomicReference<Throwable> exception = new AtomicReference<>();
     Future<Integer> future = Future.value(1).onFailure(exception::set);
     assertEquals(null, exception.get());
     assertEquals(new Integer(1), get(future));
   }
 
   @Test
-  public void onFailureException() throws InterruptedException {
+  public void onFailureException() throws ExecutionException {
     Future<Integer> future = Future.value(1).onFailure(ex -> {
       throw new RuntimeException();
     });
@@ -82,19 +83,19 @@ public class ValueFutureTest {
   /*** get ***/
 
   @Test
-  public void get() throws InterruptedException {
+  public void get() throws ExecutionException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(1, TimeUnit.MILLISECONDS));
   }
 
   @Test
-  public void getZeroTimeout() throws InterruptedException {
+  public void getZeroTimeout() throws ExecutionException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(0, TimeUnit.MILLISECONDS));
   }
 
   @Test
-  public void getNegativeTimeout() throws InterruptedException {
+  public void getNegativeTimeout() throws ExecutionException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }

@@ -1,14 +1,16 @@
 package io.futures;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 final class ExceptionFuture<T> extends SatisfiedFuture<T> {
 
-  private final RuntimeException ex;
+  private final Throwable ex;
 
-  ExceptionFuture(final RuntimeException ex) {
+  ExceptionFuture(final Throwable ex) {
+    NonFatalException.verify(ex);
     this.ex = ex;
   }
 
@@ -28,36 +30,37 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  Future<T> onFailure(final Consumer<RuntimeException> c) {
+  Future<T> onFailure(final Consumer<Throwable> c) {
     try {
       c.accept(ex);
-    } catch (final RuntimeException ex) {
+    } catch (final Throwable ex) {
       // TODO logging
+      NonFatalException.verify(ex);
     }
     return this;
   }
 
   @Override
-  Future<T> rescue(Function<RuntimeException, Future<T>> f) {
+  Future<T> rescue(Function<Throwable, Future<T>> f) {
     try {
       return f.apply(ex);
-    } catch (RuntimeException ex) {
+    } catch (Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
 
   @Override
-  Future<T> handle(Function<RuntimeException, T> f) {
+  Future<T> handle(Function<Throwable, T> f) {
     try {
       return Future.value(f.apply(ex));
-    } catch (RuntimeException ex) {
+    } catch (Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
 
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) {
-    throw ex;
+  protected final T get(final long timeout, final TimeUnit unit) throws ExecutionException {
+    throw new ExecutionException(ex);
   }
 
   @SuppressWarnings("unchecked")

@@ -16,7 +16,7 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   final <R> Future<R> map(final Function<T, R> f) {
     try {
       return new ValueFuture<>(f.apply(value));
-    } catch (final RuntimeException ex) {
+    } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
@@ -25,7 +25,7 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
     try {
       return f.apply(value);
-    } catch (final RuntimeException ex) {
+    } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
@@ -34,24 +34,25 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   final Future<T> onSuccess(final Consumer<T> c) {
     try {
       c.accept(value);
-    } catch (final RuntimeException ex) {
+    } catch (final Throwable ex) {
       // TODO logging
+      NonFatalException.verify(ex);
     }
     return this;
   }
 
   @Override
-  final Future<T> onFailure(final Consumer<RuntimeException> c) {
+  final Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
   
   @Override
-  Future<T> rescue(Function<RuntimeException, Future<T>> f) {
+  Future<T> rescue(Function<Throwable, Future<T>> f) {
     return this;
   }
 
   @Override
-  Future<T> handle(Function<RuntimeException, T> f) {
+  Future<T> handle(Function<Throwable, T> f) {
     return this;
   }
 
