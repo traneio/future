@@ -317,7 +317,7 @@ public class FutureTest {
     Future<Integer> future = Future.value(1);
     long delay = 10;
     long start = System.currentTimeMillis();
-    int result = future.delayed(delay, timer).get(20, TimeUnit.MILLISECONDS);
+    int result = future.delayed(delay, TimeUnit.MILLISECONDS, timer).get(20, TimeUnit.MILLISECONDS);
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
@@ -329,7 +329,7 @@ public class FutureTest {
     AtomicReference<Exception> intr = new AtomicReference<>();
     Promise<Integer> p = new Promise<>(intr::set);
 
-    Future<Integer> future = p.delayed(10, timer);
+    Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, timer);
 
     future.raise(ex);
 

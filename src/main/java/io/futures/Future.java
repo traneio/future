@@ -174,14 +174,14 @@ abstract class Future<T> implements InterruptHandler {
     return flatMap(v -> VOID);
   }
 
-  public final Future<T> delayed(final long delay, final Timer timer) {
+  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final Timer timer) {
     final Promise<T> p = new Promise<>(this);
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
         p.become(Future.this);
       }
-    }, delay);
+    }, timeUnit.convert(delay, TimeUnit.MILLISECONDS));
     return p;
   }
 }
