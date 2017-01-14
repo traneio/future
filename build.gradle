@@ -1,0 +1,30 @@
+plugins {
+  id "me.champeau.gradle.jmh" version "0.3.1"
+}
+
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    
+    //compile 'org.slf4j:slf4j-api:1.7.12'
+    
+    
+    jmh 'com.twitter:util-core_2.12:6.40.0'
+    
+    
+    //testCompile 'org.openjdk.jmh:jmh-core:0.9'
+    //testCompile 'org.openjdk.jmh:jmh-generator-annprocess:0.9'
+    
+    testCompile 'junit:junit:4.12'
+}
+
+jmh {
+	fork = 1
+	warmupIterations = 10
+	iterations = 10
+	//profilers = [gc]
+}
