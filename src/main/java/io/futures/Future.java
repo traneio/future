@@ -182,7 +182,39 @@ abstract class Future<T> implements InterruptHandler {
       public void run() {
         p.become(Future.this);
       }
-    }, timeUnit.convert(delay, TimeUnit.MILLISECONDS));
+    }, timeUnit.toMillis(delay));
+    return p;
+  }
+
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Timer timer) {
+    return within(timeout, timeUnit, TimeoutException.stackless, timer);
+  }
+
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Throwable exception,
+      final Timer timer) {
+    if (isDefined() || timeout == Long.MAX_VALUE)
+      return this;
+
+    Promise<T> p = new Promise<>(this);
+
+    TimerTask task = new TimerTask() {
+      @Override
+      public void run() {
+        p.setResultIfEmpty(Future.exception(exception));
+      }
+    };
+    timer.schedule(task, timeUnit.toMillis(timeout));
+
+    onSuccess(r -> {
+      task.cancel();
+      p.setResultIfEmpty(Future.value(r));
+    });
+
+    onFailure(ex -> {
+      task.cancel();
+      p.setResultIfEmpty(Future.exception(ex));
+    });
+
     return p;
   }
 }
