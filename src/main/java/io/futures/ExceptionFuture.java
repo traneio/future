@@ -41,19 +41,19 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  Future<T> rescue(Function<Throwable, Future<T>> f) {
+  Future<T> rescue(final Function<Throwable, Future<T>> f) {
     try {
       return f.apply(ex);
-    } catch (Throwable ex) {
+    } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
 
   @Override
-  Future<T> handle(Function<Throwable, T> f) {
+  Future<T> handle(final Function<Throwable, T> f) {
     try {
       return Future.value(f.apply(ex));
-    } catch (Throwable ex) {
+    } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }

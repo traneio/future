@@ -35,7 +35,7 @@ abstract class Future<T> implements InterruptHandler {
     return new ExceptionFuture<>(ex);
   }
 
-  public static final <T> Future<T> flatten(Future<Future<T>> fut) {
+  public static final <T> Future<T> flatten(final Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
 
@@ -68,9 +68,8 @@ abstract class Future<T> implements InterruptHandler {
       int i = 0;
       for (final Future<T> f : list) {
 
-        if (f instanceof ExceptionFuture) {
+        if (f instanceof ExceptionFuture)
           return (Future<List<T>>) f;
-        }
 
         f.onFailure(p::setException);
 
@@ -96,16 +95,15 @@ abstract class Future<T> implements InterruptHandler {
       final Promise<Void> p = new Promise<>(list);
       final Consumer<T> decrement = v -> {
         if (count.decrementAndGet() == 0)
-          p.setResult(VOID);
+          p.update(VOID);
       };
       final Consumer<Throwable> fail = ex -> {
         p.setException(ex);
       };
       for (final Future<T> f : list) {
 
-        if (f instanceof ExceptionFuture) {
+        if (f instanceof ExceptionFuture)
           return (Future<Void>) f;
-        }
 
         f.onSuccess(decrement);
         f.onFailure(fail);
@@ -114,18 +112,18 @@ abstract class Future<T> implements InterruptHandler {
     }
   }
 
-  public static final <T> Future<Integer> selectIndex(List<Future<T>> list) {
-    Promise<Integer> p = new Promise<>(list);
+  public static final <T> Future<Integer> selectIndex(final List<Future<T>> list) {
+    final Promise<Integer> p = new Promise<>(list);
     int i = 0;
-    for (Future<?> f : list) {
+    for (final Future<?> f : list) {
       final int ii = i;
-      f.ensure(() -> p.setResultIfEmpty(Future.value(ii)));
+      f.ensure(() -> p.updateIfEmpty(Future.value(ii)));
       i++;
     }
     return p;
   }
 
-  public static final <T> Future<Void> whileDo(Supplier<Boolean> cond, Supplier<Future<T>> f) {
+  public static final <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
     return tailrec(() -> {
       if (cond.get())
         return f.get().flatMap(r -> whileDo(cond, f));
@@ -134,8 +132,8 @@ abstract class Future<T> implements InterruptHandler {
     });
   }
 
-  public static final <T> List<Future<T>> parallel(int n, Supplier<Future<T>> f) {
-    List<Future<T>> result = new ArrayList<>(n);
+  public static final <T> List<Future<T>> parallel(final int n, final Supplier<Future<T>> f) {
+    final List<Future<T>> result = new ArrayList<>(n);
     for (int i = 0; i < n; i++)
       result.add(f.get());
     return result;
@@ -163,10 +161,9 @@ abstract class Future<T> implements InterruptHandler {
 
   /*** concrete ***/
 
-  public final void proxyTo(Promise<T> p) {
-    if (p.isDefined()) {
+  public final void proxyTo(final Promise<T> p) {
+    if (p.isDefined())
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
-    }
     onSuccess(r -> p.setValue(r));
     onFailure(ex -> p.setException(ex));
   }
@@ -187,32 +184,32 @@ abstract class Future<T> implements InterruptHandler {
   }
 
   public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Timer timer) {
-    return within(timeout, timeUnit, TimeoutException.stackless, timer);
+    return within(timeout, timeUnit, timer, TimeoutException.stackless);
   }
 
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Throwable exception,
-      final Timer timer) {
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Timer timer,
+      final Throwable exception) {
     if (isDefined() || timeout == Long.MAX_VALUE)
       return this;
 
-    Promise<T> p = new Promise<>(this);
+    final Promise<T> p = new Promise<>(this);
 
-    TimerTask task = new TimerTask() {
+    final TimerTask task = new TimerTask() {
       @Override
       public void run() {
-        p.setResultIfEmpty(Future.exception(exception));
+        p.updateIfEmpty(Future.exception(exception));
       }
     };
     timer.schedule(task, timeUnit.toMillis(timeout));
 
     onSuccess(r -> {
       task.cancel();
-      p.setResultIfEmpty(Future.value(r));
+      p.updateIfEmpty(Future.value(r));
     });
 
     onFailure(ex -> {
       task.cancel();
-      p.setResultIfEmpty(Future.exception(ex));
+      p.updateIfEmpty(Future.exception(ex));
     });
 
     return p;

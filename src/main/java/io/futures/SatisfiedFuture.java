@@ -15,7 +15,6 @@ abstract class SatisfiedFuture<T> extends Future<T> {
   @Override
   public final void raise(final Throwable ex) {
   }
-  
 
   @Override
   final boolean isDefined() {

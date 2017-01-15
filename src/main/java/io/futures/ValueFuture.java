@@ -45,14 +45,14 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   final Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
-  
+
   @Override
-  Future<T> rescue(Function<Throwable, Future<T>> f) {
+  Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return this;
   }
 
   @Override
-  Future<T> handle(Function<Throwable, T> f) {
+  Future<T> handle(final Function<Throwable, T> f) {
     return this;
   }
 

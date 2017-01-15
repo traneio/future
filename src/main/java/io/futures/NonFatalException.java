@@ -2,7 +2,7 @@ package io.futures;
 
 public final class NonFatalException {
 
-  public static final Throwable verify(Throwable ex) {
+  public static final Throwable verify(final Throwable ex) {
 
     // VirtualMachineError includes OutOfMemoryError and other fatal errors
     if (ex instanceof VirtualMachineError || ex instanceof ThreadDeath || ex instanceof LinkageError)

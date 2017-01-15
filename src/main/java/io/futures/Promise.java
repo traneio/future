@@ -25,9 +25,8 @@ public class Promise<T> extends Future<T> {
   public Promise(final List<? extends InterruptHandler> interruptHandlers) {
     super();
     this.interruptHandler = (ex) -> {
-      for (final InterruptHandler handler : interruptHandlers) {
+      for (final InterruptHandler handler : interruptHandlers)
         handler.raise(ex);
-      }
     };
   }
 
@@ -42,13 +41,13 @@ public class Promise<T> extends Future<T> {
     return Unsafe.compareAndSwapObject(this, stateOffset, oldState, newState);
   }
 
-  public final void setResult(final Future<T> result) {
-    if (!setResultIfEmpty(result))
+  public final void update(final Future<T> result) {
+    if (!updateIfEmpty(result))
       throw new IllegalStateException("Can't set result " + result + " for promise with state " + state);
   }
 
   @SuppressWarnings("unchecked")
-  public final boolean setResultIfEmpty(final Future<T> result) {
+  public final boolean updateIfEmpty(final Future<T> result) {
 
     if (result instanceof Continuation)
       throw new IllegalArgumentException("A `Continuation` can't be set as a promise result.");
@@ -61,7 +60,7 @@ public class Promise<T> extends Future<T> {
         if (curr instanceof SatisfiedFuture) // Done
           return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
-          ((Promise<T>) curr).setResult(result);
+          ((Promise<T>) curr).update(result);
           return true;
         } else if (cas(curr, result)) { // Waiting
           WaitQueue.flush(curr, result);
@@ -74,21 +73,21 @@ public class Promise<T> extends Future<T> {
   }
 
   public final void setValue(final T value) {
-    setResult(new ValueFuture<>(value));
+    update(new ValueFuture<>(value));
   }
 
   public final void setException(final Throwable ex) {
-    setResult(new ExceptionFuture<T>(ex));
+    update(new ExceptionFuture<T>(ex));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
-    if (state instanceof SatisfiedFuture) { // Done
+    if (state instanceof SatisfiedFuture) // Done
       return;
-    } else if (state instanceof Promise && !(state instanceof Continuation)) { // Linked
+    else if (state instanceof Promise && !(state instanceof Continuation)) // Linked
       ((Promise<T>) state).raise(ex);
-    } else if (interruptHandler != null && interruptHandler != this)
+    else if (interruptHandler != null && interruptHandler != this)
       interruptHandler.raise(ex);
   }
 
@@ -99,21 +98,20 @@ public class Promise<T> extends Future<T> {
       if (curr instanceof SatisfiedFuture) { // Done
         c.flush((Future<T>) curr);
         return c;
-      } else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
+      } else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
         return ((Promise<T>) curr).continuation(c);
-      } else if (cas(curr, WaitQueue.add(curr, c))) // Waiting
+      else if (cas(curr, WaitQueue.add(curr, c))) // Waiting
         return c;
     }
   }
 
   public final void become(final Future<T> target) {
-    if (state instanceof SatisfiedFuture) { // Done
+    if (state instanceof SatisfiedFuture) // Done
       throw new IllegalStateException("Can't become() a satisfied promise");
-    } else if (target instanceof Promise && !(target instanceof Continuation)) { // Linked
+    else if (target instanceof Promise && !(target instanceof Continuation)) // Linked
       ((Promise<T>) target).link(compress());
-    } else {
-      target.ensure(() -> setResult(target));
-    }
+    else
+      target.ensure(() -> update(target));
   }
 
   @SuppressWarnings("unchecked")
@@ -130,7 +128,7 @@ public class Promise<T> extends Future<T> {
   @SuppressWarnings("unchecked")
   private final void link(final Promise<T> target) {
     final Object curr = state;
-    while (true) {
+    while (true)
       if (curr instanceof Promise && !(curr instanceof Continuation) && cas(curr, target)) { // Linke
         ((Promise<T>) curr).link(target);
         return;
@@ -142,7 +140,6 @@ public class Promise<T> extends Future<T> {
         WaitQueue.forward(curr, target);
         return;
       }
-    }
   }
 
   @SuppressWarnings("unchecked")
@@ -162,11 +159,11 @@ public class Promise<T> extends Future<T> {
     final CountDownLatch latch = new CountDownLatch(1);
     ensure(() -> latch.countDown());
     try {
-    if (latch.await(timeout, unit))
-      return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
-    else
-      throw new TimeoutException();
-    } catch (Throwable ex) {
+      if (latch.await(timeout, unit))
+        return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+      else
+        throw new TimeoutException();
+    } catch (final Throwable ex) {
       throw new ExecutionException(ex);
     }
   }
@@ -222,7 +219,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> rescue(Function<Throwable, Future<T>> f) {
+  final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -232,7 +229,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> handle(Function<Throwable, T> f) {
+  final Future<T> handle(final Function<Throwable, T> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -251,6 +248,6 @@ abstract class Continuation<T, R> extends Promise<R> {
   abstract Future<R> apply(Future<T> result);
 
   protected final void flush(final Future<T> result) {
-    super.setResult(apply(result));
+    super.update(apply(result));
   }
 }
