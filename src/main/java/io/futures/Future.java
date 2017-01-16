@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -113,9 +112,17 @@ abstract class Future<T> implements InterruptHandler {
   }
 
   public static final <T> Future<Integer> selectIndex(final List<Future<T>> list) {
+
+    if (list.isEmpty())
+      throw new IllegalArgumentException("Can't select from empty list.");
+
     final Promise<Integer> p = new Promise<>(list);
     int i = 0;
     for (final Future<?> f : list) {
+
+      if (f instanceof SatisfiedFuture)
+        return Future.value(i);
+
       final int ii = i;
       f.ensure(() -> p.updateIfEmpty(Future.value(ii)));
       i++;
@@ -157,7 +164,7 @@ abstract class Future<T> implements InterruptHandler {
 
   abstract boolean isDefined();
 
-  abstract T get(long timeout, TimeUnit unit) throws ExecutionException;
+  abstract T get(long timeout, TimeUnit unit) throws CheckedFutureException;
 
   /*** concrete ***/
 

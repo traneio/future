@@ -1,6 +1,5 @@
 package io.futures;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -59,8 +58,13 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) throws ExecutionException {
-    throw new ExecutionException(ex);
+  protected final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+    if (ex instanceof RuntimeException)
+      throw (RuntimeException) ex;
+    if (ex instanceof Error)
+      throw (Error) ex;
+    else
+      throw new CheckedFutureException(ex);
   }
 
   @SuppressWarnings("unchecked")

@@ -3,7 +3,6 @@ package io.futures;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -155,7 +154,7 @@ public class Promise<T> extends Future<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) throws ExecutionException {
+  protected final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     final CountDownLatch latch = new CountDownLatch(1);
     ensure(() -> latch.countDown());
     try {
@@ -163,8 +162,8 @@ public class Promise<T> extends Future<T> {
         return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
       else
         throw new TimeoutException();
-    } catch (final Throwable ex) {
-      throw new ExecutionException(ex);
+    } catch (InterruptedException ex) {
+      throw new CheckedFutureException(ex);
     }
   }
 

@@ -3,7 +3,6 @@ package io.futures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -11,7 +10,7 @@ import org.junit.Test;
 
 public class SatisfiedFutureTest {
   
-  private <T> T get(Future<T> future) throws ExecutionException {
+  private <T> T get(Future<T> future) throws CheckedFutureException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
   
@@ -25,7 +24,7 @@ public class SatisfiedFutureTest {
   }
 
   @Test
-  public void ensureException() throws ExecutionException {
+  public void ensureException() throws CheckedFutureException {
     Future<String> future = Future.value("s").ensure(() -> {
       throw new RuntimeException();
     });

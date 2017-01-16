@@ -3,7 +3,6 @@ package io.futures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,20 +11,20 @@ import org.junit.Test;
 
 public class ValueFutureTest {
 
-  private <T> T get(Future<T> future) throws ExecutionException {
+  private <T> T get(Future<T> future) throws CheckedFutureException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
 
   /*** map ***/
 
   @Test
-  public void map() throws ExecutionException {
+  public void map() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).map(i -> i + 1);
     assertEquals(new Integer(2), get(future));
   }
 
-  @Test(expected = ExecutionException.class)
-  public void mapException() throws ExecutionException {
+  @Test(expected = ArithmeticException.class)
+  public void mapException() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).map(i -> i / 0);
     get(future);
   }
@@ -33,13 +32,13 @@ public class ValueFutureTest {
   /*** flatMap ***/
 
   @Test
-  public void flatMap() throws ExecutionException {
+  public void flatMap() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).flatMap(i -> Future.value(i + 1));
     assertEquals(new Integer(2), get(future));
   }
 
-  @Test(expected = ExecutionException.class)
-  public void flatMapException() throws ExecutionException {
+  @Test(expected = ArithmeticException.class)
+  public void flatMapException() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).flatMap(i -> Future.value(i / 0));
     get(future);
   }
@@ -47,7 +46,7 @@ public class ValueFutureTest {
   /*** onSuccess ***/
 
   @Test
-  public void onSuccess() throws ExecutionException {
+  public void onSuccess() throws CheckedFutureException {
     AtomicInteger result = new AtomicInteger(0);
     Future<Integer> future = Future.value(1).onSuccess(i -> result.set(i));
     assertEquals(1, result.get());
@@ -55,7 +54,7 @@ public class ValueFutureTest {
   }
 
   @Test
-  public void onSuccessException() throws ExecutionException {
+  public void onSuccessException() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).onSuccess(i -> {
       throw new RuntimeException();
     });
@@ -65,7 +64,7 @@ public class ValueFutureTest {
   /*** onFailure ***/
 
   @Test
-  public void onFailure() throws ExecutionException {
+  public void onFailure() throws CheckedFutureException {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     Future<Integer> future = Future.value(1).onFailure(exception::set);
     assertEquals(null, exception.get());
@@ -73,29 +72,43 @@ public class ValueFutureTest {
   }
 
   @Test
-  public void onFailureException() throws ExecutionException {
+  public void onFailureException() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).onFailure(ex -> {
       throw new RuntimeException();
     });
     assertEquals(new Integer(1), get(future));
   }
 
+  /*** handle ***/
+
+  public void handle() {
+    Future<Integer> future = Future.value(1);
+    assertEquals(future, future.handle(t -> 2));
+  }
+
+  /*** rescue ***/
+
+  public void rescue() {
+    Future<Integer> future = Future.value(1);
+    assertEquals(future, future.rescue(t -> Future.value(2)));
+  }
+
   /*** get ***/
 
   @Test
-  public void get() throws ExecutionException {
+  public void get() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(1, TimeUnit.MILLISECONDS));
   }
 
   @Test
-  public void getZeroTimeout() throws ExecutionException {
+  public void getZeroTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(0, TimeUnit.MILLISECONDS));
   }
 
   @Test
-  public void getNegativeTimeout() throws ExecutionException {
+  public void getNegativeTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }

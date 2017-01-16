@@ -1,6 +1,6 @@
 package io.futures;
 
-public class TimeoutException extends Throwable {
+public class TimeoutException extends RuntimeException {
 
   public static final TimeoutException stackless = new TimeoutException() {
     private static final long serialVersionUID = -4485668079739346310L;
