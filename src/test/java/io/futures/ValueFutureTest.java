@@ -81,6 +81,7 @@ public class ValueFutureTest {
 
   /*** handle ***/
 
+  @Test
   public void handle() {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.handle(t -> 2));
@@ -88,6 +89,7 @@ public class ValueFutureTest {
 
   /*** rescue ***/
 
+  @Test
   public void rescue() {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.rescue(t -> Future.value(2)));

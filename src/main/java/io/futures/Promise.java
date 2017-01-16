@@ -59,8 +59,7 @@ public class Promise<T> extends Future<T> {
         if (curr instanceof SatisfiedFuture) // Done
           return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
-          ((Promise<T>) curr).update(result);
-          return true;
+          return ((Promise<T>) curr).updateIfEmpty(result);
         } else if (cas(curr, result)) { // Waiting
           WaitQueue.flush(curr, result);
           return true;
@@ -132,7 +131,7 @@ public class Promise<T> extends Future<T> {
         ((Promise<T>) curr).link(target);
         return;
       } else if (curr instanceof SatisfiedFuture) { // Done
-        if (!target.state.equals(curr))
+        if (target.state != null && !target.state.equals(curr))
           throw new IllegalStateException("Cannot link two Done Promises with differing values");
         return;
       } else if (cas(curr, target)) { // Waiting

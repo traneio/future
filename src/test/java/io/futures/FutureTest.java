@@ -14,6 +14,7 @@ import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -178,15 +179,21 @@ public class FutureTest {
 
   @Test
   public void collectConcurrentResults() throws CheckedFutureException {
-    List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
+      List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
+      AtomicBoolean start = new AtomicBoolean();
       Future<List<Integer>> future = Future.collect(promises);
       for (Promise<Integer> p : promises) {
         ex.submit(() -> {
+          while (true) {
+            if (start.get())
+              break;
+          }
           p.setValue(p.hashCode());
         });
       }
+      start.set(true);
       List<Integer> expected = promises.stream().map(p -> p.hashCode()).collect(toList());
       List<Integer> result = future.get(100, TimeUnit.MILLISECONDS);
       assertArrayEquals(expected.toArray(), result.toArray());
@@ -458,13 +465,13 @@ public class FutureTest {
   }
 
   /*** within (default exception) ***/
-  
+
   @Test
   public void withinMaxLongWait() {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, timer));
   }
-  
+
   @Test
   public void withinMaxLongWaitPromise() {
     Future<Integer> future = new Promise<>();
@@ -486,7 +493,7 @@ public class FutureTest {
   @Test
   public void withinPromiseSuccess() throws CheckedFutureException {
     Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, timer);
+    Future<Integer> future = p.within(100, TimeUnit.MILLISECONDS, timer);
     p.setValue(1);
     assertEquals(new Integer(1), get(future));
   }
@@ -513,13 +520,13 @@ public class FutureTest {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, timer, ex));
   }
-  
+
   @Test
   public void withinCustomExceptionMaxLongWaitPromise() {
     Future<Integer> future = new Promise<>();
     assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, timer, ex));
   }
-  
+
   @Test
   public void withinCustomExceptionSatisfiedFutureSuccess() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).within(1, TimeUnit.MILLISECONDS, timer, ex);
