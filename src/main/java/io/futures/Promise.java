@@ -60,6 +60,9 @@ public class Promise<T> extends Future<T> {
           return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
           return ((Promise<T>) curr).updateIfEmpty(result);
+        } else if (result instanceof Promise) {
+          become((Promise<T>) result);
+          return true;
         } else if (cas(curr, result)) { // Waiting
           WaitQueue.flush(curr, result);
           return true;
@@ -85,7 +88,7 @@ public class Promise<T> extends Future<T> {
       return;
     else if (state instanceof Promise && !(state instanceof Continuation)) // Linked
       ((Promise<T>) state).raise(ex);
-    else if (interruptHandler != null && interruptHandler != this)
+    else if (interruptHandler != null)
       interruptHandler.raise(ex);
   }
 
@@ -104,9 +107,7 @@ public class Promise<T> extends Future<T> {
   }
 
   public final void become(final Future<T> target) {
-    if (state instanceof SatisfiedFuture) // Done
-      throw new IllegalStateException("Can't become() a satisfied promise");
-    else if (target instanceof Promise && !(target instanceof Continuation)) // Linked
+    if (target instanceof Promise)
       ((Promise<T>) target).link(compress());
     else
       target.ensure(() -> update(target));
@@ -127,9 +128,11 @@ public class Promise<T> extends Future<T> {
   private final void link(final Promise<T> target) {
     final Object curr = state;
     while (true)
-      if (curr instanceof Promise && !(curr instanceof Continuation) && cas(curr, target)) { // Linke
-        ((Promise<T>) curr).link(target);
-        return;
+      if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
+        if (cas(curr, target)) {
+          ((Promise<T>) curr).link(target);
+          return;
+        }
       } else if (curr instanceof SatisfiedFuture) { // Done
         if (target.state != null && !target.state.equals(curr))
           throw new IllegalStateException("Cannot link two Done Promises with differing values");

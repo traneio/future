@@ -1,6 +1,8 @@
 package io.futures;
 
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
+import org.junit.experimental.theories.suppliers.TestedOn;
 
 public class PromiseTest {
 
@@ -31,11 +34,39 @@ public class PromiseTest {
 
   @Test
   public void newPromiseWithHandler() throws CheckedFutureException {
-    AtomicReference<Throwable> thrown = new AtomicReference<Throwable>();
-    InterruptHandler handler = thrown::set;
+    AtomicReference<Throwable> interrupt = new AtomicReference<Throwable>();
+    InterruptHandler handler = interrupt::set;
     Promise<Integer> p = new Promise<>(handler);
     p.raise(ex);
-    assertEquals(ex, thrown.get());
+    assertEquals(ex, interrupt.get());
+  }
+
+  @Test
+  public void newPromiseWithHandlers() throws CheckedFutureException {
+    AtomicReference<Throwable> interrupt1 = new AtomicReference<Throwable>();
+    AtomicReference<Throwable> interrupt2 = new AtomicReference<Throwable>();
+    InterruptHandler handler1 = interrupt1::set;
+    InterruptHandler handler2 = interrupt2::set;
+    Promise<Integer> p = new Promise<>(Arrays.asList(handler1, handler2));
+    p.raise(ex);
+    assertEquals(ex, interrupt1.get());
+    assertEquals(ex, interrupt2.get());
+  }
+
+  /*** update ***/
+
+  @Test
+  public void updateSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.update(Future.value(1));
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void updateFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.update(Future.value(1));
+    p.update(Future.value(1));
   }
 
   /*** updateIfEmpty ***/
@@ -123,5 +154,315 @@ public class PromiseTest {
     } finally {
       es.shutdown();
     }
+  }
+
+  @Test
+  public void updateIfEmptyWithPromise() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    Future<Integer> f = p1.map(i -> i + 1);
+    assertTrue(p1.updateIfEmpty(p2));
+    p2.setValue(1);
+    assertEquals(new Integer(2), get(f));
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(1), get(p2));
+  }
+
+  /*** setValue ***/
+
+  @Test
+  public void setValueSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void setValueFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.setValue(1);
+    p.setValue(1);
+  }
+
+  /*** setException ***/
+
+  @Test(expected = TestException.class)
+  public void setExceptionSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.setException(ex);
+    get(p);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void setExceptionFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.setException(ex);
+    p.setException(ex);
+  }
+
+  /*** raise ***/
+
+  @Test
+  public void raise() {
+    AtomicReference<Throwable> interrupt = new AtomicReference<>();
+    Promise<Integer> p = new Promise<>(interrupt::set);
+    p.raise(ex);
+    assertEquals(ex, interrupt.get());
+  }
+
+  @Test
+  public void raiseDone() {
+    AtomicReference<Throwable> interrupt = new AtomicReference<>();
+    Promise<Integer> p = new Promise<>(interrupt::set);
+    p.setValue(1);
+    p.raise(ex);
+    assertNull(interrupt.get());
+  }
+
+  @Test
+  public void raiseLinked() {
+    AtomicReference<Throwable> interrupt = new AtomicReference<>();
+    Promise<Integer> p1 = new Promise<>(interrupt::set);
+    Promise<Integer> p2 = new Promise<>();
+    p1.become(p2);
+    p2.raise(ex);
+    assertEquals(ex, interrupt.get());
+  }
+
+  @Test
+  public void raiseNoHandler() {
+    Promise<Integer> p = new Promise<>();
+    p.raise(ex);
+  }
+
+  /*** become ***/
+
+  @Test
+  public void becomeAPromise() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.become(p2);
+    p2.setValue(1);
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(1), get(p2));
+  }
+
+  @Test
+  public void becomeAContinuation() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.become(p2.map(i -> i + 1));
+    p2.setValue(1);
+    assertEquals(new Integer(2), get(p1));
+    assertEquals(new Integer(1), get(p2));
+  }
+
+  @Test
+  public void becomeASatisfiedFuture() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.become(Future.value(1));
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test
+  public void becomeLinkedChain() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p3 = new Promise<>();
+    p2.become(p1);
+    p3.become(p2);
+    p1.setValue(1);
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(1), get(p2));
+    assertEquals(new Integer(1), get(p3));
+  }
+
+  @Test
+  public void becomeDoubleLinked() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p3 = new Promise<>();
+    p1.become(p3);
+    p2.become(p3);
+    p3.setValue(1);
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(1), get(p2));
+    assertEquals(new Integer(1), get(p3));
+  }
+
+  @Test
+  public void becomeAlreadySatisfiedSuccess() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.setValue(1);
+    p2.setValue(1);
+    p1.become(p2);
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(1), get(p2));
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void becomeAlreadySatisfiedFailure() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.setValue(1);
+    p2.setValue(2);
+    p1.become(p2);
+  }
+
+  /*** isDefined ***/
+
+  @Test
+  public void isDefinedDone() {
+    Promise<Integer> p = new Promise<>();
+    p.setValue(1);
+    assertTrue(p.isDefined());
+  }
+
+  @Test
+  public void isDefinedLinkedDone() {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p2.become(p1);
+    p1.setValue(1);
+    assertTrue(p1.isDefined());
+  }
+
+  @Test
+  public void isDefinedLinkedWaiting() {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p2.become(p1);
+    assertFalse(p2.isDefined());
+  }
+
+  @Test
+  public void isDefinedWaiting() {
+    Promise<Integer> p = new Promise<>();
+    assertFalse(p.isDefined());
+  }
+
+  /*** get ***/
+
+  @Test
+  public void getSuccess() throws InterruptedException {
+    ExecutorService es = Executors.newCachedThreadPool();
+    try {
+      Promise<Integer> p = new Promise<>();
+      CountDownLatch latch = new CountDownLatch(1);
+      es.submit(() -> {
+        try {
+          p.get(100, TimeUnit.MILLISECONDS);
+          latch.countDown();
+        } catch (CheckedFutureException e) {
+        }
+      });
+      es.submit(() -> {
+        p.setValue(1);
+      });
+      latch.await();
+    } finally {
+      es.shutdown();
+    }
+  }
+
+  @Test(expected = TimeoutException.class)
+  public void getTimeout() throws CheckedFutureException {
+    (new Promise<Integer>()).get(10, TimeUnit.MILLISECONDS);
+  }
+
+  @Test
+  public void getInterrupted() throws CheckedFutureException, InterruptedException {
+    AtomicReference<Throwable> cause = new AtomicReference<>();
+    Thread t = new Thread() {
+      @Override
+      public void run() {
+        try {
+          (new Promise<Integer>()).get(10, TimeUnit.DAYS);
+        } catch (CheckedFutureException e) {
+          cause.set(e.getCause());
+        }
+      }
+    };
+    t.start();
+    Thread.sleep(100);
+    t.interrupt();
+    t.join();
+    assertTrue(cause.get() instanceof InterruptedException);
+  }
+
+  /***
+   * continuation methods
+   * 
+   * @throws CheckedFutureException
+   ***/
+
+  @Test
+  public void map() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.map(i -> i + 1);
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test
+  public void flatMap() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    p.flatMap(i -> Future.value(i + 1));
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test
+  public void ensure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicBoolean called = new AtomicBoolean(false);
+    p.ensure(() -> called.set(true));
+    p.setValue(1);
+    assertTrue(called.get());
+  }
+
+  @Test
+  public void onSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicInteger result = new AtomicInteger();
+    p.onSuccess(result::set);
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+  }
+
+  @Test
+  public void onFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicReference<Throwable> result = new AtomicReference<>();
+    p.onFailure(result::set);
+    p.setException(ex);
+    assertEquals(ex, result.get());
+  }
+
+  @Test
+  public void rescue() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicReference<Throwable> exception = new AtomicReference<>();
+    Future<Integer> f = p.rescue(t -> {
+      exception.set(t);
+      return Future.value(2);
+    });
+    p.setException(ex);
+    assertEquals(ex, exception.get());
+    assertEquals(new Integer(2), get(f));
+  }
+  
+  @Test
+  public void handle() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicReference<Throwable> exception = new AtomicReference<>();
+    Future<Integer> f = p.handle(t -> {
+      exception.set(t);
+      return 2;
+    });
+    p.setException(ex);
+    assertEquals(ex, exception.get());
+    assertEquals(new Integer(2), get(f));
   }
 }
