@@ -88,9 +88,8 @@ final class WaitQueue3<T> extends WaitQueue<T> {
   }
 
   @Override
-  protected final WaitQueue<T> add(final Continuation<T, ?> c) {
-    // TODO Auto-generated method stub
-    return null;
+  protected final WaitQueue<T> add(final Continuation<T, ?> c4) {
+    return new WaitQueue4<>(c1, c2, c3, c4);
   }
 
   @Override
