@@ -34,8 +34,6 @@ public final class Local<T> {
   }
 
   public void set(final Optional<T> opt) {
-    assert (position < size);
-
     Optional<?>[] ctx = local.get();
 
     if (ctx == null)
