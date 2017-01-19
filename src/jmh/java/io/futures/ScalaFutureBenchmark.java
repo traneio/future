@@ -5,10 +5,12 @@ import org.openjdk.jmh.annotations.Benchmark;
 import scala.Function1;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
+import scala.concurrent.Future$;
 import scala.concurrent.Promise;
 
 public class ScalaFutureBenchmark {
 
+  private static final RuntimeException exception = new RuntimeException();
   private static final ExecutionContext ec = scala.concurrent.ExecutionContext.global();
   private static final Future<Integer> constFuture = Future.successful(1);
   private static final Function1<Integer, Integer> mapF = i -> i + 1;
@@ -27,6 +29,11 @@ public class ScalaFutureBenchmark {
   @Benchmark
   public void value() {
     Future.successful(1);
+  }
+  
+  @Benchmark
+  public void exception() {
+    Future$.MODULE$.failed(exception);
   }
 
   @Benchmark

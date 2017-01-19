@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 
 import org.openjdk.jmh.annotations.Benchmark;
 
-public class JavaSyncFutureBenchmark {
+public class JavaAsyncFutureBenchmark {
 
   private static final RuntimeException exception = new RuntimeException();
   private static final Supplier<Integer> exceptionSupplier = () -> { throw exception; };
@@ -36,21 +36,21 @@ public class JavaSyncFutureBenchmark {
 
   @Benchmark
   public void mapConst() {
-    constFuture.thenApply(mapF);
+    constFuture.thenApplyAsync(mapF);
   }
 
   @Benchmark
   public void mapPromise() {
-    (new CompletableFuture<Integer>()).thenApply(mapF);
+    (new CompletableFuture<Integer>()).thenApplyAsync(mapF);
   }
 
   @Benchmark
   public void flatMapConst() {
-    constFuture.thenCompose(flatMapF);
+    constFuture.thenComposeAsync(flatMapF);
   }
 
   @Benchmark
   public void flatMapPromise() {
-    (new CompletableFuture<Integer>()).thenCompose(flatMapF);
+    (new CompletableFuture<Integer>()).thenComposeAsync(flatMapF);
   }
 }

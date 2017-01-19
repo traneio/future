@@ -9,6 +9,7 @@ import scala.Function1;
 
 public class TwitterFutureBenchmark {
 
+  private static final RuntimeException exception = new RuntimeException();
   private static final Future<Integer> constFuture = Future.value(1);
   private static final Function1<Integer, Integer> mapF = i -> i + 1;
   private static final Function1<Integer, Future<Integer>> flatMapF = i -> constFuture;
@@ -26,6 +27,11 @@ public class TwitterFutureBenchmark {
   @Benchmark
   public void value() {
     Future.value(1);
+  }
+  
+  @Benchmark
+  public void exception() {
+    Future.exception(exception);
   }
 
   @Benchmark
