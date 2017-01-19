@@ -1,14 +1,17 @@
 package io.futures;
 
-import java.util.function.Function;
-
 import org.openjdk.jmh.annotations.Benchmark;
 
-public class FutureBenchmark {
+import com.twitter.util.Future;
+import com.twitter.util.Promise;
+
+import scala.Function1;
+
+public class TwitterFutureBenchmark {
 
   private static final Future<Integer> constFuture = Future.value(1);
-  private static final Function<Integer, Integer> mapF = i -> i + 1;
-  private static final Function<Integer, Future<Integer>> flatMapF = i -> constFuture;
+  private static final Function1<Integer, Integer> mapF = i -> i + 1;
+  private static final Function1<Integer, Future<Integer>> flatMapF = i -> constFuture;
 
   @Benchmark
   public void newPromise() {

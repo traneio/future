@@ -58,10 +58,10 @@ public class Promise<T> extends Future<T> {
         final Object curr = state;
         if (curr instanceof SatisfiedFuture) // Done
           return false;
-        else if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
+        else if (curr instanceof Promise && !(curr instanceof Continuation))
           return ((Promise<T>) curr).updateIfEmpty(result);
-        } else if (result instanceof Promise) {
-          become((Promise<T>) result);
+        else if (result instanceof Promise) {
+          become(result);
           return true;
         } else if (cas(curr, result)) { // Waiting
           WaitQueue.flush(curr, result);
@@ -164,7 +164,7 @@ public class Promise<T> extends Future<T> {
         return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
       else
         throw new TimeoutException();
-    } catch (InterruptedException ex) {
+    } catch (final InterruptedException ex) {
       throw new CheckedFutureException(ex);
     }
   }

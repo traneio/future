@@ -24,7 +24,7 @@ dependencies {
 
 jmh {
 	fork = 1
-	warmupIterations = 10
-	iterations = 10
+	warmupIterations = 5
+	iterations = 5
 	//profilers = [gc]
 }
