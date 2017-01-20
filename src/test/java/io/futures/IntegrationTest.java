@@ -1,43 +1,35 @@
 package io.futures;
 
 import java.util.Random;
-import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Test;
 
 public class IntegrationTest {
-  
+
   private final Random random = new Random(1);
-  private final Timer timer = new Timer();
-  
-  private Future<Integer> gen(int depth) {
-    Future<Integer> f = gen();
-    while(true) {
-      if(depth == 0)
-        break;
-      else {
-        f = f.flatMap(i -> gen());
-        depth--;
-      }
-    }
-    return f;
-  }
-  
-  private Future<Integer> gen() {
-    int i = random.nextInt(3);
-    if(i == 1)
-      return Future.value(1).delayed(10, TimeUnit.MILLISECONDS, timer);
-    else if(i == 2)
-      return gen().map(v -> v + 1);
-    else
-      return Future.value(1);
-  }
-  
-  @Test
-  public void test() throws CheckedFutureException {
-//    Future<Integer> f = gen(200000);
-//    f.get(1, TimeUnit.DAYS);
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
+
+  @After
+  public void shutdownScheduler() {
+    scheduler.shutdown();
   }
 
+//  @Test
+  public void test() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1);
+    for (int i = 0; i < 40; i++) {
+      int j = random.nextInt(3);
+      if (j == 1)
+        f = f.delayed(10, TimeUnit.MILLISECONDS, scheduler);
+      else if (j == 2)
+        f = f.map(v -> v + 1);
+      else
+        f = f.flatMap(v -> Future.value(v + 1));
+    }
+    f.get(20, TimeUnit.SECONDS);
+  }
 }

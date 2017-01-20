@@ -73,11 +73,13 @@ public class PromiseTest {
 
   /*** updateIfEmpty ***/
 
-  @Test(expected = IllegalArgumentException.class)
-  public void updateIfEmptyContinuation() {
+  @Test
+  public void updateIfEmptyContinuation() throws CheckedFutureException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     p2.updateIfEmpty(p1.map(i -> i + 1));
+    p1.setValue(1);
+    assertEquals(new Integer(2), get(p2));
   }
 
   @Test

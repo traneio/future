@@ -47,10 +47,6 @@ public class Promise<T> extends Future<T> {
 
   @SuppressWarnings("unchecked")
   public final boolean updateIfEmpty(final Future<T> result) {
-
-    if (result instanceof Continuation)
-      throw new IllegalArgumentException("A `Continuation` can't be set as a promise result.");
-
     final Optional<?>[] oldContext = Local.save();
     Local.restore(savedContext);
     try {

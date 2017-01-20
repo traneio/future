@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -179,43 +179,33 @@ abstract class Future<T> implements InterruptHandler {
     return flatMap(v -> VOID);
   }
 
-  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final Timer timer) {
+  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     final Promise<T> p = new Promise<>(this);
-    timer.schedule(new TimerTask() {
-      @Override
-      public void run() {
-        p.become(Future.this);
-      }
-    }, timeUnit.toMillis(delay));
+    scheduler.schedule(() -> p.become(Future.this), delay, timeUnit);
     return p;
   }
 
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Timer timer) {
-    return within(timeout, timeUnit, timer, TimeoutException.stackless);
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
+    return within(timeout, timeUnit, scheduler, TimeoutException.stackless);
   }
 
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final Timer timer,
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception) {
     if (isDefined() || timeout == Long.MAX_VALUE)
       return this;
 
     final Promise<T> p = new Promise<>(this);
 
-    final TimerTask task = new TimerTask() {
-      @Override
-      public void run() {
-        p.updateIfEmpty(Future.exception(exception));
-      }
-    };
-    timer.schedule(task, timeUnit.toMillis(timeout));
+    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(new ExceptionFuture<>(exception)), timeout,
+        timeUnit);
 
     onSuccess(r -> {
-      task.cancel();
-      p.updateIfEmpty(Future.value(r));
+      task.cancel(false);
+      p.updateIfEmpty(new ValueFuture<>(r));
     });
 
     onFailure(ex -> {
-      task.cancel();
+      task.cancel(false);
       p.updateIfEmpty(Future.exception(ex));
     });
 
