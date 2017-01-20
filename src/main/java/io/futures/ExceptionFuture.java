@@ -1,5 +1,6 @@
 package io.futures;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -15,21 +16,21 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
 
   @Override
   final <R> Future<R> map(final Function<T, R> f) {
-    return this.cast();
+    return cast();
   }
 
   @Override
   final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
-    return this.cast();
+    return cast();
   }
 
   @Override
-  Future<T> onSuccess(final Consumer<T> c) {
+  final Future<T> onSuccess(final Consumer<T> c) {
     return this;
   }
 
   @Override
-  Future<T> onFailure(final Consumer<Throwable> c) {
+  final Future<T> onFailure(final Consumer<Throwable> c) {
     try {
       c.accept(ex);
     } catch (final Throwable ex) {
@@ -40,7 +41,7 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     try {
       return f.apply(ex);
     } catch (final Throwable ex) {
@@ -49,12 +50,24 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  Future<T> handle(final Function<Throwable, T> f) {
+  final Future<T> handle(final Function<Throwable, T> f) {
     try {
       return Future.value(f.apply(ex));
     } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
+  }
+
+  @Override
+  final Future<Void> voided() {
+    return cast();
+  }
+  
+  @Override
+  final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+    final Promise<T> p = new Promise<>(this);
+    scheduler.schedule(() -> p.setException(ex), delay, timeUnit);
+    return p;
   }
 
   @Override
@@ -71,7 +84,7 @@ final class ExceptionFuture<T> extends SatisfiedFuture<T> {
   private final <R> Future<R> cast() {
     return (Future<R>) this;
   }
-
+  
   @Override
   public final int hashCode() {
     final int prime = 31;

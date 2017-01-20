@@ -1,5 +1,6 @@
 package io.futures;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -47,13 +48,25 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return this;
   }
 
   @Override
-  Future<T> handle(final Function<Throwable, T> f) {
+  final Future<T> handle(final Function<Throwable, T> f) {
     return this;
+  }
+
+  @Override
+  final Future<Void> voided() {
+    return VOID;
+  }
+
+  @Override
+  final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+    final Promise<T> p = new Promise<>(this);
+    scheduler.schedule(() -> p.setValue(value), delay, timeUnit);
+    return p;
   }
 
   @Override

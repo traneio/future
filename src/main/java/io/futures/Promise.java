@@ -3,6 +3,8 @@ package io.futures;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -233,6 +235,54 @@ public class Promise<T> extends Future<T> {
         return result.handle(f);
       }
     });
+  }
+
+  @Override
+  final Future<Void> voided() {
+    return continuation(new Continuation<T, Void>(this) {
+      @Override
+      final Future<Void> apply(final Future<T> result) {
+        return result.voided();
+      }
+    });
+  }
+
+  @Override
+  final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+    final Promise<T> p = new Promise<>(this);
+    scheduler.schedule(() -> p.become(Promise.this), delay, timeUnit);
+    return p;
+  }
+
+  @Override
+  final void proxyTo(Promise<T> p) {
+    if (p.isDefined())
+      throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
+    ensure(() -> p.update(this));
+  }
+
+  @Override
+  final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+      final Throwable exception) {
+    if (timeout == Long.MAX_VALUE)
+      return this;
+
+    final Promise<T> p = new Promise<>(this);
+
+    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(new ExceptionFuture<>(exception)), timeout,
+        timeUnit);
+
+    onSuccess(r -> {
+      task.cancel(false);
+      p.updateIfEmpty(new ValueFuture<>(r));
+    });
+
+    onFailure(ex -> {
+      task.cancel(false);
+      p.updateIfEmpty(Future.exception(ex));
+    });
+
+    return p;
   }
 }
 

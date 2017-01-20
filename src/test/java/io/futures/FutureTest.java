@@ -499,7 +499,7 @@ public class FutureTest {
   @Test
   public void withinPromiseSuccess() throws CheckedFutureException {
     Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(100, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler);
     p.setValue(1);
     assertEquals(new Integer(1), get(future));
   }

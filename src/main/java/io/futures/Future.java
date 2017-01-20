@@ -146,7 +146,7 @@ abstract class Future<T> implements InterruptHandler {
     return result;
   }
 
-  /*** abstract ***/
+  /*** methods ***/
 
   abstract <R> Future<R> map(Function<T, R> f);
 
@@ -165,50 +165,17 @@ abstract class Future<T> implements InterruptHandler {
   abstract boolean isDefined();
 
   abstract T get(long timeout, TimeUnit unit) throws CheckedFutureException;
-
-  /*** concrete ***/
-
-  public final void proxyTo(final Promise<T> p) {
-    if (p.isDefined())
-      throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
-    onSuccess(r -> p.setValue(r));
-    onFailure(ex -> p.setException(ex));
-  }
-
-  public final Future<Void> voided() {
-    return flatMap(v -> VOID);
-  }
-
-  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
-    final Promise<T> p = new Promise<>(this);
-    scheduler.schedule(() -> p.become(Future.this), delay, timeUnit);
-    return p;
-  }
+  
+  abstract Future<Void> voided();
+  
+  abstract Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler);
+  
+  abstract void proxyTo(final Promise<T> p);
 
   public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     return within(timeout, timeUnit, scheduler, TimeoutException.stackless);
   }
-
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
-      final Throwable exception) {
-    if (isDefined() || timeout == Long.MAX_VALUE)
-      return this;
-
-    final Promise<T> p = new Promise<>(this);
-
-    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(new ExceptionFuture<>(exception)), timeout,
-        timeUnit);
-
-    onSuccess(r -> {
-      task.cancel(false);
-      p.updateIfEmpty(new ValueFuture<>(r));
-    });
-
-    onFailure(ex -> {
-      task.cancel(false);
-      p.updateIfEmpty(Future.exception(ex));
-    });
-
-    return p;
-  }
+  
+  abstract Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+      final Throwable exception);
 }
