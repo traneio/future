@@ -10,11 +10,13 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.After;
 import org.junit.Test;
 
 public class PromiseTest {
@@ -23,7 +25,13 @@ public class PromiseTest {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
 
-  Exception ex = new TestException();
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private final Exception ex = new TestException();
+
+  @After
+  public void shutdownScheduler() {
+    scheduler.shutdown();
+  }
 
   /*** new ***/
 
@@ -346,6 +354,79 @@ public class PromiseTest {
     assertFalse(p.isDefined());
   }
 
+  /*** voided ***/
+
+  @Test
+  public void voidedSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    Future<Void> future = p.voided();
+    p.setValue(1);
+    assertNull(get(future));
+  }
+
+  @Test(expected = TestException.class)
+  public void voidedFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    Future<Void> future = p.voided();
+    p.setException(ex);
+    get(future);
+  }
+  
+  /*** delayed ***/
+
+  @Test
+  public void delayed() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    long delay = 10;
+    long start = System.currentTimeMillis();
+    Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler);
+    p.setValue(1);
+    int result = delayed.get(20, TimeUnit.MILLISECONDS);
+    assertTrue(System.currentTimeMillis() - start >= delay);
+    assertEquals(1, result);
+  }
+
+  @Test
+  public void delayedInterrupt() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = new Promise<>(intr::set);
+    Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, scheduler);
+
+    future.raise(ex);
+    assertEquals(ex, intr.get());
+  }
+
+  /*** within ***/
+
+  @Test
+  public void withinMaxLongWait() {
+    Future<Integer> future = new Promise<>();
+    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler, ex));
+  }
+
+  @Test
+  public void withinPromiseSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    p.setValue(1);
+    assertEquals(new Integer(1), get(future));
+  }
+
+  @Test(expected = TestException.class)
+  public void withinPromiseFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    p.setException(ex);
+    get(future);
+  }
+
+  @Test(expected = TimeoutException.class)
+  public void withinPromiseTimeout() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    get(future);
+  }
+
   /*** get ***/
 
   @Test
@@ -395,11 +476,7 @@ public class PromiseTest {
     assertTrue(cause.get() instanceof InterruptedException);
   }
 
-  /***
-   * continuation methods
-   * 
-   * @throws CheckedFutureException
-   ***/
+  /*** continuation ***/
 
   @Test
   public void map() throws CheckedFutureException {
@@ -456,7 +533,7 @@ public class PromiseTest {
     assertEquals(ex, exception.get());
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void handle() throws CheckedFutureException {
     Promise<Integer> p = new Promise<>();

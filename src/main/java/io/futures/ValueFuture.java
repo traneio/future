@@ -1,6 +1,5 @@
 package io.futures;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -60,13 +59,6 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   @Override
   public final Future<Void> voided() {
     return VOID;
-  }
-
-  @Override
-  public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
-    final Promise<T> p = new Promise<>(this);
-    scheduler.schedule(() -> p.setValue(value), delay, timeUnit);
-    return p;
   }
 
   @Override

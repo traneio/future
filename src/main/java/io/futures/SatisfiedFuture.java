@@ -31,8 +31,30 @@ interface SatisfiedFuture<T> extends Future<T> {
   }
 
   @Override
+  default Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+    final DelayedSatisfiedFuture<T> p = new DelayedSatisfiedFuture<>(this);
+    scheduler.schedule(p, delay, timeUnit);
+    return p;
+  }
+
+  @Override
   default Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception) {
     return this;
+  }
+}
+
+class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
+
+  private final SatisfiedFuture<T> result;
+
+  public DelayedSatisfiedFuture(SatisfiedFuture<T> result) {
+    super(result);
+    this.result = result;
+  }
+
+  @Override
+  public void run() {
+    update(result);
   }
 }

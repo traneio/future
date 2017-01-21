@@ -92,6 +92,14 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.<Integer>exception(ex).rescue(r -> Future.value(1/0));
     get(future);
   }
+  
+  /*** voided ***/
+
+  @Test(expected = TestException.class)
+  public void voided() throws CheckedFutureException {
+    Future<Void> future = Future.exception(ex).voided();
+    get(future);
+  }
 
   /*** get ***/
 

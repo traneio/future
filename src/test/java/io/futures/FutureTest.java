@@ -3,7 +3,6 @@ package io.futures;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -25,7 +24,7 @@ import org.junit.Test;
 public class FutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(1, TimeUnit.MILLISECONDS);
   }
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -432,149 +431,19 @@ public class FutureTest {
     assertArrayEquals(list.toArray(), result.toArray());
   }
 
-  /*** voided ***/
-
-  @Test
-  public void voidedSuccess() throws CheckedFutureException {
-    Future<Void> future = Future.value(1).voided();
-    assertNull(get(future));
-  }
-
-  @Test(expected = TestException.class)
-  public void voidedFailure() throws CheckedFutureException {
-    Future<Void> future = Future.exception(ex).voided();
-    get(future);
-  }
-
   /*** within ***/
 
-  @Test
-  public void withinMaxLongWait() {
-    Future<Integer> future = Future.value(1);
-    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler));
-  }
-
-  @Test
-  public void withinMaxLongWaitPromise() {
-    Future<Integer> future = new Promise<>();
-    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler));
-  }
-
-  @Test
-  public void withinSatisfiedFutureSuccess() throws CheckedFutureException {
-    Future<Integer> future = Future.value(1).within(1, TimeUnit.MILLISECONDS, scheduler);
-    assertEquals(new Integer(1), get(future));
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void withinSatisfiedFutureFailure() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).within(1, TimeUnit.MILLISECONDS, scheduler);
-    get(future);
-  }
-
-  @Test
-  public void withinPromiseSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler);
-    p.setValue(1);
-    assertEquals(new Integer(1), get(future));
-  }
-
-  @Test(expected = TestException.class)
-  public void withinPromiseFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler);
-    p.setException(ex);
-    get(future);
-  }
-
   @Test(expected = TimeoutException.class)
-  public void withinPromiseTimeout() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler);
-    get(future);
-  }
-
-  /*** within (custom exception) ***/
-
-  @Test
-  public void withinCustomExceptionMaxLongWaitSatisfiedFuture() {
-    Future<Integer> future = Future.value(1);
-    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler, ex));
+  public void withinDefaultExceptionFailure() throws CheckedFutureException {
+    Future<Integer> f = (new Promise<Integer>()).within(1, TimeUnit.MILLISECONDS, scheduler);
+    get(f);
   }
 
   @Test
-  public void withinCustomExceptionMaxLongWaitPromise() {
-    Future<Integer> future = new Promise<>();
-    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler, ex));
-  }
-
-  @Test
-  public void withinCustomExceptionSatisfiedFutureSuccess() throws CheckedFutureException {
-    Future<Integer> future = Future.value(1).within(1, TimeUnit.MILLISECONDS, scheduler, ex);
-    assertEquals(new Integer(1), get(future));
-  }
-
-  @Test(expected = TestException.class)
-  public void withinCustomExceptionSatisfiedFutureFailure() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).within(1, TimeUnit.MILLISECONDS, scheduler, ex);
-    get(future);
-  }
-
-  @Test
-  public void withinCustomExceptionPromiseSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+  public void withinDefaultExceptionSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<Integer>();
+    Future<Integer> f = p.within(10, TimeUnit.MILLISECONDS, scheduler);
     p.setValue(1);
-    assertEquals(new Integer(1), get(future));
-  }
-
-  @Test(expected = TestException.class)
-  public void withinCustomExceptionPromiseFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
-    p.setException(ex);
-    get(future);
-  }
-
-  @Test(expected = TimeoutException.class)
-  public void withinCustomExceptionPromiseTimeout() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
-    get(future);
-  }
-
-  /*** delayed ***/
-
-  @Test
-  public void doubleDelayed() throws CheckedFutureException {
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-    try {
-      Future.value(1).delayed(5, TimeUnit.MILLISECONDS, scheduler).delayed(10, TimeUnit.MILLISECONDS, scheduler).get(10000, TimeUnit.SECONDS);
-    } finally {
-      scheduler.shutdown();
-    }
-  }
-
-  @Test
-  public void delayed() throws CheckedFutureException {
-    Future<Integer> future = Future.value(1);
-    long delay = 10;
-    long start = System.currentTimeMillis();
-    int result = future.delayed(delay, TimeUnit.MILLISECONDS, scheduler).get(20, TimeUnit.MILLISECONDS);
-    assertTrue(System.currentTimeMillis() - start >= delay);
-    assertEquals(1, result);
-  }
-
-  @Test
-  public void delayedInterrupt() {
-    AtomicReference<Throwable> intr = new AtomicReference<>();
-    Promise<Integer> p = new Promise<>(intr::set);
-
-    Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, scheduler);
-
-    future.raise(ex);
-
-    assertEquals(ex, intr.get());
+    assertEquals(new Integer(1), get(f));
   }
 }

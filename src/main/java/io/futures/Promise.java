@@ -15,7 +15,7 @@ public class Promise<T> implements Future<T> {
 
   private final InterruptHandler interruptHandler;
 
-  // Future<T> (Done) | WaitQueue (Pending) | Promise<T> (Linked)
+  // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
   private final Object state = null;
 
   private final Optional<?>[] savedContext = Local.save();
@@ -252,10 +252,20 @@ public class Promise<T> implements Future<T> {
     });
   }
 
+  private class DelayedPromise extends Promise<T> implements Runnable {
+    public DelayedPromise() {
+      super(Promise.this);
+    }
+    @Override
+    public void run() {
+      become(Promise.this);
+    }
+  }
+
   @Override
   public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
-    final Promise<T> p = new Promise<>(this);
-    scheduler.schedule(() -> p.become(this), delay, timeUnit);
+    final DelayedPromise p = new DelayedPromise();
+    scheduler.schedule(p, delay, timeUnit);
     return p;
   }
 

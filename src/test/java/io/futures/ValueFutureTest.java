@@ -2,6 +2,7 @@ package io.futures;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -93,6 +94,14 @@ public class ValueFutureTest {
   public void rescue() {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.rescue(t -> Future.value(2)));
+  }
+  
+  /*** voided ***/
+
+  @Test
+  public void voided() throws CheckedFutureException {
+    Future<Void> future = Future.value(1).voided();
+    assertNull(get(future));
   }
 
   /*** get ***/

@@ -1,6 +1,5 @@
 package io.futures;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -63,13 +62,6 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     return cast();
   }
   
-  @Override
-  public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
-    final Promise<T> p = new Promise<>(this);
-    scheduler.schedule(() -> p.setException(ex), delay, timeUnit);
-    return p;
-  }
-
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     if (ex instanceof RuntimeException)

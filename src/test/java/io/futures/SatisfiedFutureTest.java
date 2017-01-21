@@ -3,14 +3,23 @@ package io.futures;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.After;
 import org.junit.Test;
 
 public class SatisfiedFutureTest {
   
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final Exception ex = new TestException();
+
+  @After
+  public void shutdownScheduler() {
+    scheduler.shutdown();
+  }
   
   private <T> T get(Future<T> future) throws CheckedFutureException {
     return future.get(0, TimeUnit.MILLISECONDS);
@@ -60,5 +69,31 @@ public class SatisfiedFutureTest {
     Promise<Integer> p = new Promise<>();
     Future.<Integer>exception(ex).proxyTo(p);
     get(p);
+  }
+  
+  /*** delayed ***/
+
+  @Test
+  public void delayed() throws CheckedFutureException {
+    Future<Integer> future = Future.value(1);
+    long delay = 10;
+    long start = System.currentTimeMillis();
+    int result = future.delayed(delay, TimeUnit.MILLISECONDS, scheduler).get(20, TimeUnit.MILLISECONDS);
+    assertTrue(System.currentTimeMillis() - start >= delay);
+    assertEquals(1, result);
+  }
+  
+  /*** within ***/
+  
+  @Test(expected = TestException.class)
+  public void withinFailure() throws CheckedFutureException {
+    Future<Integer> f = Future.<Integer>exception(ex).within(1, TimeUnit.MILLISECONDS, scheduler);
+    get(f);
+  }
+  
+  @Test
+  public void withinSuccess() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1).within(1, TimeUnit.MILLISECONDS, scheduler);
+    assertEquals(new Integer(1), get(f));
   }
 }
