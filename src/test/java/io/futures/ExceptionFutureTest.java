@@ -1,9 +1,12 @@
 package io.futures;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -59,6 +62,42 @@ public class ExceptionFutureTest {
     get(future);
   }
 
+  /*** respond ***/
+
+  public void respond() {
+    AtomicBoolean success = new AtomicBoolean(false);
+    AtomicBoolean failure = new AtomicBoolean(false);
+    final Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        failure.set(true);
+      }
+      @Override
+      public void onValue(Integer value) {
+        success.set(true);
+      }
+    };
+    Future.<Integer>exception(ex).respond(r);
+    assertFalse(success.get());
+    assertTrue(failure.get());
+  }
+  
+  @Test(expected = TestException.class)
+  public void respondException() throws CheckedFutureException {
+    final Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        throw new NullPointerException();
+      }
+      @Override
+      public void onValue(Integer value) {
+        throw new NullPointerException();
+      }
+    };
+    Future<Integer> f = Future.<Integer>exception(ex).respond(r);
+    get(f);
+  }
+
   /*** handle ***/
 
   @Test
@@ -69,10 +108,10 @@ public class ExceptionFutureTest {
     });
     assertEquals(new Integer(1), get(future));
   }
-  
+
   @Test(expected = ArithmeticException.class)
   public void handleException() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).handle(r -> 1/0);
+    Future<Integer> future = Future.<Integer>exception(ex).handle(r -> 1 / 0);
     get(future);
   }
 
@@ -86,13 +125,13 @@ public class ExceptionFutureTest {
     });
     assertEquals(new Integer(1), get(future));
   }
-  
+
   @Test(expected = ArithmeticException.class)
   public void rescueException() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).rescue(r -> Future.value(1/0));
+    Future<Integer> future = Future.<Integer>exception(ex).rescue(r -> Future.value(1 / 0));
     get(future);
   }
-  
+
   /*** voided ***/
 
   @Test(expected = TestException.class)

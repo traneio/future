@@ -38,6 +38,17 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     }
     return this;
   }
+  
+  @Override
+  public Future<T> respond(Responder<T> r) {
+    try {
+      r.onException(ex);
+    } catch (final Throwable ex) {
+      // TODO logging
+      NonFatalException.verify(ex);
+    }
+    return this;
+  }
 
   @Override
   public final Future<T> rescue(final Function<Throwable, Future<T>> f) {

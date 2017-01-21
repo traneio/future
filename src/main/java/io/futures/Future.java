@@ -32,7 +32,7 @@ interface Future<T> extends InterruptHandler {
   public static <T> Future<T> exception(final Throwable ex) {
     return new ExceptionFuture<>(ex);
   }
-  
+
   public static <T> Future<T> flatten(final Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
@@ -43,11 +43,11 @@ interface Future<T> extends InterruptHandler {
     return p;
   }
 
-  static Future<List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
+  static Future<? extends List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
 
   @SuppressWarnings("unchecked")
   public static <T> Future<List<T>> emptyList() {
-    return emptyListInstance.map(l -> (List<T>) l);
+    return (Future<List<T>>) emptyListInstance;
   }
 
   @SuppressWarnings("unchecked")
@@ -66,15 +66,23 @@ interface Future<T> extends InterruptHandler {
         if (f instanceof ExceptionFuture)
           return (Future<List<T>>) f;
 
-        f.onFailure(p::setException);
-
         final int ii = i;
-        f.onSuccess(v -> {
-          results[ii] = v;
-          if (count.decrementAndGet() == 0)
-            p.setValue((List<T>) Arrays.asList(results));
-        });
+        final Responder<T> responder = new Responder<T>() {
+          @Override
+          public void onException(Throwable ex) {
+            p.setException(ex);
+          }
 
+          @Override
+          public void onValue(T value) {
+            results[ii] = value;
+            if (count.decrementAndGet() == 0)
+              p.setValue((List<T>) Arrays.asList(results));
+          }
+
+        };
+
+        f.respond(responder);
         i++;
       }
       return p;
@@ -86,22 +94,15 @@ interface Future<T> extends InterruptHandler {
     if (list.isEmpty())
       return VOID;
     else {
-      final AtomicInteger count = new AtomicInteger(list.size());
       final Promise<Void> p = new Promise<>(list);
-      final Consumer<T> decrement = v -> {
-        if (count.decrementAndGet() == 0)
-          p.update(VOID);
-      };
-      final Consumer<Throwable> fail = ex -> {
-        p.setException(ex);
-      };
+      final JoinResponder<T> responder = new JoinResponder<T>(p, list.size());
+      
       for (final Future<T> f : list) {
 
         if (f instanceof ExceptionFuture)
           return (Future<Void>) f;
-
-        f.onSuccess(decrement);
-        f.onFailure(fail);
+        
+        f.respond(responder);
       }
       return p;
     }
@@ -154,6 +155,8 @@ interface Future<T> extends InterruptHandler {
 
   Future<T> onFailure(Consumer<Throwable> c);
 
+  Future<T> respond(Responder<T> r);
+
   Future<T> rescue(Function<Throwable, Future<T>> f);
 
   Future<T> handle(Function<Throwable, T> f);
@@ -168,8 +171,7 @@ interface Future<T> extends InterruptHandler {
 
   void proxyTo(final Promise<T> p);
 
-  default Future<T> within(final long timeout, final TimeUnit timeUnit,
-      final ScheduledExecutorService scheduler) {
+  default Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     return within(timeout, timeUnit, scheduler, TimeoutException.stackless);
   }
 
@@ -184,8 +186,31 @@ class TailrecPromise<T> extends Promise<T> implements Runnable {
     super();
     this.sup = sup;
   }
+
   @Override
   public void run() {
     become(sup.get());
+  }
+}
+
+class JoinResponder<T> extends AtomicInteger implements Responder<T> {
+  private static final long serialVersionUID = 5763037150431433940L;
+  
+  private final Promise<Void> p;
+
+  public JoinResponder(Promise<Void> p, int size) {
+    super(size);
+    this.p = p;
+  }
+  
+  @Override
+  public void onException(Throwable ex) {
+    p.setException(ex);
+  }
+  
+  @Override
+  public void onValue(T value) {
+    if (decrementAndGet() == 0)
+      p.update(Future.VOID); 
   }
 }

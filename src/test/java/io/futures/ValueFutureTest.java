@@ -1,10 +1,12 @@
 package io.futures;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -78,6 +80,47 @@ public class ValueFutureTest {
       throw new RuntimeException();
     });
     assertEquals(new Integer(1), get(future));
+  }
+  
+  /*** respond ***/
+
+  public void respond() {
+    AtomicInteger result = new AtomicInteger(-1);
+    AtomicBoolean failure = new AtomicBoolean(false);
+    final Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        failure.set(true);
+      }
+      @Override
+      public void onValue(Integer value) {
+        result.set(value);
+      }
+    };
+    Future.value(1).respond(r);
+    assertEquals(1, result.get());
+    assertFalse(failure.get());
+  }
+  
+  @Test
+  public void respondException() throws CheckedFutureException {
+    AtomicInteger result = new AtomicInteger(-1);
+    AtomicBoolean failure = new AtomicBoolean(false);
+    final Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        failure.set(true);
+        throw new NullPointerException();
+      }
+      @Override
+      public void onValue(Integer value) {
+        result.set(value);
+        throw new NullPointerException();
+      }
+    };
+    Future.value(1).respond(r);
+    assertEquals(1, result.get());
+    assertFalse(failure.get());
   }
 
   /*** handle ***/

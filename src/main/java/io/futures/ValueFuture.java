@@ -45,6 +45,17 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
+  
+  @Override
+  public Future<T> respond(Responder<T> r) {
+    try {
+      r.onValue(value);
+    } catch (final Throwable ex) {
+      // TODO logging
+      NonFatalException.verify(ex);
+    }
+    return this;
+  }
 
   @Override
   public final Future<T> rescue(final Function<Throwable, Future<T>> f) {

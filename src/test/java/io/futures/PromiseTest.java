@@ -550,6 +550,50 @@ public class PromiseTest {
   }
 
   @Test
+  public void respondSuccess() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicInteger result = new AtomicInteger(-1);
+    AtomicBoolean failure = new AtomicBoolean(false);
+    Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        failure.set(true);
+      }
+
+      @Override
+      public void onValue(Integer value) {
+        result.set(value);
+      }
+    };
+    p.respond(r);
+    p.setValue(1);
+    assertEquals(1, result.get());
+    assertFalse(failure.get());
+  }
+
+  @Test
+  public void respondFailure() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    AtomicBoolean success = new AtomicBoolean(false);
+    AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
+    Responder<Integer> r = new Responder<Integer>() {
+      @Override
+      public void onException(Throwable ex) {
+        failure.set(ex);
+      }
+
+      @Override
+      public void onValue(Integer value) {
+        success.set(true);
+      }
+    };
+    p.respond(r);
+    p.setException(ex);
+    assertEquals(ex, failure.get());
+    assertFalse(success.get());
+  }
+
+  @Test
   public void rescue() throws CheckedFutureException {
     Promise<Integer> p = new Promise<>();
     AtomicReference<Throwable> exception = new AtomicReference<>();

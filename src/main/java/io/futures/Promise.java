@@ -2,6 +2,7 @@ package io.futures;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -222,6 +223,16 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
+  public final Future<T> respond(final Responder<T> r) {
+    return continuation(new Continuation<T, T>(this) {
+      @Override
+      final Future<T> apply(final Future<T> result) {
+        return result.respond(r);
+      }
+    });
+  }
+
+  @Override
   public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
@@ -273,8 +284,49 @@ public class Promise<T> implements Future<T> {
   public final void proxyTo(Promise<T> p) {
     if (p.isDefined())
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
-    onSuccess(p::setValue);
-    onFailure(p::setException);
+
+    final Responder<T> r = new Responder<T>() {
+      @Override
+      public void onException(Throwable ex) {
+        p.setException(ex);
+      }
+
+      @Override
+      public void onValue(T value) {
+        p.setValue(value);
+      }
+    };
+    respond(r);
+  }
+
+  private static class WithinPromise<T> extends Promise<T> implements Responder<T>, Callable<Boolean> {
+
+    private final ScheduledFuture<Boolean> task;
+    private final Throwable exception;
+
+    public WithinPromise(InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
+        final ScheduledExecutorService scheduler, final Throwable exception) {
+      super(handler);
+      this.task = scheduler.schedule(this, timeout, timeUnit);
+      this.exception = exception;
+    }
+
+    @Override
+    public void onException(Throwable ex) {
+      task.cancel(false);
+      updateIfEmpty(Future.exception(ex));
+    }
+
+    @Override
+    public void onValue(T value) {
+      task.cancel(false);
+      updateIfEmpty(Future.value(value));
+    }
+
+    @Override
+    public Boolean call() throws Exception {
+      return updateIfEmpty(Future.exception(exception));
+    }
   }
 
   @Override
@@ -283,21 +335,8 @@ public class Promise<T> implements Future<T> {
     if (timeout == Long.MAX_VALUE)
       return this;
 
-    final Promise<T> p = new Promise<>(this);
-
-    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(Future.exception(exception)), timeout,
-        timeUnit);
-
-    onSuccess(r -> {
-      task.cancel(false);
-      p.updateIfEmpty(Future.value(r));
-    });
-
-    onFailure(ex -> {
-      task.cancel(false);
-      p.updateIfEmpty(Future.exception(ex));
-    });
-
+    WithinPromise<T> p = new WithinPromise<>(this, timeout, timeUnit, scheduler, exception);
+    respond(p);
     return p;
   }
 }
