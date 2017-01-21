@@ -179,6 +179,13 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p1));
     assertEquals(new Integer(1), get(p2));
   }
+  
+  @Test(expected = NullPointerException.class)
+  public void updateIfEmptyError() {
+    Promise<Integer> p = new Promise<Integer>();
+    p.map(i -> i + 1);
+    p.updateIfEmpty(null);
+  }
 
   /*** setValue ***/
 
