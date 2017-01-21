@@ -4,13 +4,14 @@ import java.lang.reflect.Field;
 
 public interface Unsafe {
 
-  static sun.misc.Unsafe instance = getUnsafe();
+  static sun.misc.Unsafe instance = getDeclaredStaticField(sun.misc.Unsafe.class, "theUnsafe");
 
-  static sun.misc.Unsafe getUnsafe() {
+  @SuppressWarnings("unchecked")
+  static <T> T getDeclaredStaticField(final Class<?> cls, final String name) {
     try {
-      final Field f = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+      final Field f = cls.getDeclaredField(name);
       f.setAccessible(true);
-      return (sun.misc.Unsafe) f.get(null);
+      return (T) f.get(null);
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }
