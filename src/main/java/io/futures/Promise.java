@@ -17,7 +17,7 @@ public class Promise<T> implements Future<T> {
   private final InterruptHandler interruptHandler;
 
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
-  private final Object state = null;
+  private volatile Object state = null;
 
   private final Optional<?>[] savedContext = Local.save();
 
