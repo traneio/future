@@ -3,6 +3,7 @@ package io.futures;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -157,10 +158,21 @@ public class Promise<T> implements Future<T> {
       return false;
   }
 
+  private static final class ReleaseOnRunLatch extends CountDownLatch implements Runnable {
+    public ReleaseOnRunLatch() {
+      super(1);
+    }
+
+    @Override
+    public final void run() {
+      super.countDown();
+    }
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    final CountDownOnRunLatch latch = new CountDownOnRunLatch(1);
+    final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
     ensure(latch);
     try {
       if (latch.await(timeout, unit))
@@ -262,13 +274,13 @@ public class Promise<T> implements Future<T> {
     });
   }
 
-  private class DelayedPromise extends Promise<T> implements Runnable {
+  private final class DelayedPromise extends Promise<T> implements Runnable {
     public DelayedPromise() {
       super(Promise.this);
     }
 
     @Override
-    public void run() {
+    public final void run() {
       become(Promise.this);
     }
   }
