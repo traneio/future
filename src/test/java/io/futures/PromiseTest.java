@@ -371,7 +371,7 @@ public class PromiseTest {
     p.setException(ex);
     get(future);
   }
-  
+
   /*** delayed ***/
 
   @Test
@@ -394,6 +394,34 @@ public class PromiseTest {
 
     future.raise(ex);
     assertEquals(ex, intr.get());
+  }
+
+  /*** proxyTo ***/
+
+  @Test(expected = IllegalStateException.class)
+  public void proxySatisified() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p2.setValue(1);
+    p1.proxyTo(p2);
+  }
+
+  @Test
+  public void proxyToSuccess() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.proxyTo(p2);
+    p1.setValue(1);
+    assertEquals(new Integer(1), get(p2));
+  }
+
+  @Test(expected = TestException.class)
+  public void proxyToFailure() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.proxyTo(p2);
+    p1.setException(ex);
+    get(p2);
   }
 
   /*** within ***/

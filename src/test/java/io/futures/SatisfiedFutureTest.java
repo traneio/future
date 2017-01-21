@@ -49,9 +49,22 @@ public class SatisfiedFutureTest {
     Future.value(1).raise(new Throwable());
   }
   
-
+  /*** isDefined ***/
+  
+  @Test
+  public void isDefinedValue() {
+    assertTrue(Future.value(1).isDefined());
+  }
+  
+  @Test
+  public void isDefinedException() {
+    assertTrue(Future.exception(ex).isDefined());
+  }
+  
+  /*** proxyTo ***/
+  
   @Test(expected = IllegalStateException.class)
-  public void proxyToSatisfied() {
+  public void proxy() {
     Promise<Integer> p = new Promise<>();
     p.setValue(2);
     Future.value(1).proxyTo(p);
