@@ -351,6 +351,19 @@ public class Promise<T> implements Future<T> {
     respond(p);
     return p;
   }
+
+  @Override
+  public String toString() {
+    Object curr = state;
+    String stateString;
+    if (curr instanceof SatisfiedFuture) { // Done
+      stateString = state.toString();
+    } else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+      stateString = String.format("Linked(%s)", curr.toString());
+    else 
+      stateString = "Waiting";
+    return String.format("Promise(%s)@%s", stateString, Integer.toHexString(hashCode()));
+  }
 }
 
 abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {

@@ -13,6 +13,20 @@ public class NonFatalExceptionTest {
     });
   }
   
+  @Test(expected = ThreadDeath.class)
+  public void threadDeath() {
+    NonFatalException.verify(new ThreadDeath() {
+      private static final long serialVersionUID = 1L;
+    });
+  }
+  
+  @Test(expected = LinkageError.class)
+  public void linkageError() {
+    NonFatalException.verify(new LinkageError() {
+      private static final long serialVersionUID = 1L;
+    });
+  }
+  
   @Test(expected = RuntimeException.class)
   public void interruptedException() {
     NonFatalException.verify(new InterruptedException());

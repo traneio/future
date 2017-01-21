@@ -618,4 +618,38 @@ public class PromiseTest {
     assertEquals(ex, exception.get());
     assertEquals(new Integer(2), get(f));
   }
+  
+  /*** toString ***/
+  
+  private String hexHashCode(Promise<?> p) {
+    return Integer.toHexString(p.hashCode());
+  }
+
+  @Test
+  public void toStringSatisfied() {
+    Promise<Integer> p = new Promise<>();
+    p.setValue(1);
+    assertEquals("Promise(ValueFuture(1))@" + hexHashCode(p), p.toString());
+  }
+
+  @Test
+  public void toStringLinked() {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    p1.become(p2);
+    assertEquals("Promise(Linked(" + p1.toString() + "))@" + hexHashCode(p2), p2.toString());
+  }
+  
+  @Test
+  public void toStringWaiting() {
+    Promise<Integer> p = new Promise<>();
+    assertEquals("Promise(Waiting)@" + hexHashCode(p), p.toString());
+  }
+  
+  @Test
+  public void toStringWaitingNonEmptyQueue() {
+    Promise<Integer> p = new Promise<>();
+    p.map(i -> i + 1);
+    assertEquals("Promise(Waiting)@" + hexHashCode(p), p.toString());
+  }
 }

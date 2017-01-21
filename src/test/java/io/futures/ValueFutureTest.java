@@ -84,6 +84,7 @@ public class ValueFutureTest {
   
   /*** respond ***/
 
+  @Test
   public void respond() {
     AtomicInteger result = new AtomicInteger(-1);
     AtomicBoolean failure = new AtomicBoolean(false);
@@ -165,6 +166,20 @@ public class ValueFutureTest {
   public void getNegativeTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
+  }
+  
+  /*** toString ***/
+  
+  @Test
+  public void toStringInt() {
+    String s = Future.value(1).toString();
+    assertEquals("ValueFuture(1)", s);
+  }
+  
+  @Test
+  public void toStringNull() {
+    String s = Future.value(null).toString();
+    assertEquals("ValueFuture(null)", s);
   }
 
   /*** hashCode ***/

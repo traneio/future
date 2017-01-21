@@ -64,6 +64,7 @@ public class ExceptionFutureTest {
 
   /*** respond ***/
 
+  @Test
   public void respond() {
     AtomicBoolean success = new AtomicBoolean(false);
     AtomicBoolean failure = new AtomicBoolean(false);
@@ -72,6 +73,7 @@ public class ExceptionFutureTest {
       public void onException(Throwable ex) {
         failure.set(true);
       }
+
       @Override
       public void onValue(Integer value) {
         success.set(true);
@@ -81,7 +83,7 @@ public class ExceptionFutureTest {
     assertFalse(success.get());
     assertTrue(failure.get());
   }
-  
+
   @Test(expected = TestException.class)
   public void respondException() throws CheckedFutureException {
     final Responder<Integer> r = new Responder<Integer>() {
@@ -89,6 +91,7 @@ public class ExceptionFutureTest {
       public void onException(Throwable ex) {
         throw new NullPointerException();
       }
+
       @Override
       public void onValue(Integer value) {
         throw new NullPointerException();
@@ -164,6 +167,20 @@ public class ExceptionFutureTest {
   public void getNegativeTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.exception(ex);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
+  }
+
+  /*** toString ***/
+
+  @Test
+  public void toStringException() {
+    String s = Future.exception(ex).toString();
+    assertEquals("ExceptionFuture(" + ex + ")", s);
+  }
+
+  @Test
+  public void toStringNull() {
+    String s = Future.exception(null).toString();
+    assertEquals("ExceptionFuture(null)", s);
   }
 
   /*** hashCode ***/
