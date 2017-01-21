@@ -32,16 +32,14 @@ interface Future<T> extends InterruptHandler {
   public static <T> Future<T> exception(final Throwable ex) {
     return new ExceptionFuture<>(ex);
   }
-
+  
   public static <T> Future<T> flatten(final Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
 
   public static <T> Future<T> tailrec(final Supplier<Future<T>> sup) {
-    final Promise<T> p = new Promise<>();
-    Scheduler.submit(() -> {
-      p.become(sup.get());
-    });
+    final TailrecPromise<T> p = new TailrecPromise<>(sup);
+    Scheduler.submit(p);
     return p;
   }
 
@@ -177,4 +175,17 @@ interface Future<T> extends InterruptHandler {
 
   Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception);
+}
+
+class TailrecPromise<T> extends Promise<T> implements Runnable {
+  private final Supplier<Future<T>> sup;
+
+  public TailrecPromise(Supplier<Future<T>> sup) {
+    super();
+    this.sup = sup;
+  }
+  @Override
+  public void run() {
+    become(sup.get());
+  }
 }

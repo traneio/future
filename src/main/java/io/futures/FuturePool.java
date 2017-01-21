@@ -18,13 +18,23 @@ public class FuturePool {
 
   public <T> Future<T> async(final Supplier<T> s) {
     try {
-      final Promise<T> p = new Promise<>();
-      executor.submit(() -> {
-        p.setValue(s.get());
-      });
+      final AsyncPromise<T> p = new AsyncPromise<>(s);
+      executor.submit(p);
       return p;
     } catch (final RejectedExecutionException ex) {
       return Future.exception(ex);
     }
+  }
+}
+
+class AsyncPromise<T> extends Promise<T> implements Runnable {
+  private final Supplier<T> s;
+  public AsyncPromise(Supplier<T> s) {
+    super();
+    this.s = s;
+  }
+  @Override
+  public void run() {
+    setValue(s.get());
   }
 }

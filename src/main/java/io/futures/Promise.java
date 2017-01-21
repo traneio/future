@@ -160,8 +160,8 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    final CountDownLatch latch = new CountDownLatch(1);
-    ensure(() -> latch.countDown());
+    final CountDownOnRunLatch latch = new CountDownOnRunLatch(1);
+    ensure(latch);
     try {
       if (latch.await(timeout, unit))
         return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
@@ -256,6 +256,7 @@ public class Promise<T> implements Future<T> {
     public DelayedPromise() {
       super(Promise.this);
     }
+
     @Override
     public void run() {
       become(Promise.this);
