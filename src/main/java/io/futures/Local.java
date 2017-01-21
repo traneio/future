@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 
 public final class Local<T> {
 
-  private static Optional<?>[] EMPTY = new Optional<?>[0];
+  private static final Optional<?>[] EMPTY = new Optional<?>[0];
   private static ThreadLocal<Optional<?>[]> local = null;
   private static int size = 0;
 

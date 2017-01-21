@@ -265,19 +265,4 @@ public class WaitQueueTest {
     assertEquals(new Integer(1), get(c5));
     assertEquals(new Integer(1), get(c6));
   }
-  
-  @Test(expected = IllegalStateException.class)
-  public void addInvalid() {
-    WaitQueue.add("a", newContinuation());
-  }
-  
-  @Test(expected = IllegalStateException.class)
-  public void flushInvalid() {
-    WaitQueue.flush("a", Future.value(1));
-  }
-  
-  @Test(expected = IllegalStateException.class)
-  public void forwardInvalid() {
-    WaitQueue.forward("a", new Promise<>());
-  }
 }

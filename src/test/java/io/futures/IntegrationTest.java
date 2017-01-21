@@ -21,16 +21,14 @@ public class IntegrationTest {
   // @Test
   public static void main(String[] args) throws CheckedFutureException {
     Future<Integer> f = Future.value(1);
-    ArrayList<Future<Integer>> l = new ArrayList<>();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4000000; i++) {
       int j = random.nextInt(3);
       if (j == 1)
         f = f.delayed(10, TimeUnit.MILLISECONDS, scheduler);
-      l.add(f);
-//      else if (j == 2)
-//        f = f.map(v -> v + 1);
-//      else
-//        f = f.flatMap(v -> Future.value(v + 1));
+      else if (j == 2)
+        f = f.map(v -> v + 1);
+      else
+        f = f.flatMap(v -> Future.value(v + 1));
     }
     f.get(20, TimeUnit.SECONDS);
     scheduler.shutdown();

@@ -5,20 +5,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-abstract class Future<T> implements InterruptHandler {
+interface Future<T> extends InterruptHandler {
 
   /*** static ***/
 
-  public static final Future<Void> VOID = Future.value((Void) null);
+  public static Future<Void> VOID = Future.value((Void) null);
 
-  public static final <T> Future<T> apply(final Supplier<T> s) {
+  public static <T> Future<T> apply(final Supplier<T> s) {
     try {
       return new ValueFuture<>(s.get());
     } catch (final Throwable ex) {
@@ -26,19 +25,19 @@ abstract class Future<T> implements InterruptHandler {
     }
   }
 
-  public static final <T> Future<T> value(final T v) {
+  public static <T> Future<T> value(final T v) {
     return new ValueFuture<>(v);
   }
 
-  public static final <T> Future<T> exception(final Throwable ex) {
+  public static <T> Future<T> exception(final Throwable ex) {
     return new ExceptionFuture<>(ex);
   }
 
-  public static final <T> Future<T> flatten(final Future<Future<T>> fut) {
+  public static <T> Future<T> flatten(final Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
 
-  public static final <T> Future<T> tailrec(final Supplier<Future<T>> sup) {
+  public static <T> Future<T> tailrec(final Supplier<Future<T>> sup) {
     final Promise<T> p = new Promise<>();
     Scheduler.submit(() -> {
       p.become(sup.get());
@@ -46,8 +45,7 @@ abstract class Future<T> implements InterruptHandler {
     return p;
   }
 
-  private static final Future<List<?>> emptyListInstance = Future
-      .value(Collections.unmodifiableList(new ArrayList<>(0)));
+  static Future<List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
 
   @SuppressWarnings("unchecked")
   public static <T> Future<List<T>> emptyList() {
@@ -55,7 +53,7 @@ abstract class Future<T> implements InterruptHandler {
   }
 
   @SuppressWarnings("unchecked")
-  public static final <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
+  public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
     if (list.isEmpty())
       return emptyList();
     else {
@@ -86,7 +84,7 @@ abstract class Future<T> implements InterruptHandler {
   }
 
   @SuppressWarnings("unchecked")
-  public static final <T> Future<Void> join(final List<? extends Future<T>> list) {
+  public static <T> Future<Void> join(final List<? extends Future<T>> list) {
     if (list.isEmpty())
       return VOID;
     else {
@@ -111,7 +109,7 @@ abstract class Future<T> implements InterruptHandler {
     }
   }
 
-  public static final <T> Future<Integer> selectIndex(final List<Future<T>> list) {
+  public static <T> Future<Integer> selectIndex(final List<Future<T>> list) {
 
     if (list.isEmpty())
       throw new IllegalArgumentException("Can't select from empty list.");
@@ -130,7 +128,7 @@ abstract class Future<T> implements InterruptHandler {
     return p;
   }
 
-  public static final <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
+  public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
     return tailrec(() -> {
       if (cond.get())
         return f.get().flatMap(r -> whileDo(cond, f));
@@ -139,7 +137,7 @@ abstract class Future<T> implements InterruptHandler {
     });
   }
 
-  public static final <T> List<Future<T>> parallel(final int n, final Supplier<Future<T>> f) {
+  public static <T> List<Future<T>> parallel(final int n, final Supplier<Future<T>> f) {
     final List<Future<T>> result = new ArrayList<>(n);
     for (int i = 0; i < n; i++)
       result.add(f.get());
@@ -148,34 +146,35 @@ abstract class Future<T> implements InterruptHandler {
 
   /*** methods ***/
 
-  abstract <R> Future<R> map(Function<T, R> f);
+  <R> Future<R> map(Function<T, R> f);
 
-  abstract <R> Future<R> flatMap(Function<T, Future<R>> f);
+  <R> Future<R> flatMap(Function<T, Future<R>> f);
 
-  abstract Future<T> ensure(Runnable r);
+  Future<T> ensure(Runnable r);
 
-  abstract Future<T> onSuccess(Consumer<T> c);
+  Future<T> onSuccess(Consumer<T> c);
 
-  abstract Future<T> onFailure(Consumer<Throwable> c);
+  Future<T> onFailure(Consumer<Throwable> c);
 
-  abstract Future<T> rescue(Function<Throwable, Future<T>> f);
+  Future<T> rescue(Function<Throwable, Future<T>> f);
 
-  abstract Future<T> handle(Function<Throwable, T> f);
+  Future<T> handle(Function<Throwable, T> f);
 
-  abstract boolean isDefined();
+  boolean isDefined();
 
-  abstract T get(long timeout, TimeUnit unit) throws CheckedFutureException;
-  
-  abstract Future<Void> voided();
-  
-  abstract Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler);
-  
-  abstract void proxyTo(final Promise<T> p);
+  T get(long timeout, TimeUnit unit) throws CheckedFutureException;
 
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
+  Future<Void> voided();
+
+  Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler);
+
+  void proxyTo(final Promise<T> p);
+
+  default Future<T> within(final long timeout, final TimeUnit timeUnit,
+      final ScheduledExecutorService scheduler) {
     return within(timeout, timeUnit, scheduler, TimeoutException.stackless);
   }
-  
-  abstract Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+
+  Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception);
 }

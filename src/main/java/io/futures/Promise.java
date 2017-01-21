@@ -9,9 +9,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Promise<T> extends Future<T> {
+public class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
+
+  private final InterruptHandler interruptHandler;
+
+  // Future<T> (Done) | WaitQueue (Pending) | Promise<T> (Linked)
+  private final Object state = null;
+
+  private final Optional<?>[] savedContext = Local.save();
 
   public Promise() {
     super();
@@ -30,13 +37,6 @@ public class Promise<T> extends Future<T> {
         handler.raise(ex);
     };
   }
-
-  private final InterruptHandler interruptHandler;
-
-  // Future<T> (Done) | WaitQueue (Pending) | Promise<T> (Linked)
-  private final Object state = null;
-
-  private final Optional<?>[] savedContext = Local.save();
 
   private final boolean cas(final Object oldState, final Object newState) {
     return Unsafe.compareAndSwapObject(this, stateOffset, oldState, newState);
@@ -132,8 +132,13 @@ public class Promise<T> extends Future<T> {
           return;
         }
       } else if (curr instanceof SatisfiedFuture) { // Done
-        if (target.state != null && !target.state.equals(curr))
-          throw new IllegalStateException("Cannot link two Done Promises with differing values");
+        if (target.isDefined()) {
+          if (!target.state.equals(curr))
+            throw new IllegalStateException("Cannot link two Done Promises with differing values");
+        } else {
+          target.update((SatisfiedFuture<T>) curr);
+        }
+
         return;
       } else if (cas(curr, target)) { // Waiting
         WaitQueue.forward(curr, target);
@@ -143,7 +148,7 @@ public class Promise<T> extends Future<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  final boolean isDefined() {
+  public final boolean isDefined() {
     if (state instanceof SatisfiedFuture) // Done
       return true;
     else if (state instanceof Promise && !(state instanceof Continuation)) // Linked
@@ -154,7 +159,7 @@ public class Promise<T> extends Future<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+  public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     final CountDownLatch latch = new CountDownLatch(1);
     ensure(() -> latch.countDown());
     try {
@@ -168,7 +173,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final <R> Future<R> map(final Function<T, R> f) {
+  public final <R> Future<R> map(final Function<T, R> f) {
     return continuation(new Continuation<T, R>(this) {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -178,7 +183,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
+  public final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
     return continuation(new Continuation<T, R>(this) {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -188,7 +193,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> ensure(final Runnable f) {
+  public final Future<T> ensure(final Runnable f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -198,7 +203,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> onSuccess(final Consumer<T> c) {
+  public final Future<T> onSuccess(final Consumer<T> c) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -208,7 +213,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> onFailure(final Consumer<Throwable> c) {
+  public final Future<T> onFailure(final Consumer<Throwable> c) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -218,7 +223,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -228,7 +233,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> handle(final Function<Throwable, T> f) {
+  public final Future<T> handle(final Function<Throwable, T> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -238,7 +243,7 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<Void> voided() {
+  public final Future<Void> voided() {
     return continuation(new Continuation<T, Void>(this) {
       @Override
       final Future<Void> apply(final Future<T> result) {
@@ -248,33 +253,34 @@ public class Promise<T> extends Future<T> {
   }
 
   @Override
-  final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+  public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
     final Promise<T> p = new Promise<>(this);
-    scheduler.schedule(() -> p.become(Promise.this), delay, timeUnit);
+    scheduler.schedule(() -> p.become(this), delay, timeUnit);
     return p;
   }
 
   @Override
-  final void proxyTo(Promise<T> p) {
+  public final void proxyTo(Promise<T> p) {
     if (p.isDefined())
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
-    ensure(() -> p.update(this));
+    onSuccess(p::setValue);
+    onFailure(p::setException);
   }
 
   @Override
-  final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception) {
     if (timeout == Long.MAX_VALUE)
       return this;
 
     final Promise<T> p = new Promise<>(this);
 
-    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(new ExceptionFuture<>(exception)), timeout,
+    ScheduledFuture<Boolean> task = scheduler.schedule(() -> p.updateIfEmpty(Future.exception(exception)), timeout,
         timeUnit);
 
     onSuccess(r -> {
       task.cancel(false);
-      p.updateIfEmpty(new ValueFuture<>(r));
+      p.updateIfEmpty(Future.value(r));
     });
 
     onFailure(ex -> {
@@ -286,7 +292,7 @@ public class Promise<T> extends Future<T> {
   }
 }
 
-abstract class Continuation<T, R> extends Promise<R> {
+abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   public Continuation(final InterruptHandler handler) {
     super(handler);
@@ -294,7 +300,15 @@ abstract class Continuation<T, R> extends Promise<R> {
 
   abstract Future<R> apply(Future<T> result);
 
-  protected final void flush(final Future<T> result) {
+  public final WaitQueue<T> add(Continuation<T, ?> c) {
+    return new WaitQueue2<>(this, c);
+  }
+
+  public final void forward(Promise<T> target) {
+    target.continuation(this);
+  }
+
+  public final void flush(final Future<T> result) {
     super.update(apply(result));
   }
 }

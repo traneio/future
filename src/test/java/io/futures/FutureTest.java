@@ -27,10 +27,10 @@ public class FutureTest {
   private <T> T get(Future<T> future) throws CheckedFutureException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
-  
+
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final Exception ex = new TestException();
-  
+
   @After
   public void shutdownScheduler() {
     scheduler.shutdown();
@@ -432,30 +432,6 @@ public class FutureTest {
     assertArrayEquals(list.toArray(), result.toArray());
   }
 
-  /*** proxyTo ***/
-
-  @Test(expected = IllegalStateException.class)
-  public void proxyToSatisfied() {
-    Promise<Integer> p = new Promise<>();
-    p.setValue(2);
-    Future.value(1).proxyTo(p);
-  }
-
-  @Test
-  public void proxyToSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
-    Future.value(1).proxyTo(p);
-    assertEquals(new Integer(1), get(p));
-  }
-
-  @Test(expected = TestException.class)
-  public void proxyToFailure() throws CheckedFutureException {
-
-    Promise<Integer> p = new Promise<>();
-    Future.<Integer>exception(ex).proxyTo(p);
-    get(p);
-  }
-
   /*** voided ***/
 
   @Test
@@ -470,7 +446,7 @@ public class FutureTest {
     get(future);
   }
 
-  /*** within (default exception) ***/
+  /*** within ***/
 
   @Test
   public void withinMaxLongWait() {
@@ -569,6 +545,16 @@ public class FutureTest {
   }
 
   /*** delayed ***/
+
+  @Test
+  public void doubleDelayed() throws CheckedFutureException {
+    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
+    try {
+      Future.value(1).delayed(5, TimeUnit.MILLISECONDS, scheduler).delayed(10, TimeUnit.MILLISECONDS, scheduler).get(10000, TimeUnit.SECONDS);
+    } finally {
+      scheduler.shutdown();
+    }
+  }
 
   @Test
   public void delayed() throws CheckedFutureException {

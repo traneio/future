@@ -26,5 +26,6 @@ jmh {
 	fork = 1
 	warmupIterations = 5
 	iterations = 5
+	forceGC = true
 	//profilers = [gc]
 }

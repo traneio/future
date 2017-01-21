@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-final class ValueFuture<T> extends SatisfiedFuture<T> {
+final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   final T value;
 
@@ -14,7 +14,7 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  final <R> Future<R> map(final Function<T, R> f) {
+  public final <R> Future<R> map(final Function<T, R> f) {
     try {
       return new ValueFuture<>(f.apply(value));
     } catch (final Throwable ex) {
@@ -23,7 +23,7 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
+  public final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
     try {
       return f.apply(value);
     } catch (final Throwable ex) {
@@ -32,7 +32,7 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  final Future<T> onSuccess(final Consumer<T> c) {
+  public final Future<T> onSuccess(final Consumer<T> c) {
     try {
       c.accept(value);
     } catch (final Throwable ex) {
@@ -43,35 +43,40 @@ final class ValueFuture<T> extends SatisfiedFuture<T> {
   }
 
   @Override
-  final Future<T> onFailure(final Consumer<Throwable> c) {
+  public final Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
 
   @Override
-  final Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
     return this;
   }
 
   @Override
-  final Future<T> handle(final Function<Throwable, T> f) {
+  public final Future<T> handle(final Function<Throwable, T> f) {
     return this;
   }
 
   @Override
-  final Future<Void> voided() {
+  public final Future<Void> voided() {
     return VOID;
   }
 
   @Override
-  final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+  public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
     final Promise<T> p = new Promise<>(this);
     scheduler.schedule(() -> p.setValue(value), delay, timeUnit);
     return p;
   }
 
   @Override
-  protected final T get(final long timeout, final TimeUnit unit) {
+  public final T get(final long timeout, final TimeUnit unit) {
     return value;
+  }
+  
+  @Override
+  public String toString() {
+    return String.format("ValueFuture(%s)", value);
   }
 
   @Override
