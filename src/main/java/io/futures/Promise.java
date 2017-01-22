@@ -50,25 +50,25 @@ public class Promise<T> implements Future<T> {
 
   @SuppressWarnings("unchecked")
   public final boolean updateIfEmpty(final Future<T> result) {
-    final Optional<?>[] oldContext = Local.save();
-    Local.restore(savedContext);
-    try {
-      while (true) {
-        final Object curr = state;
-        if (curr instanceof SatisfiedFuture) // Done
-          return false;
-        else if (curr instanceof Promise && !(curr instanceof Continuation))
-          return ((Promise<T>) curr).updateIfEmpty(result);
-        else if (result instanceof Promise) {
-          become(result);
-          return true;
-        } else if (cas(curr, result)) { // Waiting
+    while (true) {
+      final Object curr = state;
+      if (curr instanceof SatisfiedFuture) // Done
+        return false;
+      else if (curr instanceof Promise && !(curr instanceof Continuation))
+        return ((Promise<T>) curr).updateIfEmpty(result);
+      else if (result instanceof Promise) {
+        become(result);
+        return true;
+      } else if (cas(curr, result)) { // Waiting
+        final Optional<?>[] oldContext = Local.save();
+        Local.restore(savedContext);
+        try {
           WaitQueue.flush(curr, result);
           return true;
+        } finally {
+          Local.restore(oldContext);
         }
       }
-    } finally {
-      Local.restore(oldContext);
     }
   }
 
@@ -83,10 +83,11 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
-    if (state instanceof SatisfiedFuture) // Done
+    Object curr = state;
+    if (curr instanceof SatisfiedFuture) // Done
       return;
-    else if (state instanceof Promise && !(state instanceof Continuation)) // Linked
-      ((Promise<T>) state).raise(ex);
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+      ((Promise<T>) curr).raise(ex);
     else if (interruptHandler != null)
       interruptHandler.raise(ex);
   }
@@ -114,14 +115,15 @@ public class Promise<T> implements Future<T> {
 
   @SuppressWarnings("unchecked")
   private final Promise<T> compress() {
-    final Object curr = state;
-    while (true)
+    while (true) {
+      final Object curr = state;
       if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
         final Promise<T> target = ((Promise<T>) curr).compress();
         if (cas(curr, target))
           return target;
       } else
         return this;
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -139,7 +141,6 @@ public class Promise<T> implements Future<T> {
             throw new IllegalStateException("Cannot link two Done Promises with differing values");
         } else
           target.update((SatisfiedFuture<T>) curr);
-
         return;
       } else if (cas(curr, target)) { // Waiting
         WaitQueue.forward(curr, target);
@@ -151,10 +152,11 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final boolean isDefined() {
-    if (state instanceof SatisfiedFuture) // Done
+    Object curr = state;
+    if (curr instanceof SatisfiedFuture) // Done
       return true;
-    else if (state instanceof Promise && !(state instanceof Continuation)) // Linked
-      return ((Promise<T>) state).isDefined();
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+      return ((Promise<T>) curr).isDefined();
     else // Waiting
       return false;
   }
