@@ -29,10 +29,12 @@ public class FuturePool {
 
 class AsyncPromise<T> extends Promise<T> implements Runnable {
   private final Supplier<T> s;
-  public AsyncPromise(Supplier<T> s) {
+
+  public AsyncPromise(final Supplier<T> s) {
     super();
     this.s = s;
   }
+
   @Override
   public void run() {
     setValue(s.get());

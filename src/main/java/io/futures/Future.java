@@ -69,12 +69,12 @@ interface Future<T> extends InterruptHandler {
         final int ii = i;
         final Responder<T> responder = new Responder<T>() {
           @Override
-          public void onException(Throwable ex) {
+          public void onException(final Throwable ex) {
             p.setException(ex);
           }
 
           @Override
-          public void onValue(T value) {
+          public void onValue(final T value) {
             results[ii] = value;
             if (count.decrementAndGet() == 0)
               p.setValue((List<T>) Arrays.asList(results));
@@ -95,13 +95,13 @@ interface Future<T> extends InterruptHandler {
       return VOID;
     else {
       final Promise<Void> p = new Promise<>(list);
-      final JoinResponder<T> responder = new JoinResponder<T>(p, list.size());
-      
+      final JoinResponder<T> responder = new JoinResponder<>(p, list.size());
+
       for (final Future<T> f : list) {
 
         if (f instanceof ExceptionFuture)
           return (Future<Void>) f;
-        
+
         f.respond(responder);
       }
       return p;
@@ -182,7 +182,7 @@ interface Future<T> extends InterruptHandler {
 class TailrecPromise<T> extends Promise<T> implements Runnable {
   private final Supplier<Future<T>> sup;
 
-  public TailrecPromise(Supplier<Future<T>> sup) {
+  public TailrecPromise(final Supplier<Future<T>> sup) {
     super();
     this.sup = sup;
   }
@@ -195,22 +195,22 @@ class TailrecPromise<T> extends Promise<T> implements Runnable {
 
 class JoinResponder<T> extends AtomicInteger implements Responder<T> {
   private static final long serialVersionUID = 5763037150431433940L;
-  
+
   private final Promise<Void> p;
 
-  public JoinResponder(Promise<Void> p, int size) {
+  public JoinResponder(final Promise<Void> p, final int size) {
     super(size);
     this.p = p;
   }
-  
+
   @Override
-  public void onException(Throwable ex) {
+  public void onException(final Throwable ex) {
     p.setException(ex);
   }
-  
+
   @Override
-  public void onValue(T value) {
+  public void onValue(final T value) {
     if (decrementAndGet() == 0)
-      p.update(Future.VOID); 
+      p.update(Future.VOID);
   }
 }

@@ -25,13 +25,13 @@ interface SatisfiedFuture<T> extends Future<T> {
   }
 
   @Override
-  default void proxyTo(Promise<T> p) {
+  default void proxyTo(final Promise<T> p) {
     if (!p.updateIfEmpty(this))
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
   }
 
   @Override
-  default Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+  default Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     final DelayedSatisfiedFuture<T> p = new DelayedSatisfiedFuture<>(this);
     scheduler.schedule(p, delay, timeUnit);
     return p;
@@ -48,7 +48,7 @@ class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
 
   private final SatisfiedFuture<T> result;
 
-  public DelayedSatisfiedFuture(SatisfiedFuture<T> result) {
+  public DelayedSatisfiedFuture(final SatisfiedFuture<T> result) {
     super(result);
     this.result = result;
   }

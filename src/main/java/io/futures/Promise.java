@@ -115,18 +115,19 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   private final Promise<T> compress() {
     final Object curr = state;
-    if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
-      final Promise<T> target = ((Promise<T>) curr).compress();
-      cas(curr, target);
-      return target;
-    } else
-      return this;
+    while (true)
+      if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
+        final Promise<T> target = ((Promise<T>) curr).compress();
+        if (cas(curr, target))
+          return target;
+      } else
+        return this;
   }
 
   @SuppressWarnings("unchecked")
   private final void link(final Promise<T> target) {
-    final Object curr = state;
-    while (true)
+    while (true) {
+      final Object curr = state;
       if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
         if (cas(curr, target)) {
           ((Promise<T>) curr).link(target);
@@ -136,15 +137,15 @@ public class Promise<T> implements Future<T> {
         if (target.isDefined()) {
           if (!target.state.equals(curr))
             throw new IllegalStateException("Cannot link two Done Promises with differing values");
-        } else {
+        } else
           target.update((SatisfiedFuture<T>) curr);
-        }
 
         return;
       } else if (cas(curr, target)) { // Waiting
         WaitQueue.forward(curr, target);
         return;
       }
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -286,25 +287,25 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     final DelayedPromise p = new DelayedPromise();
     scheduler.schedule(p, delay, timeUnit);
     return p;
   }
 
   @Override
-  public final void proxyTo(Promise<T> p) {
+  public final void proxyTo(final Promise<T> p) {
     if (p.isDefined())
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
 
     final Responder<T> r = new Responder<T>() {
       @Override
-      public void onException(Throwable ex) {
+      public void onException(final Throwable ex) {
         p.setException(ex);
       }
 
       @Override
-      public void onValue(T value) {
+      public void onValue(final T value) {
         p.setValue(value);
       }
     };
@@ -316,7 +317,7 @@ public class Promise<T> implements Future<T> {
     private final ScheduledFuture<Boolean> task;
     private final Throwable exception;
 
-    public WithinPromise(InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
+    public WithinPromise(final InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
         final ScheduledExecutorService scheduler, final Throwable exception) {
       super(handler);
       this.task = scheduler.schedule(this, timeout, timeUnit);
@@ -324,13 +325,13 @@ public class Promise<T> implements Future<T> {
     }
 
     @Override
-    public void onException(Throwable ex) {
+    public void onException(final Throwable ex) {
       task.cancel(false);
       updateIfEmpty(Future.exception(ex));
     }
 
     @Override
-    public void onValue(T value) {
+    public void onValue(final T value) {
       task.cancel(false);
       updateIfEmpty(Future.value(value));
     }
@@ -347,20 +348,20 @@ public class Promise<T> implements Future<T> {
     if (timeout == Long.MAX_VALUE)
       return this;
 
-    WithinPromise<T> p = new WithinPromise<>(this, timeout, timeUnit, scheduler, exception);
+    final WithinPromise<T> p = new WithinPromise<>(this, timeout, timeUnit, scheduler, exception);
     respond(p);
     return p;
   }
 
   @Override
   public String toString() {
-    Object curr = state;
+    final Object curr = state;
     String stateString;
-    if (curr instanceof SatisfiedFuture) { // Done
+    if (curr instanceof SatisfiedFuture)
       stateString = state.toString();
-    } else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
-    else 
+    else
       stateString = "Waiting";
     return String.format("Promise(%s)@%s", stateString, Integer.toHexString(hashCode()));
   }
@@ -374,14 +375,17 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   abstract Future<R> apply(Future<T> result);
 
-  public final WaitQueue<T> add(Continuation<T, ?> c) {
+  @Override
+  public final WaitQueue<T> add(final Continuation<T, ?> c) {
     return new WaitQueue2<>(this, c);
   }
 
-  public final void forward(Promise<T> target) {
+  @Override
+  public final void forward(final Promise<T> target) {
     target.continuation(this);
   }
 
+  @Override
   public final void flush(final Future<T> result) {
     super.update(apply(result));
   }

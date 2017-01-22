@@ -45,9 +45,9 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
-  
+
   @Override
-  public Future<T> respond(Responder<T> r) {
+  public Future<T> respond(final Responder<T> r) {
     try {
       r.onValue(value);
     } catch (final Throwable ex) {
@@ -76,7 +76,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   public final T get(final long timeout, final TimeUnit unit) {
     return value;
   }
-  
+
   @Override
   public String toString() {
     return String.format("ValueFuture(%s)", value);

@@ -38,9 +38,9 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     }
     return this;
   }
-  
+
   @Override
-  public Future<T> respond(Responder<T> r) {
+  public Future<T> respond(final Responder<T> r) {
     try {
       r.onException(ex);
     } catch (final Throwable ex) {
@@ -72,7 +72,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<Void> voided() {
     return cast();
   }
-  
+
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     if (ex instanceof RuntimeException)
@@ -87,12 +87,12 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   private final <R> Future<R> cast() {
     return (Future<R>) this;
   }
-  
+
   @Override
   public String toString() {
     return String.format("ExceptionFuture(%s)", ex);
   }
-  
+
   @Override
   public final int hashCode() {
     final int prime = 31;

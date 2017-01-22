@@ -4,9 +4,9 @@ interface WaitQueue<T> {
 
   @SuppressWarnings("unchecked")
   public static <T, R> Object add(final Object queue, final Continuation<T, R> c) {
-    if (queue == null) 
+    if (queue == null)
       return c;
-    else 
+    else
       return ((WaitQueue<T>) queue).add(c);
   }
 
@@ -14,7 +14,7 @@ interface WaitQueue<T> {
   public static <T> void flush(final Object queue, final Future<T> result) {
     if (queue == null)
       return;
-    else 
+    else
       ((WaitQueue<T>) queue).flush(result);
   }
 
