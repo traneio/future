@@ -10,7 +10,7 @@ import org.junit.After;
 public class IntegrationTest {
 
   private static final Random random = new Random(1);
-  private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
+  private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
   @After
   public static void shutdownScheduler() {

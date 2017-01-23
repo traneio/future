@@ -57,9 +57,11 @@ public class Promise<T> implements Future<T> {
       else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).updateIfEmpty(result);
       else if (result instanceof Promise) {
-        become(result);
+        result.proxyTo(this);
         return true;
       } else if (cas(curr, result)) { // Waiting
+        if (curr == null)
+          return true;
         final Optional<?>[] oldContext = Local.save();
         Local.restore(savedContext);
         try {
@@ -97,7 +99,7 @@ public class Promise<T> implements Future<T> {
     while (true) {
       final Object curr = state;
       if (curr instanceof SatisfiedFuture) { // Done
-        c.flush((Future<T>) curr);
+        c.flush((SatisfiedFuture<T>) curr);
         return c;
       } else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
         return ((Promise<T>) curr).continuation(c);
@@ -355,17 +357,21 @@ public class Promise<T> implements Future<T> {
     return p;
   }
 
+  protected String toStringPrefix() {
+    return "Promise";
+  }
+
   @Override
   public String toString() {
     final Object curr = state;
     String stateString;
     if (curr instanceof SatisfiedFuture)
-      stateString = state.toString();
+      stateString = curr.toString();
     else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
     else
       stateString = "Waiting";
-    return String.format("Promise(%s)@%s", stateString, Integer.toHexString(hashCode()));
+    return String.format("%s(%s)@%s", toStringPrefix(), stateString, Integer.toHexString(hashCode()));
   }
 }
 
@@ -390,5 +396,10 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
   @Override
   public final void flush(final Future<T> result) {
     super.update(apply(result));
+  }
+
+  @Override
+  protected String toStringPrefix() {
+    return "Continuation";
   }
 }

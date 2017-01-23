@@ -152,12 +152,14 @@ final class WaitQueueN<T> implements WaitQueue<T> {
 
   @Override
   public final void flush(final Future<T> result) {
+    // TODO avoid stack
     parent.flush(result);
     WaitQueue.flush(tail, result);
   }
 
   @Override
   public final void forward(final Promise<T> target) {
+    // TODO avoid stack
     parent.forward(target);
     WaitQueue.forward(tail, target);
   }

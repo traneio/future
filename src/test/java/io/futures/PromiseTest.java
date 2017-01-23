@@ -87,7 +87,22 @@ public class PromiseTest {
     Promise<Integer> p2 = new Promise<>();
     p2.updateIfEmpty(p1.map(i -> i + 1));
     p1.setValue(1);
+    assertEquals(new Integer(1), get(p1));
     assertEquals(new Integer(2), get(p2));
+  }
+  
+  @Test
+  public void updateIfEmptyTwoContinuations() throws CheckedFutureException {
+    Promise<Integer> p1 = new Promise<>();
+    Promise<Integer> p2 = new Promise<>();
+    Future<Integer> f1 = p1.map(i -> i + 1);
+    Future<Integer> f2 = p2.map(i -> i + 1);
+    p2.updateIfEmpty(f1);
+    p1.setValue(1);
+    assertEquals(new Integer(1), get(p1));
+    assertEquals(new Integer(2), get(p2));
+    assertEquals(new Integer(2), get(f1));
+    assertEquals(new Integer(3), get(f2));
   }
 
   @Test
@@ -387,6 +402,18 @@ public class PromiseTest {
     long delay = 10;
     long start = System.currentTimeMillis();
     Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler);
+    p.setValue(1);
+    int result = delayed.get(20, TimeUnit.MILLISECONDS);
+    assertTrue(System.currentTimeMillis() - start >= delay);
+    assertEquals(1, result);
+  }
+  
+  @Test
+  public void doubleDelayed() throws CheckedFutureException {
+    Promise<Integer> p = new Promise<>();
+    long delay = 10;
+    long start = System.currentTimeMillis();
+    Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler).delayed(delay, TimeUnit.MILLISECONDS, scheduler);
     p.setValue(1);
     int result = delayed.get(20, TimeUnit.MILLISECONDS);
     assertTrue(System.currentTimeMillis() - start >= delay);
