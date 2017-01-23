@@ -158,7 +158,7 @@ public class PromiseTest {
   }
 
   @Test
-  public void updateIfEmptyConcurrent() throws CheckedFutureException {
+  public void updateIfEmptyConcurrent() throws CheckedFutureException, InterruptedException {
     ExecutorService es = Executors.newFixedThreadPool(10);
     try {
       Promise<Integer> p = new Promise<>();
@@ -176,7 +176,8 @@ public class PromiseTest {
         });
       }
       start.set(true);
-      int result = p.get(100000, TimeUnit.MILLISECONDS);
+      int result = p.get(100, TimeUnit.MILLISECONDS);
+      Thread.sleep(10);
       assertEquals(expected.get(), result);
     } finally {
       es.shutdown();
