@@ -20,7 +20,7 @@ public class Promise<T> implements Future<T> {
   private InterruptHandler interruptHandler;
 
   private final Optional<?>[] savedContext = Local.save();
-  
+
   public Promise() {
     super();
   }
@@ -54,10 +54,10 @@ public class Promise<T> implements Future<T> {
         final Object curr = state;
         if (curr instanceof SatisfiedFuture)
           return false;
-        else if (curr instanceof Promise)
+        else if (curr instanceof Promise && !(curr instanceof Continuation))
           return ((Promise<T>) curr).becomeIfEmpty(result);
         else if (result instanceof Promise) {
-          ((Promise<T>) result).compress().link(compress());
+          ((Promise<T>) result).link(compress());
           return true;
         } else if (cas(curr, result)) {
           flush((WaitQueue<T>) curr, result);
@@ -65,7 +65,8 @@ public class Promise<T> implements Future<T> {
         }
       }
     } catch (final StackOverflowError ex) {
-      System.err.println("FATAL: Stack overflow when satisfying promise. Use `Future.tailrec` or increase the stack size (-Xss).");
+      System.err.println(
+          "FATAL: Stack overflow when satisfying promise. Use `Future.tailrec` or increase the stack size (-Xss).");
       throw ex;
     }
   }
@@ -85,10 +86,10 @@ public class Promise<T> implements Future<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private final void link(final Promise<T> target) {
+  protected final void link(final Promise<T> target) {
     while (true) {
       final Object curr = state;
-      if (curr instanceof Promise) { // Linked
+      if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
         if (cas(curr, target)) {
           ((Promise<T>) curr).link(target);
           return;
@@ -115,9 +116,9 @@ public class Promise<T> implements Future<T> {
       if (curr instanceof SatisfiedFuture) {
         c.flush((SatisfiedFuture<T>) curr);
         return c;
-      } else if (curr instanceof Promise)
+      } else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).continuation(c);
-      else if (curr == null && cas(curr, WaitQueue.create(c)))
+      else if (curr == null && cas(curr, c))
         return c;
       else if (curr != null && cas(curr, ((WaitQueue<T>) curr).add(c)))
         return c;
@@ -151,7 +152,7 @@ public class Promise<T> implements Future<T> {
     final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return;
-    else if (curr instanceof Promise) // Linked
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       ((Promise<T>) curr).raise(ex);
     else if (interruptHandler != null)
       interruptHandler.raise(ex);
@@ -163,7 +164,7 @@ public class Promise<T> implements Future<T> {
     final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return true;
-    else if (curr instanceof Promise) // Linked
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       return ((Promise<T>) curr).isDefined();
     else // Waiting
       return false;
@@ -373,7 +374,7 @@ public class Promise<T> implements Future<T> {
     String stateString;
     if (curr instanceof SatisfiedFuture)
       stateString = curr.toString();
-    else if (curr instanceof Promise) // Linked
+    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
     else
       stateString = "Waiting";
@@ -381,17 +382,28 @@ public class Promise<T> implements Future<T> {
   }
 }
 
-abstract class Continuation<T, R> extends Promise<R> {
+abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   public Continuation(final InterruptHandler handler) {
     super(handler);
   }
 
-  abstract Future<R> apply(Future<T> result);
+  @Override
+  public final WaitQueue<T> add(final Continuation<T, ?> c) {
+    return new WaitQueue2<>(this, c);
+  }
 
+  @Override
+  public final void forward(final Promise<T> target) {
+    target.continuation(this);
+  }
+
+  @Override
   public final void flush(final Future<T> result) {
     become(apply(result));
   }
+
+  abstract Future<R> apply(Future<T> result);
 
   @Override
   protected String toStringPrefix() {
