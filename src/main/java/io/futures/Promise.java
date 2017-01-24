@@ -14,16 +14,15 @@ public class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
 
-  private final InterruptHandler interruptHandler;
-
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
-  private volatile Object state = null;
+  private volatile Object state;
+
+  private InterruptHandler interruptHandler;
 
   private final Optional<?>[] savedContext = Local.save();
-
+  
   public Promise() {
     super();
-    this.interruptHandler = null;
   }
 
   public Promise(final InterruptHandler interruptHandler) {
@@ -43,76 +42,86 @@ public class Promise<T> implements Future<T> {
     return Unsafe.compareAndSwapObject(this, stateOffset, oldState, newState);
   }
 
-  public final void update(final Future<T> result) {
-    if (!updateIfEmpty(result))
+  public final void become(final Future<T> result) {
+    if (!becomeIfEmpty(result))
       throw new IllegalStateException("Can't set result " + result + " for promise with state " + state);
   }
 
   @SuppressWarnings("unchecked")
-  public final boolean updateIfEmpty(final Future<T> result) {
-    while (true) {
-      final Object curr = state;
-      if (curr instanceof SatisfiedFuture) // Done
-        return false;
-      else if (curr instanceof Promise && !(curr instanceof Continuation))
-        return ((Promise<T>) curr).updateIfEmpty(result);
-      else if (result instanceof Promise) {
-        result.proxyTo(this);
-        return true;
-      } else if (cas(curr, result)) { // Waiting
-        if (curr == null)
+  public final boolean becomeIfEmpty(final Future<T> result) {
+    try {
+      while (true) {
+        final Object curr = state;
+        if (curr instanceof SatisfiedFuture)
+          return false;
+        else if (curr instanceof Promise)
+          return ((Promise<T>) curr).becomeIfEmpty(result);
+        else if (result instanceof Promise) {
+          ((Promise<T>) result).compress().link(compress());
           return true;
-        final Optional<?>[] oldContext = Local.save();
-        Local.restore(savedContext);
-        try {
-          WaitQueue.flush(curr, result);
+        } else if (cas(curr, result)) {
+          flush((WaitQueue<T>) curr, result);
           return true;
-        } finally {
-          Local.restore(oldContext);
         }
+      }
+    } catch (final StackOverflowError ex) {
+      System.err.println("FATAL: Stack overflow when satisfying promise. Use `Future.tailrec` or increase the stack size (-Xss).");
+      throw ex;
+    }
+  }
+
+  private final void flush(final WaitQueue<T> queue, final Future<T> result) {
+    if (queue == null)
+      return;
+    else {
+      final Optional<?>[] oldContext = Local.save();
+      Local.restore(savedContext);
+      try {
+        queue.flush(result);
+      } finally {
+        Local.restore(oldContext);
       }
     }
   }
 
-  public final void setValue(final T value) {
-    update(new ValueFuture<>(value));
-  }
-
-  public final void setException(final Throwable ex) {
-    update(new ExceptionFuture<T>(ex));
-  }
-
   @SuppressWarnings("unchecked")
-  @Override
-  public final void raise(final Throwable ex) {
-    Object curr = state;
-    if (curr instanceof SatisfiedFuture) // Done
-      return;
-    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
-      ((Promise<T>) curr).raise(ex);
-    else if (interruptHandler != null)
-      interruptHandler.raise(ex);
+  private final void link(final Promise<T> target) {
+    while (true) {
+      final Object curr = state;
+      if (curr instanceof Promise) { // Linked
+        if (cas(curr, target)) {
+          ((Promise<T>) curr).link(target);
+          return;
+        }
+      } else if (curr instanceof SatisfiedFuture) { // Done
+        if (target.isDefined()) {
+          if (!target.state.equals(curr))
+            throw new IllegalStateException("Cannot link two Done Promises with differing values");
+        } else
+          target.become((SatisfiedFuture<T>) curr);
+        return;
+      } else if (cas(curr, target)) { // Waiting
+        if (curr != null)
+          ((WaitQueue<T>) curr).forward(target);
+        return;
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
   protected final <R> Future<R> continuation(final Continuation<T, R> c) {
     while (true) {
       final Object curr = state;
-      if (curr instanceof SatisfiedFuture) { // Done
+      if (curr instanceof SatisfiedFuture) {
         c.flush((SatisfiedFuture<T>) curr);
         return c;
-      } else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+      } else if (curr instanceof Promise)
         return ((Promise<T>) curr).continuation(c);
-      else if (cas(curr, WaitQueue.add(curr, c))) // Waiting
+      else if (curr == null && cas(curr, WaitQueue.create(c)))
+        return c;
+      else if (curr != null && cas(curr, ((WaitQueue<T>) curr).add(c)))
         return c;
     }
-  }
-
-  public final void become(final Future<T> target) {
-    if (target instanceof Promise)
-      ((Promise<T>) target).link(compress());
-    else
-      target.ensure(() -> update(target));
   }
 
   @SuppressWarnings("unchecked")
@@ -128,36 +137,33 @@ public class Promise<T> implements Future<T> {
     }
   }
 
+  public final void setValue(final T value) {
+    become(new ValueFuture<>(value));
+  }
+
+  public final void setException(final Throwable ex) {
+    become(new ExceptionFuture<T>(ex));
+  }
+
   @SuppressWarnings("unchecked")
-  private final void link(final Promise<T> target) {
-    while (true) {
-      final Object curr = state;
-      if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
-        if (cas(curr, target)) {
-          ((Promise<T>) curr).link(target);
-          return;
-        }
-      } else if (curr instanceof SatisfiedFuture) { // Done
-        if (target.isDefined()) {
-          if (!target.state.equals(curr))
-            throw new IllegalStateException("Cannot link two Done Promises with differing values");
-        } else
-          target.update((SatisfiedFuture<T>) curr);
-        return;
-      } else if (cas(curr, target)) { // Waiting
-        WaitQueue.forward(curr, target);
-        return;
-      }
-    }
+  @Override
+  public final void raise(final Throwable ex) {
+    final Object curr = state;
+    if (curr instanceof SatisfiedFuture) // Done
+      return;
+    else if (curr instanceof Promise) // Linked
+      ((Promise<T>) curr).raise(ex);
+    else if (interruptHandler != null)
+      interruptHandler.raise(ex);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public final boolean isDefined() {
-    Object curr = state;
+    final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return true;
-    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+    else if (curr instanceof Promise) // Linked
       return ((Promise<T>) curr).isDefined();
     else // Waiting
       return false;
@@ -331,18 +337,18 @@ public class Promise<T> implements Future<T> {
     @Override
     public void onException(final Throwable ex) {
       task.cancel(false);
-      updateIfEmpty(Future.exception(ex));
+      becomeIfEmpty(Future.exception(ex));
     }
 
     @Override
     public void onValue(final T value) {
       task.cancel(false);
-      updateIfEmpty(Future.value(value));
+      becomeIfEmpty(Future.value(value));
     }
 
     @Override
     public Boolean call() throws Exception {
-      return updateIfEmpty(Future.exception(exception));
+      return becomeIfEmpty(Future.exception(exception));
     }
   }
 
@@ -367,7 +373,7 @@ public class Promise<T> implements Future<T> {
     String stateString;
     if (curr instanceof SatisfiedFuture)
       stateString = curr.toString();
-    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
+    else if (curr instanceof Promise) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
     else
       stateString = "Waiting";
@@ -375,7 +381,7 @@ public class Promise<T> implements Future<T> {
   }
 }
 
-abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
+abstract class Continuation<T, R> extends Promise<R> {
 
   public Continuation(final InterruptHandler handler) {
     super(handler);
@@ -383,19 +389,8 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   abstract Future<R> apply(Future<T> result);
 
-  @Override
-  public final WaitQueue<T> add(final Continuation<T, ?> c) {
-    return new WaitQueue2<>(this, c);
-  }
-
-  @Override
-  public final void forward(final Promise<T> target) {
-    target.continuation(this);
-  }
-
-  @Override
   public final void flush(final Future<T> result) {
-    super.update(apply(result));
+    become(apply(result));
   }
 
   @Override

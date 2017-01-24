@@ -2,28 +2,8 @@ package io.futures;
 
 interface WaitQueue<T> {
 
-  @SuppressWarnings("unchecked")
-  public static <T, R> Object add(final Object queue, final Continuation<T, R> c) {
-    if (queue == null)
-      return c;
-    else
-      return ((WaitQueue<T>) queue).add(c);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> void flush(final Object queue, final Future<T> result) {
-    if (queue == null)
-      return;
-    else
-      ((WaitQueue<T>) queue).flush(result);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> void forward(final Object queue, final Promise<T> target) {
-    if (queue == null)
-      return;
-    else
-      ((WaitQueue<T>) queue).forward(target);
+  public static <T, R> WaitQueue<T> create(final Continuation<T, R> c1) {
+    return new WaitQueue1<>(c1);
   }
 
   WaitQueue<T> add(Continuation<T, ?> c);
@@ -31,6 +11,31 @@ interface WaitQueue<T> {
   void flush(Future<T> result);
 
   void forward(Promise<T> target);
+}
+
+final class WaitQueue1<T> implements WaitQueue<T> {
+
+  final Continuation<T, ?> c1;
+
+  WaitQueue1(final Continuation<T, ?> c1) {
+    super();
+    this.c1 = c1;
+  }
+
+  @Override
+  public final WaitQueue<T> add(final Continuation<T, ?> c2) {
+    return new WaitQueue2<>(c1, c2);
+  }
+
+  @Override
+  public final void flush(final Future<T> result) {
+    c1.flush(result);
+  }
+
+  @Override
+  public final void forward(final Promise<T> target) {
+    target.continuation(c1);
+  }
 }
 
 final class WaitQueue2<T> implements WaitQueue<T> {
@@ -113,7 +118,7 @@ final class WaitQueue4<T> implements WaitQueue<T> {
 
   @Override
   public final WaitQueue<T> add(final Continuation<T, ?> c5) {
-    return new WaitQueueN<>(this, c5);
+    return new WaitQueueN<>(this, WaitQueue.create(c5));
   }
 
   @Override
@@ -136,9 +141,9 @@ final class WaitQueue4<T> implements WaitQueue<T> {
 final class WaitQueueN<T> implements WaitQueue<T> {
 
   final WaitQueue<T> parent;
-  final Object tail;
+  final WaitQueue<T> tail;
 
-  WaitQueueN(final WaitQueue<T> parent, final Object tail) {
+  WaitQueueN(final WaitQueue<T> parent, final WaitQueue<T> tail) {
     super();
     this.parent = parent;
     this.tail = tail;
@@ -146,21 +151,20 @@ final class WaitQueueN<T> implements WaitQueue<T> {
 
   @Override
   public final WaitQueue<T> add(final Continuation<T, ?> c) {
-    final Object newTail = WaitQueue.add(tail, c);
-    return new WaitQueueN<>(parent, newTail);
+    return new WaitQueueN<>(parent, tail.add(c));
   }
 
   @Override
   public final void flush(final Future<T> result) {
     // TODO avoid stack
     parent.flush(result);
-    WaitQueue.flush(tail, result);
+    tail.flush(result);
   }
 
   @Override
   public final void forward(final Promise<T> target) {
     // TODO avoid stack
     parent.forward(target);
-    WaitQueue.forward(tail, target);
+    tail.forward(target);
   }
 }

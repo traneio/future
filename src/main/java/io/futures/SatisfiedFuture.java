@@ -26,7 +26,7 @@ interface SatisfiedFuture<T> extends Future<T> {
 
   @Override
   default void proxyTo(final Promise<T> p) {
-    if (!p.updateIfEmpty(this))
+    if (!p.becomeIfEmpty(this))
       throw new IllegalStateException("Cannot call proxyTo on an already satisfied Promise.");
   }
 
@@ -55,6 +55,6 @@ class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
 
   @Override
   public void run() {
-    update(result);
+    become(result);
   }
 }

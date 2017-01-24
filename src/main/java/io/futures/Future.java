@@ -121,7 +121,7 @@ interface Future<T> extends InterruptHandler {
         return Future.value(i);
 
       final int ii = i;
-      f.ensure(() -> p.updateIfEmpty(Future.value(ii)));
+      f.ensure(() -> p.becomeIfEmpty(Future.value(ii)));
       i++;
     }
     return p;
@@ -211,6 +211,6 @@ class JoinResponder<T> extends AtomicInteger implements Responder<T> {
   @Override
   public void onValue(final T value) {
     if (decrementAndGet() == 0)
-      p.update(Future.VOID);
+      p.become(Future.VOID);
   }
 }
