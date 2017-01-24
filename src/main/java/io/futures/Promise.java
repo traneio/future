@@ -15,7 +15,7 @@ public class Promise<T> implements Future<T> {
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
 
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
-  private volatile Object state;
+  private Object state;
 
   private InterruptHandler interruptHandler;
 
