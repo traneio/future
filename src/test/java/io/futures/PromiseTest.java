@@ -142,6 +142,7 @@ public class PromiseTest {
 
   @Test
   public void updateIfEmptyLocals() {
+    AtomicReference<Optional<Integer>> restoredLocal = new AtomicReference<>();
     Local<Integer> l = new Local<Integer>();
 
     l.set(Optional.of(1));
@@ -149,12 +150,13 @@ public class PromiseTest {
     l.set(Optional.empty());
 
     p.map(i -> {
-      assertEquals(l.get(), Optional.of(1));
+      restoredLocal.set(l.get());
       return i + 1;
     });
 
     assertTrue(p.becomeIfEmpty(Future.value(1)));
-    assertEquals(l.get(), Optional.empty());
+    assertEquals(Optional.of(1), restoredLocal.get());
+    assertEquals(Optional.empty(), l.get());
   }
 
   @Test
