@@ -13,7 +13,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final <R> Future<R> map(final Function<T, R> f) {
+  public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
     try {
       return new ValueFuture<>(f.apply(value));
     } catch (final Throwable ex) {
@@ -22,7 +22,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
+  public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     try {
       return f.apply(value);
     } catch (final Throwable ex) {
@@ -31,7 +31,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> onSuccess(final Consumer<T> c) {
+  public final Future<T> onSuccess(final Consumer<? super T> c) {
     try {
       c.accept(value);
     } catch (final Throwable ex) {
@@ -47,7 +47,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public Future<T> respond(final Responder<T> r) {
+  public Future<T> respond(final Responder<? super T> r) {
     try {
       r.onValue(value);
     } catch (final Throwable ex) {
@@ -58,12 +58,12 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     return this;
   }
 
   @Override
-  public final Future<T> handle(final Function<Throwable, T> f) {
+  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
     return this;
   }
 

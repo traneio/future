@@ -145,25 +145,27 @@ interface Future<T> extends InterruptHandler {
 
   /*** methods ***/
 
-  <R> Future<R> map(Function<T, R> f);
+  <R> Future<R> map(Function<? super T, ? extends R> f);
 
-  <R> Future<R> flatMap(Function<T, Future<R>> f);
+  <R> Future<R> flatMap(Function<? super T, ? extends Future<R>> f);
 
   Future<T> ensure(Runnable r);
 
-  Future<T> onSuccess(Consumer<T> c);
+  Future<T> onSuccess(Consumer<? super T> c);
 
   Future<T> onFailure(Consumer<Throwable> c);
 
-  Future<T> respond(Responder<T> r);
+  Future<T> respond(Responder<? super T> r);
 
-  Future<T> rescue(Function<Throwable, Future<T>> f);
+  Future<T> rescue(Function<Throwable, ? extends Future<T>> f);
 
-  Future<T> handle(Function<Throwable, T> f);
+  Future<T> handle(Function<Throwable, ? extends T> f);
 
   boolean isDefined();
 
   T get(long timeout, TimeUnit unit) throws CheckedFutureException;
+  
+  void join(long timeout, TimeUnit unit) throws CheckedFutureException;
 
   Future<Void> voided();
 

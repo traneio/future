@@ -14,17 +14,17 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final <R> Future<R> map(final Function<T, R> f) {
+  public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
     return cast();
   }
 
   @Override
-  public final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
+  public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     return cast();
   }
 
   @Override
-  public final Future<T> onSuccess(final Consumer<T> c) {
+  public final Future<T> onSuccess(final Consumer<? super T> c) {
     return this;
   }
 
@@ -40,7 +40,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public Future<T> respond(final Responder<T> r) {
+  public Future<T> respond(final Responder<? super T> r) {
     try {
       r.onException(ex);
     } catch (final Throwable ex) {
@@ -51,7 +51,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     try {
       return f.apply(ex);
     } catch (final Throwable ex) {
@@ -60,7 +60,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> handle(final Function<Throwable, T> f) {
+  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
     try {
       return Future.value(f.apply(ex));
     } catch (final Throwable ex) {
@@ -82,7 +82,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     else
       throw new CheckedFutureException(ex);
   }
-
+  
   @SuppressWarnings("unchecked")
   private final <R> Future<R> cast() {
     return (Future<R>) this;

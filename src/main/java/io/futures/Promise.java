@@ -184,12 +184,16 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+    join(timeout, unit);
+    return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+  }
+  
+  @Override
+  public void join(long timeout, TimeUnit unit) throws CheckedFutureException {
     final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
     ensure(latch);
     try {
-      if (latch.await(timeout, unit))
-        return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
-      else
+      if (!latch.await(timeout, unit))
         throw new TimeoutException();
     } catch (final InterruptedException ex) {
       throw new CheckedFutureException(ex);
@@ -197,7 +201,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final <R> Future<R> map(final Function<T, R> f) {
+  public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
     return continuation(new Continuation<T, R>(this) {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -207,7 +211,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final <R> Future<R> flatMap(final Function<T, Future<R>> f) {
+  public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     return continuation(new Continuation<T, R>(this) {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -227,7 +231,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> onSuccess(final Consumer<T> c) {
+  public final Future<T> onSuccess(final Consumer<? super T> c) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -247,7 +251,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> respond(final Responder<T> r) {
+  public final Future<T> respond(final Responder<? super T> r) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -257,7 +261,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> rescue(final Function<Throwable, Future<T>> f) {
+  public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -267,7 +271,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> handle(final Function<Throwable, T> f) {
+  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
     return continuation(new Continuation<T, T>(this) {
       @Override
       final Future<T> apply(final Future<T> result) {

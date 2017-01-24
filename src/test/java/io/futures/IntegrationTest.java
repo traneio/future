@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import com.twitter.util.CountDownLatch;
+
 public class IntegrationTest {
 
   private static final Random random = new Random(1);
@@ -20,17 +22,51 @@ public class IntegrationTest {
 
   @Test
   public void integrationTest() throws CheckedFutureException {
-    Future<Integer> f = Future.value(1);
+    Future<?> f = Future.value(1);
     for (int i = 0; i < 5000; i++) {
-      int j = random.nextInt(3);
-      if (j == 1)
-        f = f.delayed(random.nextInt(5) + 1, TimeUnit.MILLISECONDS, scheduler);
-      else if (j == 2)
-        f = f.map(v -> v + 1);
-      else
-        f = f.flatMap(v -> Future.value(v + 1));
+
+      switch (random.nextInt(11)) {
+
+      case 1:
+        f = f.flatMap(v -> Future.VOID);
+        break;
+
+      case 2:
+        f = f.flatMap(v -> Future.apply(() -> 1));
+        break;
+
+      case 3:
+        f = f.flatMap(v -> Future.apply(() -> 1 / 0));
+        break;
+
+      case 4:
+        f = f.flatMap(v -> Future.value(2));
+        break;
+
+      case 5:
+        break;
+
+      case 6:
+        break;
+
+      case 7:
+        break;
+
+      case 8:
+        break;
+
+      case 9:
+        break;
+
+      case 10:
+        break;
+
+      case 11:
+        break;
+      }
     }
-    f.get(20, TimeUnit.DAYS);
-    scheduler.shutdown();
+    f.join(20, TimeUnit.DAYS);
   }
+
+  // f = f.delayed(random.nextInt(5) + 1, TimeUnit.MILLISECONDS, scheduler);
 }
