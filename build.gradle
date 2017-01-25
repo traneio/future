@@ -1,11 +1,21 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'info.solidsoft.gradle.pitest:gradle-pitest-plugin:1.1.10'
+    }
+}
+
 plugins {
   id "me.champeau.gradle.jmh" version "0.3.1"
 }
 
 apply plugin: 'java'
+apply plugin: 'info.solidsoft.pitest'
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
@@ -28,4 +38,10 @@ jmh {
 	iterations = 5
 	forceGC = true
 	//profilers = [gc]
+}
+
+pitest {
+    targetClasses = ['io.futures.*']
+    threads = 4
+    outputFormats = ['HTML']
 }

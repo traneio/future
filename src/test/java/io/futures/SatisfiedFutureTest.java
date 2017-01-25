@@ -12,7 +12,7 @@ import org.junit.After;
 import org.junit.Test;
 
 public class SatisfiedFutureTest {
-  
+
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final Exception ex = new TestException();
 
@@ -20,11 +20,11 @@ public class SatisfiedFutureTest {
   public void shutdownScheduler() {
     scheduler.shutdown();
   }
-  
+
   private <T> T get(Future<T> future) throws CheckedFutureException {
     return future.get(0, TimeUnit.MILLISECONDS);
   }
-  
+
   /*** ensure ***/
 
   @Test
@@ -41,28 +41,28 @@ public class SatisfiedFutureTest {
     });
     assertEquals("s", get(future));
   }
-  
+
   /*** raise ***/
-  
+
   @Test
   public void raise() {
     Future.value(1).raise(new Throwable());
   }
-  
+
   /*** isDefined ***/
-  
+
   @Test
   public void isDefinedValue() {
     assertTrue(Future.value(1).isDefined());
   }
-  
+
   @Test
   public void isDefinedException() {
     assertTrue(Future.exception(ex).isDefined());
   }
-  
+
   /*** proxyTo ***/
-  
+
   @Test(expected = IllegalStateException.class)
   public void proxy() {
     Promise<Integer> p = new Promise<>();
@@ -83,7 +83,7 @@ public class SatisfiedFutureTest {
     Future.<Integer>exception(ex).proxyTo(p);
     get(p);
   }
-  
+
   /*** delayed ***/
 
   @Test
@@ -95,18 +95,26 @@ public class SatisfiedFutureTest {
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
-  
+
   /*** within ***/
-  
+
   @Test(expected = TestException.class)
   public void withinFailure() throws CheckedFutureException {
     Future<Integer> f = Future.<Integer>exception(ex).within(1, TimeUnit.MILLISECONDS, scheduler);
     get(f);
   }
-  
+
   @Test
   public void withinSuccess() throws CheckedFutureException {
     Future<Integer> f = Future.value(1).within(1, TimeUnit.MILLISECONDS, scheduler);
     assertEquals(new Integer(1), get(f));
+  }
+
+  /*** join ***/
+
+  @Test
+  public void join() throws CheckedFutureException {
+    Future<Integer> future = Future.exception(ex);
+    future.join(0, TimeUnit.MILLISECONDS);
   }
 }

@@ -11,14 +11,14 @@ public class Scheduler {
       return new Scheduler();
     }
   };
-
-  private List<Runnable> tasks = new ArrayList<>();
-
-  private boolean running = false;
-
+  
   public static void submit(final Runnable r) {
     local.get().addTask(r);
   }
+
+  private List<Runnable> tasks = null;
+
+  private boolean running = false;
 
   private void addTask(final Runnable r) {
     if (tasks == null)

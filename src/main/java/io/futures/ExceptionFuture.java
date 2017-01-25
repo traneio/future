@@ -95,10 +95,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((ex == null) ? 0 : ex.hashCode());
-    return result;
+    return ((ex == null) ? 0 : ex.hashCode());
   }
 
   @Override

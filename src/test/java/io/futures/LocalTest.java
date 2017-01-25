@@ -73,21 +73,51 @@ public class LocalTest {
   @Test
   public void letSuccess() {
     l.update(1);
-    int result = l.let(2, () -> {
-      assertEquals(Optional.of(2), l.get());
-      return 2;
-    });
-    assertEquals(2, result);
-    assertEquals(Optional.of(1), l.get());
+    try {
+      int result = l.let(2, () -> {
+        assertEquals(Optional.of(2), l.get());
+        return 2;
+      });
+      assertEquals(2, result);
+      assertEquals(Optional.of(1), l.get());
+    } finally {
+      assertEquals(Optional.of(1), l.get());
+    }
   }
-  
+
   @Test(expected = IllegalStateException.class)
   public void letFailure() {
     l.update(1);
-    l.let(2, () -> {
-      assertEquals(Optional.of(2), l.get());
-      throw new IllegalStateException();
-    });
+    try {
+      l.let(2, () -> {
+        assertEquals(Optional.of(2), l.get());
+        throw new IllegalStateException();
+      });
+    } finally {
+      assertEquals(Optional.of(1), l.get());
+    }
+  }
+  
+  @Test
+  public void getFresh() {
+    assertEquals(Optional.empty(), (new Local<Integer>()).get());
   }
 
+  @Test
+  public void multipleLocals() {
+    Local<Integer> l1 = new Local<>();
+    Local<Integer> l2 = new Local<>();
+    Local<Integer> l3 = new Local<>();
+    Local<Integer> l4 = new Local<>();
+
+    l1.set(Optional.of(1));
+    l2.set(Optional.of(2));
+    l3.set(Optional.of(3));
+    l4.set(Optional.of(4));
+
+    assertEquals(Optional.of(1), l1.get());
+    assertEquals(Optional.of(2), l2.get());
+    assertEquals(Optional.of(3), l3.get());
+    assertEquals(Optional.of(4), l4.get());
+  }
 }

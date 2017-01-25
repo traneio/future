@@ -85,7 +85,7 @@ public class ValueFutureTest {
   /*** respond ***/
 
   @Test
-  public void respond() {
+  public void respond() throws CheckedFutureException {
     AtomicInteger result = new AtomicInteger(-1);
     AtomicBoolean failure = new AtomicBoolean(false);
     final Responder<Integer> r = new Responder<Integer>() {
@@ -98,7 +98,8 @@ public class ValueFutureTest {
         result.set(value);
       }
     };
-    Future.value(1).respond(r);
+    Future<Integer> f = Future.value(1).respond(r);
+    assertEquals(new Integer(1), get(f));
     assertEquals(1, result.get());
     assertFalse(failure.get());
   }

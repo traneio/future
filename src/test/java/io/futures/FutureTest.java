@@ -61,7 +61,7 @@ public class FutureTest {
 
   /*** exception ***/
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void exception() throws CheckedFutureException {
 
     Future<Integer> future = Future.exception(ex);
@@ -133,9 +133,9 @@ public class FutureTest {
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void collectSatisfiedFuturesException() throws CheckedFutureException {
-    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.exception(new Throwable())));
+    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.exception(ex)));
     get(future);
   }
 
@@ -150,13 +150,13 @@ public class FutureTest {
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void collectPromisesException() throws CheckedFutureException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
     p1.setValue(1);
-    p2.setException(new Throwable());
+    p2.setException(ex);
     get(future);
   }
 
@@ -171,13 +171,13 @@ public class FutureTest {
     assertArrayEquals(expected, get(future).toArray());
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void collectMixedException() throws CheckedFutureException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    p2.setException(new Throwable());
+    p2.setException(ex);
     Integer[] expected = { 1, 2, 3 };
     assertArrayEquals(expected, get(future).toArray());
   }
@@ -245,9 +245,9 @@ public class FutureTest {
     get(future);
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void joinSatisfiedFuturesException() throws CheckedFutureException {
-    Future<Void> future = Future.join(Arrays.asList(Future.value(1), Future.exception(new Throwable())));
+    Future<Void> future = Future.join(Arrays.asList(Future.value(1), Future.exception(ex)));
     get(future);
   }
 
@@ -261,13 +261,13 @@ public class FutureTest {
     get(future);
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void joinPromisesException() throws CheckedFutureException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
     p1.setValue(1);
-    p2.setException(new Throwable());
+    p2.setException(ex);
     get(future);
   }
 
@@ -281,13 +281,13 @@ public class FutureTest {
     get(future);
   }
 
-  @Test(expected = Throwable.class)
+  @Test(expected = TestException.class)
   public void joinMixedException() throws CheckedFutureException {
     Promise<Integer> p1 = new Promise<>();
     Promise<Integer> p2 = new Promise<>();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    p2.setException(new Throwable());
+    p2.setException(ex);
     get(future);
   }
 

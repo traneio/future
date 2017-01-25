@@ -156,6 +156,12 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.exception(new Error());
     future.get(1, TimeUnit.MILLISECONDS);
   }
+  
+  @Test(expected = CheckedFutureException.class)
+  public void getCheckedException() throws CheckedFutureException {
+    Future<Integer> future = Future.exception(new Exception());
+    future.get(1, TimeUnit.MILLISECONDS);
+  }
 
   @Test(expected = TestException.class)
   public void getZeroTimeout() throws CheckedFutureException {
@@ -168,7 +174,7 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.exception(ex);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }
-
+  
   /*** toString ***/
 
   @Test

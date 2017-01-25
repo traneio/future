@@ -57,7 +57,7 @@ public class Promise<T> implements Future<T> {
         else if (curr instanceof Promise && !(curr instanceof Continuation))
           return ((Promise<T>) curr).becomeIfEmpty(result);
         else if (result instanceof Promise) {
-          ((Promise<T>) result).link(compress());
+          ((Promise<T>) result).compress().link(this);
           return true;
         } else if (cas(curr, result)) {
           flush((WaitQueue<T>) curr, result);
@@ -86,22 +86,13 @@ public class Promise<T> implements Future<T> {
   }
 
   @SuppressWarnings("unchecked")
-  protected final void link(final Promise<T> target) {
+  private final void link(final Promise<T> target) {
     while (true) {
       final Object curr = state;
-      if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
-        if (cas(curr, target)) {
-          ((Promise<T>) curr).link(target);
-          return;
-        }
-      } else if (curr instanceof SatisfiedFuture) { // Done
-        if (target.isDefined()) {
-          if (!target.state.equals(curr))
-            throw new IllegalStateException("Cannot link two Done Promises with differing values");
-        } else
-          target.become((SatisfiedFuture<T>) curr);
+      if (curr instanceof SatisfiedFuture) {
+        target.become((SatisfiedFuture<T>) curr);
         return;
-      } else if (cas(curr, target)) { // Waiting
+      } else if (cas(curr, target)) {
         if (curr != null)
           ((WaitQueue<T>) curr).forward(target);
         return;
@@ -187,7 +178,7 @@ public class Promise<T> implements Future<T> {
     join(timeout, unit);
     return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
   }
-  
+
   @Override
   public void join(long timeout, TimeUnit unit) throws CheckedFutureException {
     final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
