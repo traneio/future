@@ -7,30 +7,34 @@ import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
 import scala.concurrent.Future$;
 import scala.concurrent.Promise;
+import scala.util.Try;
 
 public class ScalaFutureBenchmark {
 
+  private static final String string = "s";
   private static final RuntimeException exception = new RuntimeException();
   private static final ExecutionContext ec = scala.concurrent.ExecutionContext.global();
-  private static final Future<Integer> constFuture = Future.successful(1);
-  private static final Function1<Integer, Integer> mapF = i -> i + 1;
-  private static final Function1<Integer, Future<Integer>> flatMapF = i -> constFuture;
+  private static final Future<String> constFuture = Future.successful(string);
+  private static final Future<Void> constVoidFuture = Future.successful(null);
+  private static final Function1<String, String> mapF = i -> string;
+  private static final Function1<String, Future<String>> flatMapF = i -> constFuture;
+  private static final Function1<Try<Void>, Try<Void>> ensureF = t -> t;
 
   @Benchmark
   public void newPromise() {
-    Promise.<Integer>apply();
+    Promise.<String>apply();
   }
-  
+
   @Benchmark
   public void newFutureFromPromise() {
-    Promise.<Integer>apply().future();
+    Promise.<String>apply().future();
   }
 
   @Benchmark
   public void value() {
     Future.successful(1);
   }
-  
+
   @Benchmark
   public void exception() {
     Future$.MODULE$.failed(exception);
@@ -42,8 +46,22 @@ public class ScalaFutureBenchmark {
   }
 
   @Benchmark
+  public void mapConstN() {
+    Future<String> f = constFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF, ec);
+  }
+
+  @Benchmark
   public void mapPromise() {
-    (Promise.<Integer>apply()).future().map(mapF, ec);
+    (Promise.<String>apply()).future().map(mapF, ec);
+  }
+
+  @Benchmark
+  public void mapPromiseN() {
+    Future<String> f = Promise.<String>apply().future();
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF, ec);
   }
 
   @Benchmark
@@ -52,7 +70,45 @@ public class ScalaFutureBenchmark {
   }
 
   @Benchmark
+  public void flatMapConstN() {
+    Future<String> f = constFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF, ec);
+  }
+
+  @Benchmark
   public void flatMapPromise() {
-    (Promise.<Integer>apply()).future().flatMap(flatMapF, ec);
+    (Promise.<String>apply()).future().flatMap(flatMapF, ec);
+  }
+
+  @Benchmark
+  public void flatMapPromiseN() {
+    Future<String> f = (Promise.<String>apply()).future();
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF, ec);
+  }
+
+  @Benchmark
+  public void ensureConst() {
+    constVoidFuture.transform(ensureF, ec);
+  }
+
+  @Benchmark
+  public void ensureConstN() {
+    Future<Void> f = constVoidFuture;
+    for (int i = 0; i < 100; i++)
+      f.transform(ensureF, ec);
+  }
+
+  @Benchmark
+  public void ensurePromise() {
+    Promise.<Void>apply().future().transform(ensureF, ec);
+  }
+
+  @Benchmark
+  public void ensurePromiseN() {
+    Future<Void> f = Promise.<Void>apply().future();
+    for (int i = 0; i < 100; i++)
+      f = f.transform(ensureF, ec);
   }
 }
