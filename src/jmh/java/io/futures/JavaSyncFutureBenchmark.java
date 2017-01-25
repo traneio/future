@@ -88,7 +88,7 @@ public class JavaSyncFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.thenCompose(flatMapF);
   }
-  
+
   @Benchmark
   public void ensureConst() {
     constVoidFuture.thenRun(ensureF);
@@ -111,5 +111,27 @@ public class JavaSyncFutureBenchmark {
     CompletionStage<Void> f = new CompletableFuture<>();
     for (int i = 0; i < 100; i++)
       f = f.thenRun(ensureF);
+  }
+  
+  @Benchmark
+  public void setValue() {
+    (new CompletableFuture<>()).complete(string);
+  }
+
+  @Benchmark
+  public void setValueWithContinuations() {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    for (int i = 0; i < 100; i++)
+      p.thenApply(mapF);
+    p.complete(string);
+  }
+
+  @Benchmark
+  public void setValueWithNestedContinuation() {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    CompletionStage<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.thenApply(mapF);
+    p.complete(string);
   }
 }

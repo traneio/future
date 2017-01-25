@@ -112,4 +112,26 @@ public class JavaAsyncFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.thenRunAsync(ensureF);
   }
+
+  @Benchmark
+  public void setValue() {
+    (new CompletableFuture<>()).complete(string);
+  }
+
+  @Benchmark
+  public void setValueWithContinuations() {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    for (int i = 0; i < 100; i++)
+      p.thenApplyAsync(mapF);
+    p.complete(string);
+  }
+
+  @Benchmark
+  public void setValueWithNestedContinuation() {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    CompletionStage<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.thenApplyAsync(mapF);
+    p.complete(string);
+  }
 }

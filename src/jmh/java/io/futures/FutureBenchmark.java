@@ -106,4 +106,26 @@ public class FutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.ensure(ensureF);
   }
+
+  @Benchmark
+  public void setValue() {
+    (new Promise<String>()).setValue(string);
+  }
+
+  @Benchmark
+  public void setValueWithContinuations() {
+    Promise<String> p = new Promise<String>();
+    for (int i = 0; i < 100; i++)
+      p.map(mapF);
+    p.setValue(string);
+  }
+
+  @Benchmark
+  public void setValueWithNestedContinuation() {
+    Promise<String> p = new Promise<String>();
+    Future<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF);
+    p.setValue(string);
+  }
 }

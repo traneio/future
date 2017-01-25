@@ -111,4 +111,27 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.transform(ensureF, ec);
   }
+  
+  @Benchmark
+  public void setValue() {
+    (Promise.<String>apply()).success(string);
+  }
+
+  @Benchmark
+  public void setValueWithContinuations() {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future();
+    for (int i = 0; i < 100; i++)
+      f.map(mapF, ec);
+    p.success(string);
+  }
+
+  @Benchmark
+  public void setValueWithNestedContinuation() {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future();
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF, ec);
+    p.success(string);
+  }
 }
