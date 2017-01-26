@@ -186,7 +186,7 @@ public class FutureTest {
   public void collectConcurrentResults() throws CheckedFutureException {
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
-      List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
+      List<Promise<Integer>> promises = Stream.generate(() -> Future.<Integer>promise()).limit(20000).collect(toList());
       AtomicBoolean start = new AtomicBoolean();
       Future<List<Integer>> future = Future.collect(promises);
       for (Promise<Integer> p : promises) {
@@ -293,7 +293,7 @@ public class FutureTest {
 
   @Test
   public void joinConcurrentResults() throws CheckedFutureException {
-    List<Promise<Integer>> promises = Stream.generate(() -> new Promise<Integer>()).limit(20000).collect(toList());
+    List<Promise<Integer>> promises = Stream.generate(() -> Future.<Integer>promise()).limit(20000).collect(toList());
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
       Future<Void> future = Future.join(promises);
@@ -435,13 +435,13 @@ public class FutureTest {
 
   @Test(expected = TimeoutException.class)
   public void withinDefaultExceptionFailure() throws CheckedFutureException {
-    Future<Integer> f = (new Promise<Integer>()).within(1, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = (Future.<Integer>promise()).within(1, TimeUnit.MILLISECONDS, scheduler);
     get(f);
   }
 
   @Test
   public void withinDefaultExceptionSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<Integer>();
+    Promise<Integer> p = Future.<Integer>promise();
     Future<Integer> f = p.within(10, TimeUnit.MILLISECONDS, scheduler);
     p.setValue(1);
     assertEquals(new Integer(1), get(f));

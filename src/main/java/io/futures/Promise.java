@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Promise<T> implements Future<T> {
+public abstract class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
 
@@ -187,90 +187,135 @@ public class Promise<T> implements Future<T> {
 
   @Override
   public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
-    return continuation(new Continuation<T, R>(this) {
+    return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
         return result.map(f);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
-    return continuation(new Continuation<T, R>(this) {
+    return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
         return result.flatMap(f);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> ensure(final Runnable f) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.ensure(f);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> onSuccess(final Consumer<? super T> c) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.onSuccess(c);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> onFailure(final Consumer<Throwable> c) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.onFailure(c);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> respond(final Responder<? super T> r) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.respond(r);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.rescue(f);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<T> handle(final Function<Throwable, ? extends T> f) {
-    return continuation(new Continuation<T, T>(this) {
+    return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.handle(f);
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
 
   @Override
   public final Future<Void> voided() {
-    return continuation(new Continuation<T, Void>(this) {
+    return continuation(new Continuation<T, Void>() {
       @Override
       final Future<Void> apply(final Future<T> result) {
         return result.voided();
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return Promise.this;
       }
     });
   }
@@ -380,12 +425,6 @@ public class Promise<T> implements Future<T> {
 
 abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
-  private final InterruptHandler handler;
-
-  public Continuation(final InterruptHandler handler) {
-    this.handler = handler;
-  }
-
   @Override
   public final WaitQueue<T> add(final Continuation<T, ?> c) {
     return new WaitQueue2<>(this, c);
@@ -399,11 +438,6 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
   @Override
   public final void flush(final Future<T> result) {
     become(apply(result));
-  }
-
-  @Override
-  protected InterruptHandler getInterruptHandler() {
-    return handler;
   }
 
   abstract Future<R> apply(Future<T> result);

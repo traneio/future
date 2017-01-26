@@ -17,12 +17,12 @@ public class FutureBenchmark {
 
   @Benchmark
   public void newPromise() {
-    new Promise<String>();
+    Future.<String>promise();
   }
 
   @Benchmark
   public void newFutureFromPromise() {
-    new Promise<String>();
+    Future.<String>promise();
   }
 
   @Benchmark
@@ -49,12 +49,12 @@ public class FutureBenchmark {
 
   @Benchmark
   public void mapPromise() {
-    (new Promise<String>()).map(mapF);
+    (Future.<String>promise()).map(mapF);
   }
 
   @Benchmark
   public void mapPromiseN() {
-    Future<String> f = new Promise<String>();
+    Future<String> f = Future.<String>promise();
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
   }
@@ -73,12 +73,12 @@ public class FutureBenchmark {
 
   @Benchmark
   public void flatMapPromise() {
-    (new Promise<String>()).flatMap(flatMapF);
+    (Future.<String>promise()).flatMap(flatMapF);
   }
 
   @Benchmark
   public void flatMapPromiseN() {
-    Future<String> f = new Promise<String>();
+    Future<String> f = Future.<String>promise();
     for (int i = 0; i < 100; i++)
       f = f.flatMap(flatMapF);
   }
@@ -97,7 +97,7 @@ public class FutureBenchmark {
 
   @Benchmark
   public void ensurePromise() {
-    new Promise<Void>().ensure(ensureF);
+    Future.<Void>promise().ensure(ensureF);
   }
 
   @Benchmark
@@ -109,12 +109,12 @@ public class FutureBenchmark {
 
   @Benchmark
   public void setValue() {
-    (new Promise<String>()).setValue(string);
+    (Future.<String>promise()).setValue(string);
   }
 
   @Benchmark
   public void setValueWithContinuations() {
-    Promise<String> p = new Promise<String>();
+    Promise<String> p = Future.<String>promise();
     for (int i = 0; i < 100; i++)
       p.map(mapF);
     p.setValue(string);
@@ -122,7 +122,7 @@ public class FutureBenchmark {
 
   @Benchmark
   public void setValueWithNestedContinuation() {
-    Promise<String> p = new Promise<String>();
+    Promise<String> p = Future.<String>promise();
     Future<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);

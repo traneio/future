@@ -12,9 +12,7 @@ public class WaitQueueTest {
   }
 
   private <T> Continuation<T, T> newContinuation() {
-    InterruptHandler handler = ex -> {
-    };
-    return new Continuation<T, T>(handler) {
+    return new Continuation<T, T>() {
       @Override
       Future<T> apply(Future<T> result) {
         return result;

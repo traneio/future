@@ -101,7 +101,7 @@ public class TwitterFutureBenchmark {
 
   @Benchmark
   public void ensurePromise() {
-    new Promise<Void>().ensure(ensureF);
+    (new Promise<Void>()).ensure(ensureF);
   }
 
   @Benchmark

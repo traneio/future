@@ -194,14 +194,14 @@ public class PromiseTest {
 
   @Test(expected = NullPointerException.class)
   public void becomeIfEmptyError() {
-    Promise<Integer> p = new Promise<Integer>();
+    Promise<Integer> p = Future.<Integer>promise();
     p.map(i -> i + 1);
     p.becomeIfEmpty(null);
   }
 
   @Test(expected = StackOverflowError.class)
   public void becomeIfEmptyStakOverflow() {
-    Promise<Integer> p = new Promise<Integer>();
+    Promise<Integer> p = Future.<Integer>promise();
     Future<Integer> f = p;
     for (int i = 0; i < 20000; i++)
       f = f.map(v -> v + 1);
@@ -550,7 +550,7 @@ public class PromiseTest {
 
   @Test(expected = TimeoutException.class)
   public void getTimeout() throws CheckedFutureException {
-    (new Promise<Integer>()).get(10, TimeUnit.MILLISECONDS);
+    (Future.<Integer>promise()).get(10, TimeUnit.MILLISECONDS);
   }
 
   @Test
@@ -560,7 +560,7 @@ public class PromiseTest {
       @Override
       public void run() {
         try {
-          (new Promise<Integer>()).get(10, TimeUnit.DAYS);
+          (Future.<Integer>promise()).get(10, TimeUnit.DAYS);
         } catch (CheckedFutureException e) {
           cause.set(e.getCause());
         }
@@ -744,7 +744,7 @@ public class PromiseTest {
 
   @Test
   public void toStringContinuation() {
-    Future<Integer> p = (new Promise<Integer>()).map(i -> i + 1);
+    Future<Integer> p = (Future.<Integer>promise()).map(i -> i + 1);
     assertEquals("Continuation(Waiting)@" + hexHashCode(p), p.toString());
   }
 }

@@ -93,6 +93,20 @@ interface Future<T> extends InterruptHandler {
       final Object[] results = new Object[size];
       final AtomicInteger count = new AtomicInteger(size);
 
+      final Responder<T> baseResponder = new Responder<T>() {
+        @Override
+        public void onException(final Throwable ex) {
+          p.setException(ex);
+        }
+
+        @Override
+        public void onValue(final T value) {
+          if (count.decrementAndGet() == 0)
+            p.setValue((List<T>) Arrays.asList(results));
+        }
+
+      };
+
       int i = 0;
       for (final Future<T> f : list) {
 
@@ -103,14 +117,13 @@ interface Future<T> extends InterruptHandler {
         final Responder<T> responder = new Responder<T>() {
           @Override
           public void onException(final Throwable ex) {
-            p.setException(ex);
+            baseResponder.onException(ex);
           }
 
           @Override
           public void onValue(final T value) {
             results[ii] = value;
-            if (count.decrementAndGet() == 0)
-              p.setValue((List<T>) Arrays.asList(results));
+            baseResponder.onValue(value);
           }
 
         };
