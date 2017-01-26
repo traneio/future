@@ -22,16 +22,13 @@ public class Promise<T> implements Future<T> {
   private final Optional<?>[] savedContext = Local.save();
 
   public Promise() {
-    super();
   }
 
   public Promise(final InterruptHandler interruptHandler) {
-    super();
     this.interruptHandler = interruptHandler;
   }
 
   public Promise(final List<? extends InterruptHandler> interruptHandlers) {
-    super();
     this.interruptHandler = (ex) -> {
       for (final InterruptHandler handler : interruptHandlers)
         handler.raise(ex);
@@ -60,7 +57,8 @@ public class Promise<T> implements Future<T> {
           ((Promise<T>) result).compress().link(this);
           return true;
         } else if (cas(curr, result)) {
-          flush((WaitQueue<T>) curr, result);
+          if (curr != null)
+            flush((WaitQueue<T>) curr, result);
           return true;
         }
       }
@@ -72,16 +70,12 @@ public class Promise<T> implements Future<T> {
   }
 
   private final void flush(final WaitQueue<T> queue, final Future<T> result) {
-    if (queue == null)
-      return;
-    else {
-      final Optional<?>[] oldContext = Local.save();
-      Local.restore(savedContext);
-      try {
-        queue.flush(result);
-      } finally {
-        Local.restore(oldContext);
-      }
+    final Optional<?>[] oldContext = Local.save();
+    Local.restore(savedContext);
+    try {
+      queue.flush(result);
+    } finally {
+      Local.restore(oldContext);
     }
   }
 
@@ -107,12 +101,15 @@ public class Promise<T> implements Future<T> {
       if (curr instanceof SatisfiedFuture) {
         c.flush((SatisfiedFuture<T>) curr);
         return c;
-      } else if (curr instanceof Promise && !(curr instanceof Continuation))
+      } else if (curr instanceof Promise && !(curr instanceof Continuation)) {
         return ((Promise<T>) curr).continuation(c);
-      else if (curr == null && cas(curr, c))
-        return c;
-      else if (curr != null && cas(curr, ((WaitQueue<T>) curr).add(c)))
-        return c;
+      } else if (curr == null) {
+        if (cas(curr, c))
+          return c;
+      } else if (curr != null) {
+        if (cas(curr, ((WaitQueue<T>) curr).add(c)))
+          return c;
+      }
     }
   }
 
