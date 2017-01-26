@@ -41,7 +41,7 @@ public class IntegrationTest {
     case 6:
       return gen(depth - 1).handle(ex -> 1);
     case 7:
-      Promise<Integer> p = new Promise<>();
+      Promise<Integer> p = Future.promise();
       gen(depth - 1).proxyTo(p);
       return p;
     case 8:

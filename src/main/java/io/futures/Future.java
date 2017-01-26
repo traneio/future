@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,6 +13,38 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 interface Future<T> extends InterruptHandler {
+
+  public static <T> Promise<T> promise() {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+    };
+  }
+
+  public static <T> Promise<T> promise(InterruptHandler handler) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected InterruptHandler getInterruptHandler() {
+        return handler;
+      }
+    };
+  }
+
+  public static <T> Promise<T> promise(List<? extends InterruptHandler> handlers) {
+    return promise((ex) -> {
+      for (final InterruptHandler handler : handlers)
+        handler.raise(ex);
+    });
+  }
 
   /*** static ***/
 
@@ -56,7 +89,7 @@ interface Future<T> extends InterruptHandler {
       return emptyList();
     else {
       final int size = list.size();
-      final Promise<List<T>> p = new Promise<>(list);
+      final Promise<List<T>> p = Future.promise(list);
       final Object[] results = new Object[size];
       final AtomicInteger count = new AtomicInteger(size);
 
@@ -94,7 +127,7 @@ interface Future<T> extends InterruptHandler {
     if (list.isEmpty())
       return VOID;
     else {
-      final Promise<Void> p = new Promise<>(list);
+      final Promise<Void> p = Future.promise(list);
       final JoinResponder<T> responder = new JoinResponder<>(p, list.size());
 
       for (final Future<T> f : list) {
@@ -113,7 +146,7 @@ interface Future<T> extends InterruptHandler {
     if (list.isEmpty())
       throw new IllegalArgumentException("Can't select from empty list.");
 
-    final Promise<Integer> p = new Promise<>(list);
+    final Promise<Integer> p = Future.promise(list);
     int i = 0;
     for (final Future<?> f : list) {
 
@@ -164,7 +197,7 @@ interface Future<T> extends InterruptHandler {
   boolean isDefined();
 
   T get(long timeout, TimeUnit unit) throws CheckedFutureException;
-  
+
   void join(long timeout, TimeUnit unit) throws CheckedFutureException;
 
   Future<Void> voided();

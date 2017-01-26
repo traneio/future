@@ -1,6 +1,5 @@
 package io.futures;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -17,22 +16,15 @@ public class Promise<T> implements Future<T> {
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
   private Object state;
 
-  private InterruptHandler interruptHandler;
-
-  private final Optional<?>[] savedContext = Local.save();
-
   public Promise() {
   }
 
-  public Promise(final InterruptHandler interruptHandler) {
-    this.interruptHandler = interruptHandler;
+  protected InterruptHandler getInterruptHandler() {
+    return null;
   }
 
-  public Promise(final List<? extends InterruptHandler> interruptHandlers) {
-    this.interruptHandler = (ex) -> {
-      for (final InterruptHandler handler : interruptHandlers)
-        handler.raise(ex);
-    };
+  protected Optional<?>[] getSavedContext() {
+    return null;
   }
 
   private final boolean cas(final Object oldState, final Object newState) {
@@ -70,13 +62,17 @@ public class Promise<T> implements Future<T> {
   }
 
   private final void flush(final WaitQueue<T> queue, final Future<T> result) {
-    final Optional<?>[] oldContext = Local.save();
-    Local.restore(savedContext);
-    try {
+    Optional<?>[] savedContext = getSavedContext();
+    if (savedContext != null) {
+      final Optional<?>[] oldContext = Local.save();
+      Local.restore(savedContext);
+      try {
+        queue.flush(result);
+      } finally {
+        Local.restore(oldContext);
+      }
+    } else
       queue.flush(result);
-    } finally {
-      Local.restore(oldContext);
-    }
   }
 
   @SuppressWarnings("unchecked")
@@ -137,6 +133,7 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
+    InterruptHandler interruptHandler = getInterruptHandler();
     final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return;
@@ -279,8 +276,9 @@ public class Promise<T> implements Future<T> {
   }
 
   private final class DelayedPromise extends Promise<T> implements Runnable {
-    public DelayedPromise() {
-      super(Promise.this);
+    @Override
+    protected InterruptHandler getInterruptHandler() {
+      return Promise.this;
     }
 
     @Override
@@ -317,12 +315,13 @@ public class Promise<T> implements Future<T> {
 
   private static class WithinPromise<T> extends Promise<T> implements Responder<T>, Callable<Boolean> {
 
+    private final InterruptHandler handler;
     private final ScheduledFuture<Boolean> task;
     private final Throwable exception;
 
     public WithinPromise(final InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
         final ScheduledExecutorService scheduler, final Throwable exception) {
-      super(handler);
+      this.handler = handler;
       this.task = scheduler.schedule(this, timeout, timeUnit);
       this.exception = exception;
     }
@@ -342,6 +341,11 @@ public class Promise<T> implements Future<T> {
     @Override
     public Boolean call() throws Exception {
       return becomeIfEmpty(Future.exception(exception));
+    }
+
+    @Override
+    protected InterruptHandler getInterruptHandler() {
+      return handler;
     }
   }
 
@@ -376,8 +380,10 @@ public class Promise<T> implements Future<T> {
 
 abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
+  private final InterruptHandler handler;
+
   public Continuation(final InterruptHandler handler) {
-    super(handler);
+    this.handler = handler;
   }
 
   @Override
@@ -393,6 +399,11 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
   @Override
   public final void flush(final Future<T> result) {
     become(apply(result));
+  }
+
+  @Override
+  protected InterruptHandler getInterruptHandler() {
+    return handler;
   }
 
   abstract Future<R> apply(Future<T> result);

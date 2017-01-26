@@ -42,7 +42,7 @@ interface SatisfiedFuture<T> extends Future<T> {
       final Throwable exception) {
     return this;
   }
-  
+
   @Override
   default void join(long timeout, TimeUnit unit) {
   }
@@ -53,8 +53,12 @@ class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
   private final SatisfiedFuture<T> result;
 
   public DelayedSatisfiedFuture(final SatisfiedFuture<T> result) {
-    super(result);
     this.result = result;
+  }
+
+  @Override
+  protected InterruptHandler getInterruptHandler() {
+    return result;
   }
 
   @Override

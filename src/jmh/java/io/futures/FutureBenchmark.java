@@ -102,7 +102,7 @@ public class FutureBenchmark {
 
   @Benchmark
   public void ensurePromiseN() {
-    Future<Void> f = new Promise<>();
+    Future<Void> f = Future.promise();
     for (int i = 0; i < 100; i++)
       f = f.ensure(ensureF);
   }

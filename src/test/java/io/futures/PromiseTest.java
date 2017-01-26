@@ -37,7 +37,7 @@ public class PromiseTest {
 
   @Test
   public void newPromise() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     assertEquals(new Integer(1), get(p));
   }
@@ -46,7 +46,7 @@ public class PromiseTest {
   public void newPromiseWithHandler() throws CheckedFutureException {
     AtomicReference<Throwable> interrupt = new AtomicReference<Throwable>();
     InterruptHandler handler = interrupt::set;
-    Promise<Integer> p = new Promise<>(handler);
+    Promise<Integer> p = Future.promise(handler);
     p.raise(ex);
     assertEquals(ex, interrupt.get());
   }
@@ -57,7 +57,7 @@ public class PromiseTest {
     AtomicReference<Throwable> interrupt2 = new AtomicReference<Throwable>();
     InterruptHandler handler1 = interrupt1::set;
     InterruptHandler handler2 = interrupt2::set;
-    Promise<Integer> p = new Promise<>(Arrays.asList(handler1, handler2));
+    Promise<Integer> p = Future.promise(Arrays.asList(handler1, handler2));
     p.raise(ex);
     assertEquals(ex, interrupt1.get());
     assertEquals(ex, interrupt2.get());
@@ -67,8 +67,8 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyContinuation() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p2.becomeIfEmpty(p1.map(i -> i + 1));
     p1.setValue(1);
     assertEquals(new Integer(1), get(p1));
@@ -77,8 +77,8 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyTwoContinuations() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     Future<Integer> f1 = p1.map(i -> i + 1);
     Future<Integer> f2 = p2.map(i -> i + 1);
     p2.becomeIfEmpty(f1);
@@ -91,15 +91,15 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptySatisfied() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     assertFalse(p.becomeIfEmpty(Future.value(1)));
   }
 
   @Test
   public void becomeIfEmptyLinked() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2);
     assertTrue(p2.becomeIfEmpty(Future.value(1)));
     assertEquals(new Integer(1), get(p1));
@@ -108,8 +108,8 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyLinkedSatisfied() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p2.setValue(1);
     p1.become(p2);
     assertFalse(p2.becomeIfEmpty(Future.value(1)));
@@ -117,8 +117,8 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyNestedLinked() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2);
     assertTrue(p2.becomeIfEmpty(Future.value(1)));
     assertEquals(new Integer(1), get(p1));
@@ -127,7 +127,7 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyWaiting() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> c = p.map(i -> i + 1);
     assertTrue(p.becomeIfEmpty(Future.value(1)));
     assertEquals(new Integer(1), get(p));
@@ -140,7 +140,7 @@ public class PromiseTest {
     Local<Integer> l = new Local<Integer>();
 
     l.set(Optional.of(1));
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     l.set(Optional.empty());
 
     p.map(i -> {
@@ -157,7 +157,7 @@ public class PromiseTest {
   public void becomeIfEmptyConcurrent() throws CheckedFutureException, InterruptedException {
     ExecutorService es = Executors.newFixedThreadPool(10);
     try {
-      Promise<Integer> p = new Promise<>();
+      Promise<Integer> p = Future.promise();
       AtomicInteger expected = new AtomicInteger(-1);
       AtomicBoolean start = new AtomicBoolean();
       for (int i = 0; i < 10; i++) {
@@ -182,8 +182,8 @@ public class PromiseTest {
 
   @Test
   public void becomeIfEmptyWithPromise() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     Future<Integer> f = p1.map(i -> i + 1);
     assertTrue(p1.becomeIfEmpty(p2));
     p2.setValue(1);
@@ -212,14 +212,14 @@ public class PromiseTest {
 
   @Test
   public void setValueSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     assertEquals(new Integer(1), get(p));
   }
 
   @Test(expected = IllegalStateException.class)
   public void setValueFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     p.setValue(1);
   }
@@ -228,14 +228,14 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void setExceptionSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setException(ex);
     get(p);
   }
 
   @Test(expected = IllegalStateException.class)
   public void setExceptionFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setException(ex);
     p.setException(ex);
   }
@@ -245,7 +245,7 @@ public class PromiseTest {
   @Test
   public void raise() {
     AtomicReference<Throwable> interrupt = new AtomicReference<>();
-    Promise<Integer> p = new Promise<>(interrupt::set);
+    Promise<Integer> p = Future.promise(interrupt::set);
     p.raise(ex);
     assertEquals(ex, interrupt.get());
   }
@@ -253,7 +253,7 @@ public class PromiseTest {
   @Test
   public void raiseDone() {
     AtomicReference<Throwable> interrupt = new AtomicReference<>();
-    Promise<Integer> p = new Promise<>(interrupt::set);
+    Promise<Integer> p = Future.promise(interrupt::set);
     p.setValue(1);
     p.raise(ex);
     assertNull(interrupt.get());
@@ -262,8 +262,8 @@ public class PromiseTest {
   @Test
   public void raiseLinked() {
     AtomicReference<Throwable> interrupt = new AtomicReference<>();
-    Promise<Integer> p1 = new Promise<>(interrupt::set);
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise(interrupt::set);
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2);
     p2.raise(ex);
     assertEquals(ex, interrupt.get());
@@ -271,7 +271,7 @@ public class PromiseTest {
 
   @Test
   public void raiseNoHandler() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.raise(ex);
   }
 
@@ -279,22 +279,22 @@ public class PromiseTest {
 
   @Test
   public void becomeSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.become(Future.value(1));
     assertEquals(new Integer(1), get(p));
   }
 
   @Test(expected = IllegalStateException.class)
   public void becomeFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.become(Future.value(1));
     p.become(Future.value(1));
   }
 
   @Test
   public void becomeAPromise() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2);
     p2.setValue(1);
     assertEquals(new Integer(1), get(p1));
@@ -303,8 +303,8 @@ public class PromiseTest {
 
   @Test
   public void becomeAContinuation() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2.map(i -> i + 1));
     p2.setValue(1);
     assertEquals(new Integer(2), get(p1));
@@ -313,16 +313,16 @@ public class PromiseTest {
 
   @Test
   public void becomeASatisfiedFuture() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.become(Future.value(1));
     assertEquals(new Integer(1), get(p));
   }
 
   @Test
   public void becomeLinkedChain() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
-    Promise<Integer> p3 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p3 = Future.promise();
     p2.become(p1);
     p3.become(p2);
     p1.setValue(1);
@@ -333,9 +333,9 @@ public class PromiseTest {
 
   @Test
   public void becomeDoubleLinked() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
-    Promise<Integer> p3 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p3 = Future.promise();
     p1.become(p3);
     p2.become(p3);
     p3.setValue(1);
@@ -346,8 +346,8 @@ public class PromiseTest {
 
   @Test
   public void becomeLinkedWhenWaiting() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     Future<Integer> f = p2.map(i -> i + 1);
     p1.become(p2);
     p2.setValue(1);
@@ -358,9 +358,9 @@ public class PromiseTest {
   
   @Test
   public void becomeCompress() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
-    Promise<Integer> p3 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p3 = Future.promise();
     p2.become(p1);
     p3.become(p2);
     p1.setValue(1);
@@ -371,8 +371,8 @@ public class PromiseTest {
 
   @Test(expected = IllegalStateException.class)
   public void becomeAlreadySatisfiedFailure() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.setValue(1);
     p2.setValue(2);
     p1.become(p2);
@@ -382,15 +382,15 @@ public class PromiseTest {
 
   @Test
   public void isDefinedDone() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     assertTrue(p.isDefined());
   }
 
   @Test
   public void isDefinedLinkedDone() {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p2.become(p1);
     p1.setValue(1);
     assertTrue(p1.isDefined());
@@ -398,15 +398,15 @@ public class PromiseTest {
 
   @Test
   public void isDefinedLinkedWaiting() {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p2.become(p1);
     assertFalse(p2.isDefined());
   }
 
   @Test
   public void isDefinedWaiting() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     assertFalse(p.isDefined());
   }
 
@@ -414,7 +414,7 @@ public class PromiseTest {
 
   @Test
   public void voidedSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Void> future = p.voided();
     p.setValue(1);
     assertNull(get(future));
@@ -422,7 +422,7 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void voidedFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Void> future = p.voided();
     p.setException(ex);
     get(future);
@@ -432,7 +432,7 @@ public class PromiseTest {
 
   @Test
   public void delayed() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     long delay = 10;
     long start = System.currentTimeMillis();
     Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler);
@@ -444,7 +444,7 @@ public class PromiseTest {
 
   @Test
   public void doubleDelayed() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     long delay = 10;
     long start = System.currentTimeMillis();
     Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler).delayed(delay, TimeUnit.MILLISECONDS,
@@ -458,7 +458,7 @@ public class PromiseTest {
   @Test
   public void delayedInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
-    Promise<Integer> p = new Promise<>(intr::set);
+    Promise<Integer> p = Future.promise(intr::set);
     Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, scheduler);
 
     future.raise(ex);
@@ -469,16 +469,16 @@ public class PromiseTest {
 
   @Test(expected = IllegalStateException.class)
   public void proxySatisified() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p2.setValue(1);
     p1.proxyTo(p2);
   }
 
   @Test
   public void proxyToSuccess() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.proxyTo(p2);
     p1.setValue(1);
     assertEquals(new Integer(1), get(p2));
@@ -486,8 +486,8 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void proxyToFailure() throws CheckedFutureException {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.proxyTo(p2);
     p1.setException(ex);
     get(p2);
@@ -497,13 +497,13 @@ public class PromiseTest {
 
   @Test
   public void withinMaxLongWait() {
-    Future<Integer> future = new Promise<>();
+    Future<Integer> future = Future.promise();
     assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler, ex));
   }
 
   @Test
   public void withinPromiseSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
     p.setValue(1);
     assertEquals(new Integer(1), get(future));
@@ -511,7 +511,7 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void withinPromiseFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
     p.setException(ex);
     get(future);
@@ -519,7 +519,7 @@ public class PromiseTest {
 
   @Test(expected = TimeoutException.class)
   public void withinPromiseTimeout() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
     get(future);
   }
@@ -530,7 +530,7 @@ public class PromiseTest {
   public void getSuccess() throws InterruptedException {
     ExecutorService es = Executors.newCachedThreadPool();
     try {
-      Promise<Integer> p = new Promise<>();
+      Promise<Integer> p = Future.promise();
       CountDownLatch latch = new CountDownLatch(1);
       es.submit(() -> {
         try {
@@ -577,7 +577,7 @@ public class PromiseTest {
 
   @Test
   public void multiple() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> f1 = p.map(i -> i + 1);
     Future<Integer> f2 = p.map(i -> i + 2);
     Future<Integer> f3 = p.map(i -> i + 3);
@@ -589,7 +589,7 @@ public class PromiseTest {
   
   @Test
   public void map() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> f = p.map(i -> i + 1);
     p.setValue(1);
     assertEquals(new Integer(1), get(p));
@@ -598,7 +598,7 @@ public class PromiseTest {
 
   @Test
   public void flatMap() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Future<Integer> f = p.flatMap(i -> Future.value(i + 1));
     p.setValue(1);
     assertEquals(new Integer(1), get(p));
@@ -607,7 +607,7 @@ public class PromiseTest {
 
   @Test
   public void ensure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicBoolean called = new AtomicBoolean(false);
     Future<Integer> f = p.ensure(() -> called.set(true));
     p.setValue(1);
@@ -617,7 +617,7 @@ public class PromiseTest {
 
   @Test
   public void onSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicInteger result = new AtomicInteger();
     Future<Integer> f = p.onSuccess(result::set);
     p.setValue(1);
@@ -627,7 +627,7 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void onFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicReference<Throwable> result = new AtomicReference<>();
     Future<Integer> f = p.onFailure(result::set);
     p.setException(ex);
@@ -637,7 +637,7 @@ public class PromiseTest {
 
   @Test
   public void respondSuccess() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicInteger result = new AtomicInteger(-1);
     AtomicBoolean failure = new AtomicBoolean(false);
     Responder<Integer> r = new Responder<Integer>() {
@@ -661,7 +661,7 @@ public class PromiseTest {
 
   @Test(expected = TestException.class)
   public void respondFailure() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicBoolean success = new AtomicBoolean(false);
     AtomicReference<Throwable> failure = new AtomicReference<Throwable>();
     Responder<Integer> r = new Responder<Integer>() {
@@ -684,7 +684,7 @@ public class PromiseTest {
 
   @Test
   public void rescue() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicReference<Throwable> exception = new AtomicReference<>();
     Future<Integer> f = p.rescue(t -> {
       exception.set(t);
@@ -697,7 +697,7 @@ public class PromiseTest {
 
   @Test
   public void handle() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     AtomicReference<Throwable> exception = new AtomicReference<>();
     Future<Integer> f = p.handle(t -> {
       exception.set(t);
@@ -716,28 +716,28 @@ public class PromiseTest {
 
   @Test
   public void toStringSatisfied() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.setValue(1);
     assertEquals("Promise(ValueFuture(1))@" + hexHashCode(p), p.toString());
   }
 
   @Test
   public void toStringLinked() {
-    Promise<Integer> p1 = new Promise<>();
-    Promise<Integer> p2 = new Promise<>();
+    Promise<Integer> p1 = Future.promise();
+    Promise<Integer> p2 = Future.promise();
     p1.become(p2);
     assertEquals("Promise(Linked(" + p1.toString() + "))@" + hexHashCode(p2), p2.toString());
   }
 
   @Test
   public void toStringWaiting() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     assertEquals("Promise(Waiting)@" + hexHashCode(p), p.toString());
   }
 
   @Test
   public void toStringWaitingNonEmptyQueue() {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     p.map(i -> i + 1);
     assertEquals("Promise(Waiting)@" + hexHashCode(p), p.toString());
   }

@@ -108,7 +108,7 @@ public class WaitQueueTest {
 
   @Test
   public void addAndForward() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c = newContinuation();
     
     c.forward(p);
@@ -119,7 +119,7 @@ public class WaitQueueTest {
   
   @Test
   public void addAndForward2() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c1 = newContinuation();
     Continuation<Integer, Integer> c2 = newContinuation();
     
@@ -133,7 +133,7 @@ public class WaitQueueTest {
   
   @Test
   public void addAndForward3() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c1 = newContinuation();
     Continuation<Integer, Integer> c2 = newContinuation();
     Continuation<Integer, Integer> c3 = newContinuation();
@@ -149,7 +149,7 @@ public class WaitQueueTest {
 
   @Test
   public void addAndForward4() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c1 = newContinuation();
     Continuation<Integer, Integer> c2 = newContinuation();
     Continuation<Integer, Integer> c3 = newContinuation();
@@ -167,7 +167,7 @@ public class WaitQueueTest {
 
   @Test
   public void addAndForward5() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c1 = newContinuation();
     Continuation<Integer, Integer> c2 = newContinuation();
     Continuation<Integer, Integer> c3 = newContinuation();
@@ -187,7 +187,7 @@ public class WaitQueueTest {
 
   @Test
   public void addAndForward6() throws CheckedFutureException {
-    Promise<Integer> p = new Promise<>();
+    Promise<Integer> p = Future.promise();
     Continuation<Integer, Integer> c1 = newContinuation();
     Continuation<Integer, Integer> c2 = newContinuation();
     Continuation<Integer, Integer> c3 = newContinuation();
