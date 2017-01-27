@@ -6,7 +6,7 @@ public class TimeoutException extends RuntimeException {
     private static final long serialVersionUID = -4485668079739346310L;
 
     @Override
-    public Throwable fillInStackTrace() {
+    public final Throwable fillInStackTrace() {
       return this; // Suppress stack trace
     }
   };

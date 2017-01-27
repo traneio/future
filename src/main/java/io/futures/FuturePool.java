@@ -4,7 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 
-public class FuturePool {
+public final class FuturePool {
 
   private final ExecutorService executor;
 
@@ -12,11 +12,11 @@ public class FuturePool {
     this.executor = executor;
   }
 
-  public <T> Future<T> isolate(final Supplier<Future<T>> s) {
+  public final <T> Future<T> isolate(final Supplier<Future<T>> s) {
     return Future.flatten(async(s));
   }
 
-  public <T> Future<T> async(final Supplier<T> s) {
+  public final <T> Future<T> async(final Supplier<T> s) {
     try {
       final AsyncPromise<T> p = new AsyncPromise<>(s);
       executor.submit(p);
@@ -27,7 +27,7 @@ public class FuturePool {
   }
 }
 
-class AsyncPromise<T> extends Promise<T> implements Runnable {
+final class AsyncPromise<T> extends Promise<T> implements Runnable {
   private final Supplier<T> s;
 
   public AsyncPromise(final Supplier<T> s) {
@@ -36,7 +36,7 @@ class AsyncPromise<T> extends Promise<T> implements Runnable {
   }
 
   @Override
-  public void run() {
+  public final void run() {
     setValue(s.get());
   }
 }

@@ -62,7 +62,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   private final void flush(final WaitQueue<T> queue, final Future<T> result) {
-    Optional<?>[] savedContext = getSavedContext();
+    final Optional<?>[] savedContext = getSavedContext();
     if (savedContext != null) {
       final Optional<?>[] oldContext = Local.save();
       Local.restore(savedContext);
@@ -97,15 +97,14 @@ public abstract class Promise<T> implements Future<T> {
       if (curr instanceof SatisfiedFuture) {
         c.flush((SatisfiedFuture<T>) curr);
         return c;
-      } else if (curr instanceof Promise && !(curr instanceof Continuation)) {
+      } else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).continuation(c);
-      } else if (curr == null) {
+      else if (curr == null) {
         if (cas(curr, c))
           return c;
-      } else if (curr != null) {
+      } else if (curr != null)
         if (cas(curr, ((WaitQueue<T>) curr).add(c)))
           return c;
-      }
     }
   }
 
@@ -133,7 +132,7 @@ public abstract class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
-    InterruptHandler interruptHandler = getInterruptHandler();
+    final InterruptHandler interruptHandler = getInterruptHandler();
     final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return;
@@ -174,7 +173,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public void join(long timeout, TimeUnit unit) throws CheckedFutureException {
+  public final void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
     ensure(latch);
     try {
@@ -194,7 +193,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -209,7 +208,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -224,7 +223,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -239,7 +238,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -254,7 +253,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -269,7 +268,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -284,7 +283,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -299,7 +298,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -314,7 +313,7 @@ public abstract class Promise<T> implements Future<T> {
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
       }
     });
@@ -322,13 +321,13 @@ public abstract class Promise<T> implements Future<T> {
 
   private final class DelayedPromise extends Promise<T> implements Runnable {
     @Override
-    protected InterruptHandler getInterruptHandler() {
-      return Promise.this;
+    public final void run() {
+      become(Promise.this);
     }
 
     @Override
-    public final void run() {
-      become(Promise.this);
+    protected final InterruptHandler getInterruptHandler() {
+      return Promise.this;
     }
   }
 
@@ -346,19 +345,19 @@ public abstract class Promise<T> implements Future<T> {
 
     final Responder<T> r = new Responder<T>() {
       @Override
-      public void onException(final Throwable ex) {
+      public final void onException(final Throwable ex) {
         p.setException(ex);
       }
 
       @Override
-      public void onValue(final T value) {
+      public final void onValue(final T value) {
         p.setValue(value);
       }
     };
     respond(r);
   }
 
-  private static class WithinPromise<T> extends Promise<T> implements Responder<T>, Callable<Boolean> {
+  private static final class WithinPromise<T> extends Promise<T> implements Responder<T>, Callable<Boolean> {
 
     private final InterruptHandler handler;
     private final ScheduledFuture<Boolean> task;
@@ -372,24 +371,24 @@ public abstract class Promise<T> implements Future<T> {
     }
 
     @Override
-    public void onException(final Throwable ex) {
+    public final void onException(final Throwable ex) {
       task.cancel(false);
       becomeIfEmpty(Future.exception(ex));
     }
 
     @Override
-    public void onValue(final T value) {
+    public final void onValue(final T value) {
       task.cancel(false);
       becomeIfEmpty(Future.value(value));
     }
 
     @Override
-    public Boolean call() throws Exception {
+    public final Boolean call() throws Exception {
       return becomeIfEmpty(Future.exception(exception));
     }
 
     @Override
-    protected InterruptHandler getInterruptHandler() {
+    protected final InterruptHandler getInterruptHandler() {
       return handler;
     }
   }
@@ -410,7 +409,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     final Object curr = state;
     String stateString;
     if (curr instanceof SatisfiedFuture)
@@ -427,7 +426,7 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   @Override
   public final WaitQueue<T> add(final Continuation<T, ?> c) {
-    return new WaitQueue2<>(this, c);
+    return new WaitQueueHeadTail<>(c, this);
   }
 
   @Override

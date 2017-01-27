@@ -47,7 +47,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public Future<T> respond(final Responder<? super T> r) {
+  public final Future<T> respond(final Responder<? super T> r) {
     try {
       r.onValue(value);
     } catch (final Throwable ex) {
@@ -78,7 +78,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format("ValueFuture(%s)", value);
   }
 

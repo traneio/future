@@ -9,19 +9,19 @@ public final class Local<T> {
   private static ThreadLocal<Optional<?>[]> local = null;
   private static int size = 0;
 
-  protected static Optional<?>[] save() {
+  protected static final Optional<?>[] save() {
     if (local == null)
       return EMPTY;
     else
       return local.get();
   }
 
-  protected static void restore(final Optional<?>[] saved) {
+  protected static final void restore(final Optional<?>[] saved) {
     if (local != null)
       local.set(saved);
   }
 
-  private synchronized static int newPosition() {
+  private synchronized static final int newPosition() {
     if (local == null)
       local = new ThreadLocal<>();
     return size++;
@@ -29,11 +29,11 @@ public final class Local<T> {
 
   private final int position = newPosition();
 
-  public void update(final T value) {
+  public final void update(final T value) {
     set(Optional.of(value));
   }
 
-  public void set(final Optional<T> opt) {
+  public final void set(final Optional<T> opt) {
     Optional<?>[] ctx = local.get();
 
     if (ctx == null)
@@ -49,7 +49,7 @@ public final class Local<T> {
   }
 
   @SuppressWarnings("unchecked")
-  public Optional<T> get() {
+  public final Optional<T> get() {
     final Optional<?>[] ctx = local.get();
     if (ctx == null || ctx.length <= position)
       return Optional.empty();
@@ -61,7 +61,7 @@ public final class Local<T> {
       return (Optional<T>) v;
   }
 
-  public <U> U let(final T value, final Supplier<U> s) {
+  public final <U> U let(final T value, final Supplier<U> s) {
     final Optional<T> saved = get();
     set(Optional.of(value));
     try {

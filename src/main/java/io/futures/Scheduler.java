@@ -3,7 +3,7 @@ package io.futures;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Scheduler {
+public final class Scheduler {
 
   private static ThreadLocal<Scheduler> local = new ThreadLocal<Scheduler>() {
     @Override
@@ -11,7 +11,7 @@ public class Scheduler {
       return new Scheduler();
     }
   };
-  
+
   public static void submit(final Runnable r) {
     local.get().addTask(r);
   }

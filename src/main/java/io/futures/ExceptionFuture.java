@@ -40,7 +40,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public Future<T> respond(final Responder<? super T> r) {
+  public final Future<T> respond(final Responder<? super T> r) {
     try {
       r.onException(ex);
     } catch (final Throwable ex) {
@@ -82,14 +82,14 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     else
       throw new CheckedFutureException(ex);
   }
-  
+
   @SuppressWarnings("unchecked")
   private final <R> Future<R> cast() {
     return (Future<R>) this;
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return String.format("ExceptionFuture(%s)", ex);
   }
 

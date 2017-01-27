@@ -18,32 +18,29 @@ interface Future<T> extends InterruptHandler {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
-      protected Optional<?>[] getSavedContext() {
+      protected final Optional<?>[] getSavedContext() {
         return savedContext;
       }
     };
   }
 
-  public static <T> Promise<T> promise(InterruptHandler handler) {
+  public static <T> Promise<T> promise(final InterruptHandler handler) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
-      protected Optional<?>[] getSavedContext() {
+      protected final Optional<?>[] getSavedContext() {
         return savedContext;
       }
 
       @Override
-      protected InterruptHandler getInterruptHandler() {
+      protected final InterruptHandler getInterruptHandler() {
         return handler;
       }
     };
   }
 
-  public static <T> Promise<T> promise(List<? extends InterruptHandler> handlers) {
-    return promise((ex) -> {
-      for (final InterruptHandler handler : handlers)
-        handler.raise(ex);
-    });
+  public static <T> Promise<T> promise(final List<? extends InterruptHandler> handlers) {
+    return promise(InterruptHandler.fromList(handlers));
   }
 
   /*** static ***/
@@ -88,24 +85,7 @@ interface Future<T> extends InterruptHandler {
     if (list.isEmpty())
       return emptyList();
     else {
-      final int size = list.size();
-      final Promise<List<T>> p = Future.promise(list);
-      final Object[] results = new Object[size];
-      final AtomicInteger count = new AtomicInteger(size);
-
-      final Responder<T> baseResponder = new Responder<T>() {
-        @Override
-        public void onException(final Throwable ex) {
-          p.setException(ex);
-        }
-
-        @Override
-        public void onValue(final T value) {
-          if (count.decrementAndGet() == 0)
-            p.setValue((List<T>) Arrays.asList(results));
-        }
-
-      };
+      final CollectPromise<T> p = new CollectPromise<>(list);
 
       int i = 0;
       for (final Future<T> f : list) {
@@ -116,16 +96,14 @@ interface Future<T> extends InterruptHandler {
         final int ii = i;
         final Responder<T> responder = new Responder<T>() {
           @Override
-          public void onException(final Throwable ex) {
-            baseResponder.onException(ex);
+          public final void onException(final Throwable ex) {
+            p.setException(ex);
           }
 
           @Override
-          public void onValue(final T value) {
-            results[ii] = value;
-            baseResponder.onValue(value);
+          public final void onValue(final T value) {
+            p.collect(value, ii);
           }
-
         };
 
         f.respond(responder);
@@ -227,7 +205,7 @@ interface Future<T> extends InterruptHandler {
       final Throwable exception);
 }
 
-class TailrecPromise<T> extends Promise<T> implements Runnable {
+final class TailrecPromise<T> extends Promise<T> implements Runnable {
   private final Supplier<Future<T>> sup;
 
   public TailrecPromise(final Supplier<Future<T>> sup) {
@@ -236,12 +214,38 @@ class TailrecPromise<T> extends Promise<T> implements Runnable {
   }
 
   @Override
-  public void run() {
+  public final void run() {
     become(sup.get());
   }
 }
 
-class JoinResponder<T> extends AtomicInteger implements Responder<T> {
+final class CollectPromise<T> extends Promise<List<T>> {
+
+  private final Object[] results;
+  private final AtomicInteger count;
+  private final InterruptHandler interruptHandler;
+
+  public CollectPromise(final List<? extends Future<T>> list) {
+    final int size = list.size();
+    results = new Object[size];
+    count = new AtomicInteger(size);
+    interruptHandler = InterruptHandler.fromList(list);
+  }
+
+  @SuppressWarnings("unchecked")
+  public final void collect(final T value, final int i) {
+    results[i] = value;
+    if (count.decrementAndGet() == 0)
+      setValue((List<T>) Arrays.asList(results));
+  }
+
+  @Override
+  protected final InterruptHandler getInterruptHandler() {
+    return interruptHandler;
+  }
+};
+
+final class JoinResponder<T> extends AtomicInteger implements Responder<T> {
   private static final long serialVersionUID = 5763037150431433940L;
 
   private final Promise<Void> p;
@@ -252,12 +256,12 @@ class JoinResponder<T> extends AtomicInteger implements Responder<T> {
   }
 
   @Override
-  public void onException(final Throwable ex) {
+  public final void onException(final Throwable ex) {
     p.setException(ex);
   }
 
   @Override
-  public void onValue(final T value) {
+  public final void onValue(final T value) {
     if (decrementAndGet() == 0)
       p.become(Future.VOID);
   }

@@ -1,6 +1,6 @@
 package io.futures;
 
-public class CheckedFutureException extends Exception {
+public final class CheckedFutureException extends Exception {
   private static final long serialVersionUID = -5901192406028389609L;
 
   public CheckedFutureException(final Throwable cause) {

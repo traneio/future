@@ -44,11 +44,11 @@ interface SatisfiedFuture<T> extends Future<T> {
   }
 
   @Override
-  default void join(long timeout, TimeUnit unit) {
+  default void join(final long timeout, final TimeUnit unit) {
   }
 }
 
-class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
+final class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
 
   private final SatisfiedFuture<T> result;
 
@@ -57,12 +57,7 @@ class DelayedSatisfiedFuture<T> extends Promise<T> implements Runnable {
   }
 
   @Override
-  protected InterruptHandler getInterruptHandler() {
-    return result;
-  }
-
-  @Override
-  public void run() {
+  public final void run() {
     become(result);
   }
 }

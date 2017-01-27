@@ -95,7 +95,7 @@ public class SatisfiedFutureTest {
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
-
+  
   /*** within ***/
 
   @Test(expected = TestException.class)
