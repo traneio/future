@@ -26,11 +26,6 @@ public class ScalaFutureBenchmark {
   }
 
   @Benchmark
-  public void newFutureFromPromise() {
-    Promise.<String>apply().future();
-  }
-
-  @Benchmark
   public void value() {
     Future.successful(1);
   }

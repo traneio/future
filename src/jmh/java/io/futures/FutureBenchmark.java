@@ -21,11 +21,6 @@ public class FutureBenchmark {
   }
 
   @Benchmark
-  public void newFutureFromPromise() {
-    Future.<String>promise();
-  }
-
-  @Benchmark
   public void value() {
     Future.value(string);
   }

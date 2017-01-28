@@ -25,11 +25,6 @@ public class TwitterFutureBenchmark {
   }
 
   @Benchmark
-  public void newFutureFromPromise() {
-    new Promise<String>();
-  }
-
-  @Benchmark
   public void value() {
     Future.value(1);
   }

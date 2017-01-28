@@ -27,11 +27,6 @@ public class JavaSyncFutureBenchmark {
   }
 
   @Benchmark
-  public void newFutureFromPromise() {
-    new CompletableFuture<String>();
-  }
-
-  @Benchmark
   public void value() {
     CompletableFuture.completedFuture(string);
   }
