@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,7 +24,7 @@ import org.junit.Test;
 public class FutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(10, TimeUnit.MILLISECONDS);
+    return future.get(100, TimeUnit.MILLISECONDS);
   }
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -80,44 +78,64 @@ public class FutureTest {
 
   /*** tailrec ***/
 
-  Future<Integer> tailrecLoop(int i) {
+  Future<Integer> tailrecLoop(Future<Integer> f) {
     return Future.tailrec(() -> {
-      if (i == 0)
-        return Future.value(10);
-      else
-        return tailrecLoop(i - 1);
+      return f.flatMap(i -> {
+        if (i == 0)
+          return Future.value(0);
+        else
+          return tailrecLoop(Future.value(i - 1));
+      });
     });
   }
 
   @Test
   public void tailrec() throws CheckedFutureException {
-    assertEquals(new Integer(10), get(tailrecLoop(200000)));
+    assertEquals(new Integer(0), get(tailrecLoop(Future.value(20000))));
   }
 
-  Future<Integer> tailrecLoopDelayed(int i) {
+  Future<Integer> tailrecLoopDelayed(Future<Integer> f) {
     return Future.tailrec(() -> {
-      if (i == 0)
-        return Future.value(10);
-      else
-        return Future.value(i - 1).delayed(1, TimeUnit.NANOSECONDS, scheduler).flatMap(this::tailrecLoop);
+      return f.flatMap(i -> {
+        if (i == 0)
+          return Future.value(0);
+        else
+          return tailrecLoopDelayed(Future.value(i - 1).delayed(1, TimeUnit.NANOSECONDS, scheduler));
+      });
     });
   }
 
   @Test
   public void tailrecDelayed() throws CheckedFutureException {
-    assertEquals(new Integer(10), get(tailrecLoopDelayed(200000)));
+    assertEquals(new Integer(0), get(tailrecLoopDelayed(Future.value(20000))));
   }
 
-  Future<Integer> nonTailrecLoop(int i) {
-    if (i == 0)
-      return Future.value(10);
-    else
-      return Future.flatten(Future.apply(() -> nonTailrecLoop(i - 1)));
+  Future<Integer> nonTailrecLoop(Future<Integer> f) {
+    return f.flatMap(i -> {
+      if (i == 0)
+        return Future.value(0);
+      else
+        return nonTailrecLoop(Future.value(i - 1));
+    });
   }
 
   @Test(expected = StackOverflowError.class)
   public void nonTailrec() throws CheckedFutureException {
-    nonTailrecLoop(200000);
+    assertEquals(new Integer(0), get(nonTailrecLoop(Future.value(20000))));
+  }
+
+  Future<Integer> nonTailrecLoopDelayed(Future<Integer> f) {
+    return f.flatMap(i -> {
+      if (i == 0)
+        return Future.value(0);
+      else
+        return nonTailrecLoop(Future.value(i - 1).delayed(1, TimeUnit.NANOSECONDS, scheduler));
+    });
+  }
+
+  @Test(expected = StackOverflowError.class)
+  public void nonTailrecDelayed() throws CheckedFutureException {
+    assertEquals(new Integer(0), get(nonTailrecLoop(Future.value(20000))));
   }
 
   /*** emptyList ***/
