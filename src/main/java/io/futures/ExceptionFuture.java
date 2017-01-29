@@ -1,6 +1,7 @@
 package io.futures;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -20,6 +21,16 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
+    return cast();
+  }
+
+  @Override
+  public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
+    return cast();
+  }
+
+  @Override
+  public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
     return cast();
   }
 

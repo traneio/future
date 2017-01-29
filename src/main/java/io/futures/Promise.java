@@ -6,10 +6,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class Promise<T> implements Future<T> {
+public class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
 
@@ -45,7 +46,9 @@ public abstract class Promise<T> implements Future<T> {
           return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation))
           return ((Promise<T>) curr).becomeIfEmpty(result);
-        else if (result instanceof Promise) {
+        else if (curr instanceof LinkedContinuation) {
+          return ((LinkedContinuation<?, T>) curr).becomeIfEmpty(result);
+        } else if (result instanceof Promise) {
           ((Promise<T>) result).compress().link(this);
           return true;
         } else if (cas(curr, result)) {
@@ -82,6 +85,9 @@ public abstract class Promise<T> implements Future<T> {
       if (curr instanceof SatisfiedFuture) {
         target.become((SatisfiedFuture<T>) curr);
         return;
+      } else if (target instanceof Continuation) {
+        if (cas(curr, new LinkedContinuation<>((Continuation<T, ?>) target)))
+          return;
       } else if (cas(curr, target)) {
         if (curr != null)
           ((WaitQueue<T>) curr).forward(target);
@@ -99,7 +105,9 @@ public abstract class Promise<T> implements Future<T> {
         return c;
       } else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).continuation(c);
-      else if (curr == null) {
+      else if (curr instanceof LinkedContinuation) {
+        return ((LinkedContinuation<?, T>) curr).continuation(c);
+      } else if (curr == null) {
         if (cas(curr, c))
           return c;
       } else if (curr != null)
@@ -138,6 +146,8 @@ public abstract class Promise<T> implements Future<T> {
       return;
     else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       ((Promise<T>) curr).raise(ex);
+    else if (curr instanceof LinkedContinuation)
+      ((LinkedContinuation<?, T>) curr).raise(ex);
     else if (interruptHandler != null)
       interruptHandler.raise(ex);
   }
@@ -150,6 +160,8 @@ public abstract class Promise<T> implements Future<T> {
       return true;
     else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       return ((Promise<T>) curr).isDefined();
+    else if (curr instanceof LinkedContinuation)
+      return ((LinkedContinuation<?, T>) curr).isDefined();
     else // Waiting
       return false;
   }
@@ -210,6 +222,36 @@ public abstract class Promise<T> implements Future<T> {
       @Override
       protected final InterruptHandler getInterruptHandler() {
         return Promise.this;
+      }
+    });
+  }
+
+  @Override
+  public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
+    return continuation(new Continuation<T, R>() {
+      @Override
+      final Future<R> apply(final Future<T> result) {
+        return result.biMap(other, f);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return InterruptHandler.apply(Promise.this, other);
+      }
+    });
+  }
+
+  @Override
+  public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
+    return continuation(new Continuation<T, R>() {
+      @Override
+      final Future<R> apply(final Future<T> result) {
+        return result.biFlatMap(other, f);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return InterruptHandler.apply(Promise.this, other);
       }
     });
   }
@@ -416,6 +458,8 @@ public abstract class Promise<T> implements Future<T> {
       stateString = curr.toString();
     else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
+    else if (curr instanceof LinkedContinuation)
+      stateString = String.format("Linked(%s)", curr.toString());
     else
       stateString = "Waiting";
     return String.format("%s(%s)@%s", toStringPrefix(), stateString, Integer.toHexString(hashCode()));
@@ -444,5 +488,36 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
   @Override
   protected String toStringPrefix() {
     return "Continuation";
+  }
+}
+
+final class LinkedContinuation<T, R> {
+
+  private final Continuation<T, R> continuation;
+
+  public LinkedContinuation(Continuation<T, R> continuation) {
+    super();
+    this.continuation = continuation;
+  }
+
+  public boolean isDefined() {
+    return continuation.isDefined();
+  }
+
+  public final void raise(final Throwable ex) {
+    continuation.raise(ex);
+  }
+
+  public final boolean becomeIfEmpty(final Future<R> result) {
+    return continuation.becomeIfEmpty(result);
+  }
+
+  final <S> Future<S> continuation(final Continuation<R, S> c) {
+    return continuation.continuation(c);
+  }
+
+  @Override
+  public final String toString() {
+    return continuation.toString();
   }
 }

@@ -30,7 +30,7 @@ public final class Scheduler {
 
   private void run() {
     running = true;
-    while (tasks != null && !tasks.isEmpty()) {
+    while (tasks != null) {
       final List<Runnable> pending = tasks;
       tasks = null;
       pending.forEach(r -> r.run());

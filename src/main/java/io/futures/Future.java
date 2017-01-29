@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,8 +40,12 @@ interface Future<T> extends InterruptHandler {
     };
   }
 
+  public static <T> Promise<T> promise(final InterruptHandler h1, final InterruptHandler h2) {
+    return promise(InterruptHandler.apply(h1, h2));
+  }
+
   public static <T> Promise<T> promise(final List<? extends InterruptHandler> handlers) {
-    return promise(InterruptHandler.fromList(handlers));
+    return promise(InterruptHandler.apply(handlers));
   }
 
   /*** static ***/
@@ -82,9 +87,19 @@ interface Future<T> extends InterruptHandler {
 
   @SuppressWarnings("unchecked")
   public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
-    if (list.isEmpty())
+
+    switch (list.size()) {
+
+    case 0:
       return emptyList();
-    else {
+
+    case 1:
+      return list.get(0).map(Arrays::asList);
+
+    case 2:
+      return list.get(0).biMap(list.get(1), Arrays::asList);
+
+    default:
       final CollectPromise<T> p = new CollectPromise<>(list);
 
       int i = 0;
@@ -115,9 +130,16 @@ interface Future<T> extends InterruptHandler {
 
   @SuppressWarnings("unchecked")
   public static <T> Future<Void> join(final List<? extends Future<T>> list) {
-    if (list.isEmpty())
+
+    switch (list.size()) {
+
+    case 0:
       return VOID;
-    else {
+
+    case 1:
+      return list.get(0).voided();
+
+    default:
       final Promise<Void> p = Future.promise(list);
       final JoinResponder<T> responder = new JoinResponder<>(p, list.size());
 
@@ -134,21 +156,28 @@ interface Future<T> extends InterruptHandler {
 
   public static <T> Future<Integer> selectIndex(final List<Future<T>> list) {
 
-    if (list.isEmpty())
+    switch (list.size()) {
+
+    case 0:
       throw new IllegalArgumentException("Can't select from empty list.");
 
-    final Promise<Integer> p = Future.promise(list);
-    int i = 0;
-    for (final Future<?> f : list) {
+    case 1:
+      list.get(0).map(v -> 0);
 
-      if (f instanceof SatisfiedFuture)
-        return Future.value(i);
+    default:
+      final Promise<Integer> p = Future.promise(list);
+      int i = 0;
+      for (final Future<?> f : list) {
 
-      final int ii = i;
-      f.ensure(() -> p.becomeIfEmpty(Future.value(ii)));
-      i++;
+        if (f instanceof SatisfiedFuture)
+          return Future.value(i);
+
+        final int ii = i;
+        f.ensure(() -> p.becomeIfEmpty(Future.value(ii)));
+        i++;
+      }
+      return p;
     }
-    return p;
   }
 
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
@@ -172,6 +201,10 @@ interface Future<T> extends InterruptHandler {
   <R> Future<R> map(Function<? super T, ? extends R> f);
 
   <R> Future<R> flatMap(Function<? super T, ? extends Future<R>> f);
+
+  <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f);
+
+  <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f);
 
   Future<T> ensure(Runnable r);
 
@@ -229,7 +262,7 @@ final class CollectPromise<T> extends Promise<List<T>> {
     final int size = list.size();
     results = new Object[size];
     count = new AtomicInteger(size);
-    interruptHandler = InterruptHandler.fromList(list);
+    interruptHandler = InterruptHandler.apply(list);
   }
 
   @SuppressWarnings("unchecked")

@@ -181,7 +181,8 @@ public class FutureTest {
     p1.setValue(1);
     p2.setValue(2);
     Integer[] expected = { 1, 2 };
-    assertArrayEquals(expected, get(future).toArray());
+    Object[] result = get(future).toArray();
+    assertArrayEquals(expected, result);
   }
 
   @Test(expected = TestException.class)
