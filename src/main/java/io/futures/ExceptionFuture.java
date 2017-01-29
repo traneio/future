@@ -16,22 +16,22 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
-    return cast();
+    return unsafeCast();
   }
 
   @Override
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
-    return cast();
+    return unsafeCast();
   }
 
   @Override
   public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
-    return cast();
+    return unsafeCast();
   }
 
   @Override
   public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
-    return cast();
+    return unsafeCast();
   }
 
   @Override
@@ -81,7 +81,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final Future<Void> voided() {
-    return cast();
+    return unsafeCast();
   }
 
   @Override
@@ -92,11 +92,6 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
       throw (Error) ex;
     else
       throw new CheckedFutureException(ex);
-  }
-
-  @SuppressWarnings("unchecked")
-  private final <R> Future<R> cast() {
-    return (Future<R>) this;
   }
 
   @Override

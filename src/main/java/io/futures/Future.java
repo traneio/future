@@ -80,12 +80,10 @@ interface Future<T> extends InterruptHandler {
 
   static Future<? extends List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
 
-  @SuppressWarnings("unchecked")
   public static <T> Future<List<T>> emptyList() {
-    return (Future<List<T>>) emptyListInstance;
+    return emptyListInstance.unsafeCast();
   }
 
-  @SuppressWarnings("unchecked")
   public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
 
     switch (list.size()) {
@@ -106,7 +104,7 @@ interface Future<T> extends InterruptHandler {
       for (final Future<T> f : list) {
 
         if (f instanceof ExceptionFuture)
-          return (Future<List<T>>) f;
+          return f.unsafeCast();
 
         final int ii = i;
         final Responder<T> responder = new Responder<T>() {
@@ -128,7 +126,6 @@ interface Future<T> extends InterruptHandler {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static <T> Future<Void> join(final List<? extends Future<T>> list) {
 
     switch (list.size()) {
@@ -146,7 +143,7 @@ interface Future<T> extends InterruptHandler {
       for (final Future<T> f : list) {
 
         if (f instanceof ExceptionFuture)
-          return (Future<Void>) f;
+          return f.voided();
 
         f.respond(responder);
       }
@@ -236,6 +233,11 @@ interface Future<T> extends InterruptHandler {
 
   Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception);
+  
+  @SuppressWarnings("unchecked")
+  default <R> Future<R> unsafeCast() {
+    return (Future<R>) this;
+  }
 }
 
 final class TailrecPromise<T> extends Promise<T> implements Runnable {
@@ -256,13 +258,13 @@ final class CollectPromise<T> extends Promise<List<T>> {
 
   private final Object[] results;
   private final AtomicInteger count;
-  private final InterruptHandler interruptHandler;
+  private final List<? extends Future<T>> list;
 
   public CollectPromise(final List<? extends Future<T>> list) {
     final int size = list.size();
     results = new Object[size];
     count = new AtomicInteger(size);
-    interruptHandler = InterruptHandler.apply(list);
+    this.list = list;
   }
 
   @SuppressWarnings("unchecked")
@@ -274,7 +276,7 @@ final class CollectPromise<T> extends Promise<List<T>> {
 
   @Override
   protected final InterruptHandler getInterruptHandler() {
-    return interruptHandler;
+    return InterruptHandler.apply(list);
   }
 };
 
