@@ -24,7 +24,7 @@ import org.junit.Test;
 public class FutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(100, TimeUnit.MILLISECONDS);
+    return future.get(1, TimeUnit.SECONDS);
   }
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -161,44 +161,62 @@ public class FutureTest {
   }
 
   @Test
-  public void collectSatisfiedFutures() throws CheckedFutureException {
+  public void collectOne() throws CheckedFutureException {
+    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1)));
+    Integer[] expected = { 1 };
+    assertArrayEquals(expected, get(future).toArray());
+  }
+
+  @Test
+  public void collectTwo() throws CheckedFutureException {
     Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.value(2)));
     Integer[] expected = { 1, 2 };
     assertArrayEquals(expected, get(future).toArray());
   }
 
+  @Test
+  public void collectSatisfiedFutures() throws CheckedFutureException {
+    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.value(2), Future.value(3)));
+    Integer[] expected = { 1, 2, 3 };
+    assertArrayEquals(expected, get(future).toArray());
+  }
+
   @Test(expected = TestException.class)
   public void collectSatisfiedFuturesException() throws CheckedFutureException {
-    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.exception(ex)));
+    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.exception(ex), Future.value(3)));
     get(future);
   }
 
   @Test
   public void collectPromises() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
-    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Promise<Integer> p3 = Promise.apply();
+    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, p3));
     p1.setValue(1);
     p2.setValue(2);
-    Integer[] expected = { 1, 2 };
+    p3.setValue(3);
+    Integer[] expected = { 1, 2, 3 };
     Object[] result = get(future).toArray();
     assertArrayEquals(expected, result);
   }
 
   @Test(expected = TestException.class)
   public void collectPromisesException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
-    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Promise<Integer> p3 = Promise.apply();
+    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, p3));
     p1.setValue(1);
     p2.setException(ex);
+    p3.setValue(3);
     get(future);
   }
 
   @Test
   public void collectMixed() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setValue(2);
@@ -208,8 +226,8 @@ public class FutureTest {
 
   @Test(expected = TestException.class)
   public void collectMixedException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setException(ex);
@@ -221,7 +239,7 @@ public class FutureTest {
   public void collectConcurrentResults() throws CheckedFutureException {
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
-      List<Promise<Integer>> promises = Stream.generate(() -> Future.<Integer>promise()).limit(20000).collect(toList());
+      List<Promise<Integer>> promises = Stream.generate(() -> Promise.<Integer>apply()).limit(20000).collect(toList());
       AtomicBoolean start = new AtomicBoolean();
       Future<List<Integer>> future = Future.collect(promises);
       for (Promise<Integer> p : promises) {
@@ -246,21 +264,24 @@ public class FutureTest {
   public void collectInterrupts() {
     AtomicReference<Throwable> p1Intr = new AtomicReference<>();
     AtomicReference<Throwable> p2Intr = new AtomicReference<>();
-    Promise<Integer> p1 = Future.promise(p1Intr::set);
-    Promise<Integer> p2 = Future.promise(p2Intr::set);
+    AtomicReference<Throwable> p3Intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(p1Intr::set);
+    Promise<Integer> p2 = Promise.apply(p2Intr::set);
+    Promise<Integer> p3 = Promise.apply(p3Intr::set);
 
-    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2));
+    Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, p3));
 
     future.raise(ex);
 
     assertEquals(ex, p1Intr.get());
     assertEquals(ex, p2Intr.get());
+    assertEquals(ex, p3Intr.get());
   }
 
   @Test(expected = TimeoutException.class)
   public void collectTimeout() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     future.get(10, TimeUnit.MILLISECONDS);
@@ -272,6 +293,12 @@ public class FutureTest {
   public void joinEmpty() {
     Future<Void> future = Future.join(new ArrayList<>());
     assertEquals(Future.VOID, future);
+  }
+  
+  @Test
+  public void joinOne() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1);
+    assertEquals(f.voided(), Future.join(Arrays.asList(f)));
   }
 
   @Test
@@ -288,8 +315,8 @@ public class FutureTest {
 
   @Test
   public void joinPromises() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
     p1.setValue(1);
     p2.setValue(2);
@@ -298,8 +325,8 @@ public class FutureTest {
 
   @Test(expected = TestException.class)
   public void joinPromisesException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
     p1.setValue(1);
     p2.setException(ex);
@@ -308,8 +335,8 @@ public class FutureTest {
 
   @Test
   public void joinMixed() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setValue(2);
@@ -318,8 +345,8 @@ public class FutureTest {
 
   @Test(expected = TestException.class)
   public void joinMixedException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setException(ex);
@@ -328,7 +355,7 @@ public class FutureTest {
 
   @Test
   public void joinConcurrentResults() throws CheckedFutureException {
-    List<Promise<Integer>> promises = Stream.generate(() -> Future.<Integer>promise()).limit(20000).collect(toList());
+    List<Promise<Integer>> promises = Stream.generate(() -> Promise.<Integer>apply()).limit(20000).collect(toList());
     ExecutorService ex = Executors.newFixedThreadPool(10);
     try {
       Future<Void> future = Future.join(promises);
@@ -347,8 +374,8 @@ public class FutureTest {
   public void joinInterrupts() {
     AtomicReference<Throwable> p1Intr = new AtomicReference<>();
     AtomicReference<Throwable> p2Intr = new AtomicReference<>();
-    Promise<Integer> p1 = Future.promise(p1Intr::set);
-    Promise<Integer> p2 = Future.promise(p2Intr::set);
+    Promise<Integer> p1 = Promise.apply(p1Intr::set);
+    Promise<Integer> p2 = Promise.apply(p2Intr::set);
 
     Future<Void> future = Future.join(Arrays.asList(p1, p2));
 
@@ -360,8 +387,8 @@ public class FutureTest {
 
   @Test(expected = TimeoutException.class)
   public void joinTimeout() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     future.get(10, TimeUnit.MILLISECONDS);
@@ -373,6 +400,12 @@ public class FutureTest {
   public void selectIndexEmpty() {
     Future.selectIndex(new ArrayList<>());
   }
+  
+  @Test
+  public void selectIndexOne() throws CheckedFutureException {
+    Future<Integer> f = Future.selectIndex(Arrays.asList(Future.value(1)));
+    assertEquals(new Integer(0), get(f));
+  }
 
   @Test
   public void selectIndexSatisfiedFutures() throws CheckedFutureException {
@@ -382,8 +415,8 @@ public class FutureTest {
 
   @Test
   public void selectIndexPromises() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
     p2.setValue(2);
     assertEquals(new Integer(1), get(future));
@@ -391,8 +424,8 @@ public class FutureTest {
 
   @Test
   public void selectIndexPromisesException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
     p1.setException(new Throwable());
     assertEquals(new Integer(0), get(future));
@@ -400,8 +433,8 @@ public class FutureTest {
 
   @Test
   public void selectIndexMixed() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setValue(2);
@@ -410,8 +443,8 @@ public class FutureTest {
 
   @Test
   public void selectIndexMixedException() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
     p2.setException(new Throwable());
@@ -423,8 +456,8 @@ public class FutureTest {
 
     AtomicReference<Throwable> p1Intr = new AtomicReference<>();
     AtomicReference<Throwable> p2Intr = new AtomicReference<>();
-    Promise<Integer> p1 = Future.promise(p1Intr::set);
-    Promise<Integer> p2 = Future.promise(p2Intr::set);
+    Promise<Integer> p1 = Promise.apply(p1Intr::set);
+    Promise<Integer> p2 = Promise.apply(p2Intr::set);
 
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
 
@@ -436,8 +469,8 @@ public class FutureTest {
 
   @Test(expected = TimeoutException.class)
   public void selectIndexTimeout() throws CheckedFutureException {
-    Promise<Integer> p1 = Future.promise();
-    Promise<Integer> p2 = Future.promise();
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
     future.get(10, TimeUnit.MILLISECONDS);
   }
@@ -470,13 +503,13 @@ public class FutureTest {
 
   @Test(expected = TimeoutException.class)
   public void withinDefaultExceptionFailure() throws CheckedFutureException {
-    Future<Integer> f = (Future.<Integer>promise()).within(1, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = (Promise.<Integer>apply()).within(1, TimeUnit.MILLISECONDS, scheduler);
     get(f);
   }
 
   @Test
   public void withinDefaultExceptionSuccess() throws CheckedFutureException {
-    Promise<Integer> p = Future.<Integer>promise();
+    Promise<Integer> p = Promise.<Integer>apply();
     Future<Integer> f = p.within(10, TimeUnit.MILLISECONDS, scheduler);
     p.setValue(1);
     assertEquals(new Integer(1), get(f));

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,40 +13,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 interface Future<T> extends InterruptHandler {
-
-  public static <T> Promise<T> promise() {
-    final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
-    };
-  }
-
-  public static <T> Promise<T> promise(final InterruptHandler handler) {
-    final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
-
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return handler;
-      }
-    };
-  }
-
-  public static <T> Promise<T> promise(final InterruptHandler h1, final InterruptHandler h2) {
-    return promise(InterruptHandler.apply(h1, h2));
-  }
-
-  public static <T> Promise<T> promise(final List<? extends InterruptHandler> handlers) {
-    return promise(InterruptHandler.apply(handlers));
-  }
-
+  
   /*** static ***/
 
   public static Future<Void> VOID = Future.value((Void) null);
@@ -137,7 +103,7 @@ interface Future<T> extends InterruptHandler {
       return list.get(0).voided();
 
     default:
-      final Promise<Void> p = Future.promise(list);
+      final Promise<Void> p = Promise.apply(list);
       final JoinResponder<T> responder = new JoinResponder<>(p, list.size());
 
       for (final Future<T> f : list) {
@@ -162,7 +128,7 @@ interface Future<T> extends InterruptHandler {
       list.get(0).map(v -> 0);
 
     default:
-      final Promise<Integer> p = Future.promise(list);
+      final Promise<Integer> p = Promise.apply(list);
       int i = 0;
       for (final Future<?> f : list) {
 
@@ -233,7 +199,7 @@ interface Future<T> extends InterruptHandler {
 
   Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
       final Throwable exception);
-  
+
   @SuppressWarnings("unchecked")
   default <R> Future<R> unsafeCast() {
     return (Future<R>) this;

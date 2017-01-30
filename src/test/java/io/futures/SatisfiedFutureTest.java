@@ -65,21 +65,21 @@ public class SatisfiedFutureTest {
 
   @Test(expected = IllegalStateException.class)
   public void proxy() {
-    Promise<Integer> p = Future.promise();
+    Promise<Integer> p = Promise.apply();
     p.setValue(2);
     Future.value(1).proxyTo(p);
   }
 
   @Test
   public void proxyToSuccess() throws CheckedFutureException {
-    Promise<Integer> p = Future.promise();
+    Promise<Integer> p = Promise.apply();
     Future.value(1).proxyTo(p);
     assertEquals(new Integer(1), get(p));
   }
 
   @Test(expected = TestException.class)
   public void proxyToFailure() throws CheckedFutureException {
-    Promise<Integer> p = Future.promise();
+    Promise<Integer> p = Promise.apply();
     Future.<Integer>exception(ex).proxyTo(p);
     get(p);
   }

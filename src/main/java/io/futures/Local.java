@@ -5,9 +5,16 @@ import java.util.function.Supplier;
 
 public final class Local<T> {
 
+  public static final <T> Local<T> apply() {
+    return new Local<>();
+  }
+
   private static final Optional<?>[] EMPTY = new Optional<?>[0];
   private static ThreadLocal<Optional<?>[]> local = null;
   private static int size = 0;
+
+  private Local() {
+  }
 
   protected static final Optional<?>[] save() {
     if (local == null)

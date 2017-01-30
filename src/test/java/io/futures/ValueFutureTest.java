@@ -46,6 +46,34 @@ public class ValueFutureTest {
     get(future);
   }
 
+  /*** biMap ***/
+
+  @Test
+  public void biMap() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1).biMap(Future.value(2), (a, b) -> a + b);
+    assertEquals(new Integer(3), get(f));
+  }
+
+  @Test(expected = ArithmeticException.class)
+  public void biMapException() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1).biMap(Future.value(2), (a, b) -> 1 / 0);
+    get(f);
+  }
+
+  /*** biFlatMap ***/
+
+  @Test
+  public void biFlatMap() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1).biFlatMap(Future.value(2), (a, b) -> Future.value(a + b));
+    assertEquals(new Integer(3), get(f));
+  }
+
+  @Test(expected = ArithmeticException.class)
+  public void biFlatMapException() throws CheckedFutureException {
+    Future<Integer> f = Future.value(1).biFlatMap(Future.value(2), (a, b) -> Future.apply(() -> 1 / 0));
+    get(f);
+  }
+
   /*** onSuccess ***/
 
   @Test
@@ -81,7 +109,7 @@ public class ValueFutureTest {
     });
     assertEquals(new Integer(1), get(future));
   }
-  
+
   /*** respond ***/
 
   @Test
@@ -93,6 +121,7 @@ public class ValueFutureTest {
       public void onException(Throwable ex) {
         failure.set(true);
       }
+
       @Override
       public void onValue(Integer value) {
         result.set(value);
@@ -103,7 +132,7 @@ public class ValueFutureTest {
     assertEquals(1, result.get());
     assertFalse(failure.get());
   }
-  
+
   @Test
   public void respondException() throws CheckedFutureException {
     AtomicInteger result = new AtomicInteger(-1);
@@ -114,6 +143,7 @@ public class ValueFutureTest {
         failure.set(true);
         throw new NullPointerException();
       }
+
       @Override
       public void onValue(Integer value) {
         result.set(value);
@@ -140,7 +170,7 @@ public class ValueFutureTest {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.rescue(t -> Future.value(2)));
   }
-  
+
   /*** voided ***/
 
   @Test
@@ -168,15 +198,15 @@ public class ValueFutureTest {
     Future<Integer> future = Future.value(1);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }
-  
+
   /*** toString ***/
-  
+
   @Test
   public void toStringInt() {
     String s = Future.value(1).toString();
     assertEquals("ValueFuture(1)", s);
   }
-  
+
   @Test
   public void toStringNull() {
     String s = Future.value(null).toString();

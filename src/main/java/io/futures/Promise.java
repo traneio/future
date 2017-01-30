@@ -1,5 +1,6 @@
 package io.futures;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -14,10 +15,65 @@ public class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
 
+  public static final<T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return InterruptHandler.apply(handlers);
+      }
+    };
+  }
+
+  public static final<T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return InterruptHandler.apply(h1, h2);
+      }
+    };
+  }
+
+  public static final<T> Promise<T> apply(final InterruptHandler handler) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return handler;
+      }
+    };
+  }
+
+  public static final<T> Promise<T> apply() {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+    };
+  }
+
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
   private Object state;
 
-  public Promise() {
+  protected Promise() {
   }
 
   protected InterruptHandler getInterruptHandler() {
@@ -464,6 +520,7 @@ public class Promise<T> implements Future<T> {
       stateString = "Waiting";
     return String.format("%s(%s)@%s", toStringPrefix(), stateString, Integer.toHexString(hashCode()));
   }
+
 }
 
 abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {

@@ -9,7 +9,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   private final Throwable ex;
 
-  ExceptionFuture(final Throwable ex) {
+  protected ExceptionFuture(final Throwable ex) {
     NonFatalException.verify(ex);
     this.ex = ex;
   }

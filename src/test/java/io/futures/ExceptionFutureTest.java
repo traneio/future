@@ -35,6 +35,22 @@ public class ExceptionFutureTest {
     assertEquals(future, future.flatMap(i -> Future.value(i + 1)));
   }
 
+  /*** biMap ***/
+
+  @Test
+  public void biMap() throws CheckedFutureException {
+    Future<Integer> f = Future.exception(ex);
+    assertEquals(f, f.biMap(Future.value(1), (a, b) -> a + b));
+  }
+
+  /*** biFlatMap ***/
+
+  @Test
+  public void biFlatMap() throws CheckedFutureException {
+    Future<Integer> f = Future.exception(ex);
+    assertEquals(f, f.biFlatMap(Future.value(1), (a, b) -> Future.value(a + b)));
+  }
+
   /*** onSuccess ***/
 
   @Test
@@ -156,7 +172,7 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.exception(new Error());
     future.get(1, TimeUnit.MILLISECONDS);
   }
-  
+
   @Test(expected = CheckedFutureException.class)
   public void getCheckedException() throws CheckedFutureException {
     Future<Integer> future = Future.exception(new Exception());
@@ -174,7 +190,7 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.exception(ex);
     assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
   }
-  
+
   /*** toString ***/
 
   @Test

@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class LocalTest {
 
-  Local<Integer> l = new Local<>();
+  Local<Integer> l = Local.apply();
 
   @Test
   public void getEmpty() {
@@ -100,15 +100,15 @@ public class LocalTest {
   
   @Test
   public void getFresh() {
-    assertEquals(Optional.empty(), (new Local<Integer>()).get());
+    assertEquals(Optional.empty(), (Local.<Integer>apply()).get());
   }
 
   @Test
   public void multipleLocals() {
-    Local<Integer> l1 = new Local<>();
-    Local<Integer> l2 = new Local<>();
-    Local<Integer> l3 = new Local<>();
-    Local<Integer> l4 = new Local<>();
+    Local<Integer> l1 = Local.apply();
+    Local<Integer> l2 = Local.apply();
+    Local<Integer> l3 = Local.apply();
+    Local<Integer> l4 = Local.apply();
 
     l1.set(Optional.of(1));
     l2.set(Optional.of(2));
