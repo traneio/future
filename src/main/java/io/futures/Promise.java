@@ -246,15 +246,23 @@ public class Promise<T> implements Future<T> {
       return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public final void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
-    ensure(latch);
-    try {
-      if (!latch.await(timeout, unit))
-        throw new TimeoutException();
-    } catch (final InterruptedException ex) {
-      throw new CheckedFutureException(ex);
+    Object curr = state;
+    if (curr instanceof Future && ((Future<T>) curr).isDefined())
+      return;
+    else if (curr instanceof LinkedContinuation && ((LinkedContinuation<?, T>) curr).isDefined())
+      return;
+    else {
+      final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
+      ensure(latch);
+      try {
+        if (!latch.await(timeout, unit))
+          throw new TimeoutException();
+      } catch (final InterruptedException ex) {
+        throw new CheckedFutureException(ex);
+      }
     }
   }
 
