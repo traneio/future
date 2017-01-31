@@ -240,7 +240,10 @@ public class Promise<T> implements Future<T> {
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     join(timeout, unit);
-    return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+    if (state instanceof LinkedContinuation)
+      return ((LinkedContinuation<?, T>) state).get(0, TimeUnit.MILLISECONDS);
+    else
+      return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -575,6 +578,10 @@ final class LinkedContinuation<T, R> {
 
   final <S> Future<S> continuation(final Continuation<R, S> c) {
     return continuation.continuation(c);
+  }
+
+  final R get(long timeout, TimeUnit unit) throws CheckedFutureException {
+    return continuation.get(timeout, unit);
   }
 
   @Override

@@ -330,6 +330,18 @@ public class PromiseTest {
   }
   
   @Test
+  public void raiseLinkedContinuation() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(intr::set);
+    Promise<Integer> p2 = Promise.apply();
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    p2.raise(ex);
+    assertEquals(ex, intr.get());
+  }
+  
+  @Test
   public void raiseNoHandler() {
     Promise<Integer> p = Promise.apply();
     p.raise(ex);
@@ -461,6 +473,29 @@ public class PromiseTest {
     Promise<Integer> p1 = Promise.apply();
     Promise<Integer> p2 = Promise.apply();
     p2.become(p1);
+    assertFalse(p2.isDefined());
+  }
+  
+  @Test
+  public void isDefinedLinkedContinuationDone() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(intr::set);
+    Promise<Integer> p2 = Promise.apply();
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    p2.setValue(1);
+    assertTrue(p2.isDefined());
+  }
+  
+  @Test
+  public void isDefinedLinkedContinuationWaiting() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(intr::set);
+    Promise<Integer> p2 = Promise.apply();
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
     assertFalse(p2.isDefined());
   }
 
@@ -663,6 +698,19 @@ public class PromiseTest {
     assertEquals(new Integer(2), get(f1));
     assertEquals(new Integer(3), get(f2));
     assertEquals(new Integer(4), get(f3));
+  }
+  
+  @Test
+  public void linkedContinuation() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    Future<Integer> f = p2.map(i -> i + 1);
+    p2.setValue(1);
+    assertEquals(new Integer(1), get(p2));
+    assertEquals(new Integer(2), get(f));
   }
 
   @Test
@@ -951,6 +999,17 @@ public class PromiseTest {
     Promise<Integer> p2 = Promise.apply();
     p1.become(p2);
     assertEquals("Promise(Linked(" + p1.toString() + "))@" + hexHashCode(p2), p2.toString());
+  }
+  
+  @Test
+  public void toStringLinkedContinuationWaiting() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(intr::set);
+    Promise<Integer> p2 = Promise.apply();
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    assertEquals("Promise(Linked(" + c.toString() + "))@" + hexHashCode(p2), p2.toString());
   }
   
   @Test
