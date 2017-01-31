@@ -3,10 +3,12 @@ package io.futures;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import scala.Function1;
+import scala.concurrent.Await;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
 import scala.concurrent.Future$;
 import scala.concurrent.Promise;
+import scala.concurrent.duration.Duration;
 import scala.util.Try;
 
 public class ScalaFutureBenchmark {
@@ -21,112 +23,137 @@ public class ScalaFutureBenchmark {
   private static final Function1<Try<Void>, Try<Void>> ensureF = t -> t;
 
   @Benchmark
-  public void newPromise() {
-    Promise.<String>apply();
+  public Promise<String> newPromise() {
+    return Promise.<String>apply();
   }
 
   @Benchmark
-  public void value() {
-    Future.successful(1);
+  public Future<Integer> value() {
+    return Future.successful(1);
   }
 
   @Benchmark
-  public void exception() {
-    Future$.MODULE$.failed(exception);
+  public Future<String> exception() {
+    return Future$.MODULE$.<String>failed(exception);
   }
 
   @Benchmark
-  public void mapConst() {
-    constFuture.map(mapF, ec);
+  public String mapConst() throws Exception {
+    return Await.result(constFuture.map(mapF, ec), Duration.Inf());
   }
 
   @Benchmark
-  public void mapConstN() {
+  public String mapConstN() throws Exception {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void mapPromise() {
-    (Promise.<String>apply()).future().map(mapF, ec);
+  public String mapPromise() throws Exception {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future().map(mapF, ec);
+    p.success(string);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void mapPromiseN() {
-    Future<String> f = Promise.<String>apply().future();
+  public String mapPromiseN() throws Exception {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future();
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
+    p.success(string);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void flatMapConst() {
-    constFuture.flatMap(flatMapF, ec);
+  public String flatMapConst() throws Exception {
+    return Await.result(constFuture.flatMap(flatMapF, ec), Duration.Inf());
   }
 
   @Benchmark
-  public void flatMapConstN() {
+  public String flatMapConstN() throws Exception {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.flatMap(flatMapF, ec);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void flatMapPromise() {
-    (Promise.<String>apply()).future().flatMap(flatMapF, ec);
+  public String flatMapPromise() throws Exception {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future().flatMap(flatMapF, ec);
+    p.success(string);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void flatMapPromiseN() {
-    Future<String> f = (Promise.<String>apply()).future();
+  public String flatMapPromiseN() throws Exception {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.future();
     for (int i = 0; i < 100; i++)
       f = f.flatMap(flatMapF, ec);
+    p.success(string);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void ensureConst() {
-    constVoidFuture.transform(ensureF, ec);
+  public Void ensureConst() throws Exception {
+    return Await.result(constVoidFuture.transform(ensureF, ec), Duration.Inf());
   }
 
   @Benchmark
-  public void ensureConstN() {
+  public Void ensureConstN() throws Exception {
     Future<Void> f = constVoidFuture;
     for (int i = 0; i < 100; i++)
       f.transform(ensureF, ec);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void ensurePromise() {
-    Promise.<Void>apply().future().transform(ensureF, ec);
+  public Void ensurePromise() throws Exception {
+    Promise<Void> p = Promise.<Void>apply();
+    Future<Void> f = p.future().transform(ensureF, ec);
+    p.success(null);
+    return Await.result(f, Duration.Inf());
   }
 
   @Benchmark
-  public void ensurePromiseN() {
-    Future<Void> f = Promise.<Void>apply().future();
+  public Void ensurePromiseN() throws Exception {
+    Promise<Void> p = Promise.<Void>apply();
+    Future<Void> f = p.future();
     for (int i = 0; i < 100; i++)
       f = f.transform(ensureF, ec);
+    p.success(null);
+    return Await.result(f, Duration.Inf());
   }
   
   @Benchmark
-  public void setValue() {
-    (Promise.<String>apply()).success(string);
+  public String setValue() throws Exception {
+    Promise<String> p = Promise.<String>apply();
+    p.success(string);
+    return Await.result(p.future(), Duration.Inf());
   }
 
   @Benchmark
-  public void setValueWithContinuations() {
+  public String setValueWithContinuations() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
     for (int i = 0; i < 100; i++)
       f.map(mapF, ec);
     p.success(string);
+    return Await.result(p.future(), Duration.Inf());
   }
 
   @Benchmark
-  public void setValueWithNestedContinuation() {
+  public String setValueWithNestedContinuation() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
     p.success(string);
+    return Await.result(p.future(), Duration.Inf());
   }
 }

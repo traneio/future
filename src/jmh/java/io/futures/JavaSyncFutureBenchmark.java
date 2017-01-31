@@ -1,7 +1,7 @@
 package io.futures;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -22,111 +22,136 @@ public class JavaSyncFutureBenchmark {
   };
 
   @Benchmark
-  public void newPromise() {
-    new CompletableFuture<String>();
+  public CompletableFuture<String> newPromise() {
+    return new CompletableFuture<String>();
   }
 
   @Benchmark
-  public void value() {
-    CompletableFuture.completedFuture(string);
+  public CompletableFuture<String> value() {
+    return CompletableFuture.completedFuture(string);
   }
 
   @Benchmark
-  public void exception() {
-    CompletableFuture.supplyAsync(exceptionSupplier);
+  public CompletableFuture<String> exception() {
+    return CompletableFuture.supplyAsync(exceptionSupplier);
   }
 
   @Benchmark
-  public void mapConst() {
-    constFuture.thenApply(mapF);
+  public String mapConst() throws InterruptedException, ExecutionException {
+    return constFuture.thenApply(mapF).get();
   }
 
   @Benchmark
-  public void mapConstN() {
-    CompletionStage<String> f = constFuture;
+  public String mapConstN() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.thenApply(mapF);
+    return f.get();
   }
 
   @Benchmark
-  public void mapPromise() {
-    (new CompletableFuture<String>()).thenApply(mapF);
+  public String mapPromise() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> p = new CompletableFuture<String>();
+    CompletableFuture<String> f = p.thenApply(mapF);
+    p.complete(string);
+    return f.get();
   }
 
   @Benchmark
-  public void mapPromiseN() {
-    CompletionStage<String> f = new CompletableFuture<String>();
+  public String mapPromiseN() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> p = new CompletableFuture<String>();
+    CompletableFuture<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.thenApply(mapF);
+    p.complete(string);
+    return f.get();
   }
 
   @Benchmark
-  public void flatMapConst() {
-    constFuture.thenCompose(flatMapF);
+  public String flatMapConst() throws InterruptedException, ExecutionException {
+    return constFuture.thenCompose(flatMapF).get();
   }
 
   @Benchmark
-  public void flatMapConstN() {
-    CompletionStage<String> f = constFuture;
+  public String flatMapConstN() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.thenCompose(flatMapF);
+    return f.get();
   }
 
   @Benchmark
-  public void flatMapPromise() {
-    (new CompletableFuture<String>()).thenCompose(flatMapF);
+  public String flatMapPromise() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> p = new CompletableFuture<String>();
+    p.thenCompose(flatMapF);
+    p.complete(string);
+    return p.get();
   }
 
   @Benchmark
-  public void flatMapPromiseN() {
-    CompletionStage<String> f = new CompletableFuture<String>();
+  public String flatMapPromiseN() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    CompletableFuture<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.thenCompose(flatMapF);
+    p.complete(string);
+    return f.get();
   }
 
   @Benchmark
-  public void ensureConst() {
-    constVoidFuture.thenRun(ensureF);
+  public Void ensureConst() throws InterruptedException, ExecutionException {
+    return constVoidFuture.thenRun(ensureF).get();
   }
 
   @Benchmark
-  public void ensureConstN() {
-    CompletionStage<Void> f = constVoidFuture;
+  public Void ensureConstN() throws InterruptedException, ExecutionException {
+    CompletableFuture<Void> f = constVoidFuture;
     for (int i = 0; i < 100; i++)
       f = f.thenRun(ensureF);
+    return f.get();
   }
 
   @Benchmark
-  public void ensurePromise() {
-    new CompletableFuture<Void>().thenRun(ensureF);
+  public Void ensurePromise() throws InterruptedException, ExecutionException {
+    CompletableFuture<Void> p = new CompletableFuture<Void>();
+    CompletableFuture<Void> f = p.thenRun(ensureF);
+    p.complete(null);
+    return f.get();
   }
 
   @Benchmark
-  public void ensurePromiseN() {
-    CompletionStage<Void> f = new CompletableFuture<>();
+  public Void ensurePromiseN() throws InterruptedException, ExecutionException {
+    CompletableFuture<Void> p = new CompletableFuture<>();
+    CompletableFuture<Void> f = p;
     for (int i = 0; i < 100; i++)
       f = f.thenRun(ensureF);
-  }
-  
-  @Benchmark
-  public void setValue() {
-    (new CompletableFuture<>()).complete(string);
+    p.complete(null);
+    return f.get();
   }
 
   @Benchmark
-  public void setValueWithContinuations() {
+  public String setValue() throws InterruptedException, ExecutionException {
+    CompletableFuture<String> p = new CompletableFuture<>();
+    p.complete(string);
+    return p.get();
+  }
+
+  @Benchmark
+  public String setValueWithContinuations() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<>();
     for (int i = 0; i < 100; i++)
       p.thenApply(mapF);
     p.complete(string);
+    return p.get();
   }
 
   @Benchmark
-  public void setValueWithNestedContinuation() {
+  public String setValueWithNestedContinuation() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<>();
-    CompletionStage<String> f = p;
+    CompletableFuture<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.thenApply(mapF);
     p.complete(string);
+    return p.get();
   }
 }

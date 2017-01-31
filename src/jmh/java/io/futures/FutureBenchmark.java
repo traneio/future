@@ -1,5 +1,6 @@
 package io.futures;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -16,111 +17,136 @@ public class FutureBenchmark {
   };
 
   @Benchmark
-  public void newPromise() {
-    Promise.<String>apply();
+  public Promise<String> newPromise() {
+    return Promise.<String>apply();
   }
 
   @Benchmark
-  public void value() {
-    Future.value(string);
+  public Future<String> value() {
+    return Future.value(string);
   }
 
   @Benchmark
-  public void exception() {
-    Future.<String>exception(exception);
+  public Future<String> exception() {
+    return Future.<String>exception(exception);
   }
 
   @Benchmark
-  public void mapConst() {
-    constFuture.map(mapF);
+  public String mapConst() throws CheckedFutureException {
+    return constFuture.map(mapF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 
   @Benchmark
-  public void mapConstN() {
+  public String mapConstN() throws CheckedFutureException {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 
   @Benchmark
-  public void mapPromise() {
-    (Promise.<String>apply()).map(mapF);
-  }
-
-  @Benchmark
-  public void mapPromiseN() {
-    Future<String> f = Promise.<String>apply();
-    for (int i = 0; i < 100; i++)
-      f = f.map(mapF);
-  }
-
-  @Benchmark
-  public void flatMapConst() {
-    constFuture.flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapConstN() {
-    Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
-      f = f.flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapPromise() {
-    (Promise.<String>apply()).flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapPromiseN() {
-    Future<String> f = Promise.<String>apply();
-    for (int i = 0; i < 100; i++)
-      f = f.flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void ensureConst() {
-    constVoidFuture.ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensureConstN() {
-    Future<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
-      f = f.ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensurePromise() {
-    Promise.<Void>apply().ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensurePromiseN() {
-    Future<Void> f = Promise.apply();
-    for (int i = 0; i < 100; i++)
-      f = f.ensure(ensureF);
-  }
-
-  @Benchmark
-  public void setValue() {
-    (Promise.<String>apply()).setValue(string);
-  }
-
-  @Benchmark
-  public void setValueWithContinuations() {
+  public String mapPromise() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
-    for (int i = 0; i < 100; i++)
-      p.map(mapF);
+    Future<String> f = p.map(mapF);
     p.setValue(string);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 
   @Benchmark
-  public void setValueWithNestedContinuation() {
+  public String mapPromiseN() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
     p.setValue(string);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String flatMapConst() throws CheckedFutureException {
+    return constFuture.flatMap(flatMapF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String flatMapConstN() throws CheckedFutureException {
+    Future<String> f = constFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String flatMapPromise() throws CheckedFutureException {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p.flatMap(flatMapF);
+    p.setValue(string);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String flatMapPromiseN() throws CheckedFutureException {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF);
+    p.setValue(string);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public Void ensureConst() throws CheckedFutureException {
+    return constVoidFuture.ensure(ensureF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public Void ensureConstN() throws CheckedFutureException {
+    Future<Void> f = constVoidFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.ensure(ensureF);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public Void ensurePromise() throws CheckedFutureException {
+    Promise<Void> p = Promise.<Void>apply();
+    Future<Void> f = p.ensure(ensureF);
+    p.setValue(null);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public Void ensurePromiseN() throws CheckedFutureException {
+    Promise<Void> p = Promise.apply();
+    Future<Void> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.ensure(ensureF);
+    p.setValue(null);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String setValue() throws CheckedFutureException {
+    Promise<String> p = Promise.<String>apply();
+    p.setValue(string);
+    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String setValueWithContinuations() throws CheckedFutureException {
+    Promise<String> p = Promise.<String>apply();
+    for (int i = 0; i < 100; i++)
+      p.map(mapF);
+    p.setValue(string);
+    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  @Benchmark
+  public String setValueWithNestedContinuation() throws CheckedFutureException {
+    Promise<String> p = Promise.<String>apply();
+    Future<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF);
+    p.setValue(string);
+    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 }

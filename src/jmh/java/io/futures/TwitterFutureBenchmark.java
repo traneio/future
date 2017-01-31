@@ -2,6 +2,7 @@ package io.futures;
 
 import org.openjdk.jmh.annotations.Benchmark;
 
+import com.twitter.util.Await;
 import com.twitter.util.Future;
 import com.twitter.util.Promise;
 
@@ -20,111 +21,136 @@ public class TwitterFutureBenchmark {
   private static final Function0<BoxedUnit> ensureF = () -> BoxedUnit.UNIT;
 
   @Benchmark
-  public void newPromise() {
-    new Promise<String>();
+  public Promise<String> newPromise() {
+    return new Promise<String>();
   }
 
   @Benchmark
-  public void value() {
-    Future.value(1);
+  public Future<Integer> value() {
+    return Future.value(1);
   }
 
   @Benchmark
-  public void exception() {
-    Future.exception(exception);
+  public Future<Object> exception() {
+    return Future.exception(exception);
   }
 
   @Benchmark
-  public void mapConst() {
-    constFuture.map(mapF);
+  public String mapConst() throws Exception {
+    return Await.result(constFuture.map(mapF));
   }
 
   @Benchmark
-  public void mapConstN() {
+  public String mapConstN() throws Exception {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
+    return Await.result(f);
   }
 
   @Benchmark
-  public void mapPromise() {
-    (new Promise<String>()).map(mapF);
-  }
-
-  @Benchmark
-  public void mapPromiseN() {
-    Future<String> f = new Promise<String>();
-    for (int i = 0; i < 100; i++)
-      f = f.map(mapF);
-  }
-
-  @Benchmark
-  public void flatMapConst() {
-    constFuture.flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapConstN() {
-    Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
-      f = f.flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapPromise() {
-    (new Promise<String>()).flatMap(flatMapF);
-  }
-
-  @Benchmark
-  public void flatMapPromiseN() {
-    Future<String> f = new Promise<String>();
-    for (int i = 0; i < 100; i++)
-      f = f.flatMap(flatMapF);
-  }
-  
-  @Benchmark
-  public void ensureConst() {
-    constVoidFuture.ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensureConstN() {
-    Future<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
-      f = f.ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensurePromise() {
-    (new Promise<Void>()).ensure(ensureF);
-  }
-
-  @Benchmark
-  public void ensurePromiseN() {
-    Future<Void> f = new Promise<>();
-    for (int i = 0; i < 100; i++)
-      f = f.ensure(ensureF);
-  }
-  
-  @Benchmark
-  public void setValue() {
-    (new Promise<String>()).setValue(string);
-  }
-  
-  @Benchmark
-  public void setValueWithContinuations() {
+  public String mapPromise() throws Exception {
     Promise<String> p = new Promise<String>();
-    for (int i = 0; i < 100; i++)
-      p.map(mapF);
+    Future<String> f = p.map(mapF);
     p.setValue(string);
+    return Await.result(f);
   }
 
   @Benchmark
-  public void setValueWithNestedContinuation() {
+  public String mapPromiseN() throws Exception {
     Promise<String> p = new Promise<String>();
     Future<String> f = p;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
     p.setValue(string);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  public String flatMapConst() throws Exception {
+    return Await.result(constFuture.flatMap(flatMapF));
+  }
+
+  @Benchmark
+  public String flatMapConstN() throws Exception {
+    Future<String> f = constFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  public String flatMapPromise() throws Exception {
+    Promise<String> p = new Promise<String>();
+    Future<String> f = p.flatMap(flatMapF);
+    p.setValue(string);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  public String flatMapPromiseN() throws Exception {
+    Promise<String> p = new Promise<String>();
+    Future<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.flatMap(flatMapF);
+    p.setValue(string);
+    return Await.result(f);
+  }
+  
+  @Benchmark
+  public Void ensureConst() throws Exception {
+    return Await.result(constVoidFuture.ensure(ensureF));
+  }
+
+  @Benchmark
+  public Void ensureConstN() throws Exception {
+    Future<Void> f = constVoidFuture;
+    for (int i = 0; i < 100; i++)
+      f = f.ensure(ensureF);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  public Void ensurePromise() throws Exception {
+    Promise<Void> p = new Promise<Void>();
+    Future<Void> f = p.ensure(ensureF);
+    p.setValue(null);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  public Void ensurePromiseN() throws Exception {
+    Promise<Void> p = new Promise<>();
+    Future<Void> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.ensure(ensureF);
+    p.setValue(null);
+    return Await.result(f);
+  }
+  
+  @Benchmark
+  public String setValue() throws Exception {
+    Promise<String> p = new Promise<String>();
+    p.setValue(string);
+    return Await.result(p);
+  }
+  
+  @Benchmark
+  public String setValueWithContinuations() throws Exception {
+    Promise<String> p = new Promise<String>();
+    for (int i = 0; i < 100; i++)
+      p.map(mapF);
+    p.setValue(string);
+    return Await.result(p);
+  }
+
+  @Benchmark
+  public String setValueWithNestedContinuation() throws Exception {
+    Promise<String> p = new Promise<String>();
+    Future<String> f = p;
+    for (int i = 0; i < 100; i++)
+      f = f.map(mapF);
+    p.setValue(string);
+    return Await.result(p);
   }
 }
