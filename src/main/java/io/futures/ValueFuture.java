@@ -4,8 +4,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 final class ValueFuture<T> implements SatisfiedFuture<T> {
+
+  private static final Logger logger = Logger.getLogger(ExceptionFuture.class.getName());
 
   final T value;
 
@@ -32,13 +36,15 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
+  public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
     return other.map(u -> f.apply(value, u)); // TODO avoid lambda allocation?
   }
 
   @Override
-  public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
-    return other.flatMap(u -> f.apply(value, u)); // TODO avoid lambda allocation?
+  public <U, R> Future<R> biFlatMap(final Future<U> other,
+      final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
+    return other.flatMap(u -> f.apply(value, u)); // TODO avoid lambda
+                                                  // allocation?
   }
 
   @Override
@@ -46,7 +52,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
     try {
       c.accept(value);
     } catch (final Throwable ex) {
-      // TODO logging
+      logger.log(Level.WARNING, "Error executing `onSuccess` callback " + c + "for" + this, ex);
       NonFatalException.verify(ex);
     }
     return this;
@@ -62,7 +68,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
     try {
       r.onValue(value);
     } catch (final Throwable ex) {
-      // TODO logging
+      logger.log(Level.WARNING, "Error when executing `respond` callback " + r + "for" + this, ex);
       NonFatalException.verify(ex);
     }
     return this;

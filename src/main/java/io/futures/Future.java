@@ -13,7 +13,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 interface Future<T> extends InterruptHandler {
-  
+
   /*** static ***/
 
   public static Future<Void> VOID = Future.value((Void) null);

@@ -10,12 +10,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
+  private static final Logger logger = Logger.getLogger(Promise.class.getName());
 
-  public static final<T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
+  public static final <T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
@@ -30,7 +33,7 @@ public class Promise<T> implements Future<T> {
     };
   }
 
-  public static final<T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
+  public static final <T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
@@ -45,7 +48,7 @@ public class Promise<T> implements Future<T> {
     };
   }
 
-  public static final<T> Promise<T> apply(final InterruptHandler handler) {
+  public static final <T> Promise<T> apply(final InterruptHandler handler) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
@@ -60,7 +63,7 @@ public class Promise<T> implements Future<T> {
     };
   }
 
-  public static final<T> Promise<T> apply() {
+  public static final <T> Promise<T> apply() {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
       @Override
@@ -102,9 +105,9 @@ public class Promise<T> implements Future<T> {
           return false;
         else if (curr instanceof Promise && !(curr instanceof Continuation))
           return ((Promise<T>) curr).becomeIfEmpty(result);
-        else if (curr instanceof LinkedContinuation) {
+        else if (curr instanceof LinkedContinuation)
           return ((LinkedContinuation<?, T>) curr).becomeIfEmpty(result);
-        } else if (result instanceof Promise) {
+        else if (result instanceof Promise) {
           ((Promise<T>) result).compress().link(this);
           return true;
         } else if (cas(curr, result)) {
@@ -114,8 +117,9 @@ public class Promise<T> implements Future<T> {
         }
       }
     } catch (final StackOverflowError ex) {
-      System.err.println(
-          "FATAL: Stack overflow when satisfying promise. Use `Future.tailrec` or increase the stack size (-Xss).");
+      logger.log(Level.SEVERE,
+          "FATAL: Stack overflow when satisfying promise, the promise and its continuations won't be satisfied. "
+              + "Use `Future.tailrec` or increase the stack size (-Xss).");
       throw ex;
     }
   }
@@ -161,9 +165,9 @@ public class Promise<T> implements Future<T> {
         return c;
       } else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).continuation(c);
-      else if (curr instanceof LinkedContinuation) {
+      else if (curr instanceof LinkedContinuation)
         return ((LinkedContinuation<?, T>) curr).continuation(c);
-      } else if (curr == null) {
+      else if (curr == null) {
         if (cas(curr, c))
           return c;
       } else if (curr != null)
@@ -283,7 +287,7 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
+  public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
     return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -298,7 +302,8 @@ public class Promise<T> implements Future<T> {
   }
 
   @Override
-  public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
+  public <U, R> Future<R> biFlatMap(final Future<U> other,
+      final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
     return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -552,7 +557,7 @@ final class LinkedContinuation<T, R> {
 
   private final Continuation<T, R> continuation;
 
-  public LinkedContinuation(Continuation<T, R> continuation) {
+  public LinkedContinuation(final Continuation<T, R> continuation) {
     super();
     this.continuation = continuation;
   }

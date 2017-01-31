@@ -27,31 +27,29 @@ final class WaitQueueHeadTail<T> implements WaitQueue<T> {
   @Override
   public final void flush(final Future<T> result) {
     WaitQueue<T> t = this;
-    while (true) {
+    while (true)
       if (t instanceof WaitQueueHeadTail) {
-        WaitQueueHeadTail<T> l = (WaitQueueHeadTail<T>) t;
+        final WaitQueueHeadTail<T> l = (WaitQueueHeadTail<T>) t;
         l.head.flush(result);
         t = l.tail;
       } else {
         t.flush(result);
         return;
       }
-    }
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public final void forward(final Promise<T> target) {
     WaitQueue<T> t = this;
-    while (true) {
+    while (true)
       if (t instanceof WaitQueueHeadTail) {
-        WaitQueueHeadTail<T> l = (WaitQueueHeadTail<T>) t;
+        final WaitQueueHeadTail<T> l = (WaitQueueHeadTail<T>) t;
         target.continuation(l.head);
         t = l.tail;
       } else {
         target.continuation((Continuation<T, ?>) t);
         return;
       }
-    }
   }
 }

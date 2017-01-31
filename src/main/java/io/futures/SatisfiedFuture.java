@@ -2,14 +2,19 @@ package io.futures;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 interface SatisfiedFuture<T> extends Future<T> {
+
+  static final Logger logger = Logger.getLogger(SatisfiedFuture.class.getName());
+
   @Override
   default Future<T> ensure(final Runnable r) {
     try {
       r.run();
     } catch (final Throwable ex) {
-      // TODO logging
+      logger.log(Level.WARNING, "Error when executing `respond` callback " + r + "for" + this, ex);
       NonFatalException.verify(ex);
     }
     return this;
