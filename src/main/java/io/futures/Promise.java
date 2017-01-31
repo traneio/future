@@ -240,29 +240,26 @@ public class Promise<T> implements Future<T> {
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     join(timeout, unit);
-    if (state instanceof LinkedContinuation)
-      return ((LinkedContinuation<?, T>) state).get(0, TimeUnit.MILLISECONDS);
-    else
-      return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public final void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     Object curr = state;
     if (curr instanceof Future && ((Future<T>) curr).isDefined())
-      return;
+      return ((Future<T>) curr).get(0, TimeUnit.MILLISECONDS);
     else if (curr instanceof LinkedContinuation && ((LinkedContinuation<?, T>) curr).isDefined())
-      return;
+      return ((LinkedContinuation<?, T>) curr).get(0, TimeUnit.MILLISECONDS);
     else {
-      final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
-      ensure(latch);
-      try {
-        if (!latch.await(timeout, unit))
-          throw new TimeoutException();
-      } catch (final InterruptedException ex) {
-        throw new CheckedFutureException(ex);
-      }
+      join(timeout, unit);
+      return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+    }
+  }
+
+  @Override
+  public final void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+    final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
+    ensure(latch);
+    try {
+      if (!latch.await(timeout, unit))
+        throw new TimeoutException();
+    } catch (final InterruptedException ex) {
+      throw new CheckedFutureException(ex);
     }
   }
 
