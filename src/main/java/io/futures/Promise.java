@@ -2,7 +2,6 @@ package io.futures;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -460,10 +459,10 @@ public class Promise<T> implements Future<T> {
     respond(r);
   }
 
-  private static final class WithinPromise<T> extends Promise<T> implements Responder<T>, Callable<Boolean> {
+  private static final class WithinPromise<T> extends Promise<T> implements Responder<T>, Runnable {
 
     private final InterruptHandler handler;
-    private final ScheduledFuture<Boolean> task;
+    private final ScheduledFuture<?> task;
     private final Throwable exception;
 
     public WithinPromise(final InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
@@ -486,8 +485,8 @@ public class Promise<T> implements Future<T> {
     }
 
     @Override
-    public final Boolean call() throws Exception {
-      return becomeIfEmpty(Future.exception(exception));
+    public final void run() {
+      becomeIfEmpty(Future.exception(exception));
     }
 
     @Override
