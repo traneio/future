@@ -12,7 +12,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Promise<T> implements Future<T> {
+public abstract class Promise<T> implements Future<T> {
 
   private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
   private static final Logger logger = Logger.getLogger(Promise.class.getName());
@@ -75,9 +75,6 @@ public class Promise<T> implements Future<T> {
   // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
   private Object state;
 
-  protected Promise() {
-  }
-
   protected InterruptHandler getInterruptHandler() {
     return null;
   }
@@ -125,13 +122,13 @@ public class Promise<T> implements Future<T> {
 
   private final void flush(final WaitQueue<T> queue, final Future<T> result) {
     final Optional<?>[] savedContext = getSavedContext();
-    if (savedContext != null) {
-      final Optional<?>[] oldContext = Local.save();
+    Optional<?>[] originalContext;
+    if (savedContext != null && (originalContext = Local.save()) != savedContext) {
       Local.restore(savedContext);
       try {
         queue.flush(result);
       } finally {
-        Local.restore(oldContext);
+        Local.restore(originalContext);
       }
     } else
       queue.flush(result);
@@ -239,9 +236,8 @@ public class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    join(timeout, unit);
     Object curr = state;
-    if (curr instanceof Future && ((Future<T>) curr).isDefined())
+    if (curr instanceof Future && !(curr instanceof Continuation) && ((Future<T>) curr).isDefined())
       return ((Future<T>) curr).get(0, TimeUnit.MILLISECONDS);
     else if (curr instanceof LinkedContinuation && ((LinkedContinuation<?, T>) curr).isDefined())
       return ((LinkedContinuation<?, T>) curr).get(0, TimeUnit.MILLISECONDS);

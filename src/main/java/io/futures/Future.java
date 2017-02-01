@@ -228,8 +228,8 @@ final class CollectPromise<T> extends Promise<List<T>> {
 
   public CollectPromise(final List<? extends Future<T>> list) {
     final int size = list.size();
-    results = new Object[size];
-    count = new AtomicInteger(size);
+    this.results = new Object[size];
+    this.count = new AtomicInteger(size);
     this.list = list;
   }
 
