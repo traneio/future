@@ -72,7 +72,7 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
-  // Future<T> (Done) | Promise<T> (Linked) | WaitQueue|Null (Pending)
+  // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) | WaitQueue|Null (Pending)
   private Object state;
 
   protected InterruptHandler getInterruptHandler() {
@@ -190,13 +190,13 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   public final void setException(final Throwable ex) {
-    become(new ExceptionFuture<T>(ex));
+    become(new ExceptionFuture<>(ex));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
-    final InterruptHandler interruptHandler = getInterruptHandler();
+    InterruptHandler interruptHandler;
     final Object curr = state;
     if (curr instanceof SatisfiedFuture) // Done
       return;
@@ -204,7 +204,7 @@ public abstract class Promise<T> implements Future<T> {
       ((Promise<T>) curr).raise(ex);
     else if (curr instanceof LinkedContinuation)
       ((LinkedContinuation<?, T>) curr).raise(ex);
-    else if (interruptHandler != null)
+    else if ((interruptHandler = getInterruptHandler()) != null)
       interruptHandler.raise(ex);
   }
 
@@ -222,17 +222,6 @@ public abstract class Promise<T> implements Future<T> {
       return false;
   }
 
-  private static final class ReleaseOnRunLatch extends CountDownLatch implements Runnable {
-    public ReleaseOnRunLatch() {
-      super(1);
-    }
-
-    @Override
-    public final void run() {
-      super.countDown();
-    }
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
@@ -244,6 +233,17 @@ public abstract class Promise<T> implements Future<T> {
     else {
       join(timeout, unit);
       return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+    }
+  }
+  
+  private static final class ReleaseOnRunLatch extends CountDownLatch implements Runnable {
+    public ReleaseOnRunLatch() {
+      super(1);
+    }
+
+    @Override
+    public final void run() {
+      super.countDown();
     }
   }
 
