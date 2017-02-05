@@ -72,7 +72,8 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
-  // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) | WaitQueue|Null (Pending)
+  // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) |
+  // WaitQueue|Null (Pending)
   private Object state;
 
   protected InterruptHandler getInterruptHandler() {
@@ -225,7 +226,7 @@ public abstract class Promise<T> implements Future<T> {
   @SuppressWarnings("unchecked")
   @Override
   public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    Object curr = state;
+    final Object curr = state;
     if (curr instanceof Future && !(curr instanceof Continuation) && ((Future<T>) curr).isDefined())
       return ((Future<T>) curr).get(0, TimeUnit.MILLISECONDS);
     else if (curr instanceof LinkedContinuation && ((LinkedContinuation<?, T>) curr).isDefined())
@@ -235,7 +236,7 @@ public abstract class Promise<T> implements Future<T> {
       return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
     }
   }
-  
+
   private static final class ReleaseOnRunLatch extends CountDownLatch implements Runnable {
     public ReleaseOnRunLatch() {
       super(1);
@@ -520,9 +521,7 @@ public abstract class Promise<T> implements Future<T> {
     String stateString;
     if (curr instanceof SatisfiedFuture)
       stateString = curr.toString();
-    else if (curr instanceof Promise && !(curr instanceof Continuation)) // Linked
-      stateString = String.format("Linked(%s)", curr.toString());
-    else if (curr instanceof LinkedContinuation)
+    else if ((curr instanceof Promise && !(curr instanceof Continuation)) || curr instanceof LinkedContinuation) // Linked
       stateString = String.format("Linked(%s)", curr.toString());
     else
       stateString = "Waiting";
@@ -581,7 +580,7 @@ final class LinkedContinuation<T, R> {
     return continuation.continuation(c);
   }
 
-  final R get(long timeout, TimeUnit unit) throws CheckedFutureException {
+  final R get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     return continuation.get(timeout, unit);
   }
 
