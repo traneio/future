@@ -41,6 +41,8 @@
 	</dependencies>
 
 	<properties>
+        <sonar.skip>true</sonar.skip>
+        
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- JMH version to use with this project. -->

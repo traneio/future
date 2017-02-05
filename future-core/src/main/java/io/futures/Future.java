@@ -125,7 +125,7 @@ interface Future<T> extends InterruptHandler {
       throw new IllegalArgumentException("Can't select from empty list.");
 
     case 1:
-      list.get(0).map(v -> 0);
+      return list.get(0).map(v -> 0);
 
     default:
       final Promise<Integer> p = Promise.apply(list);
