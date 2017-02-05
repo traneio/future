@@ -33,7 +33,7 @@ public final class Scheduler {
     while (tasks != null) {
       final List<Runnable> pending = tasks;
       tasks = null;
-      pending.forEach(r -> r.run());
+      pending.forEach(Runnable::run);
     }
     running = false;
   }

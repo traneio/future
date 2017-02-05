@@ -10,27 +10,27 @@ public final class Local<T> {
   }
 
   private static final Optional<?>[] EMPTY = new Optional<?>[0];
-  private static ThreadLocal<Optional<?>[]> local = null;
+  private static ThreadLocal<Optional<?>[]> threadLocal = null;
   private static int size = 0;
 
   private Local() {
   }
 
   protected static final Optional<?>[] save() {
-    if (local == null)
+    if (threadLocal == null)
       return EMPTY;
     else
-      return local.get();
+      return threadLocal.get();
   }
 
   protected static final void restore(final Optional<?>[] saved) {
-    if (local != null)
-      local.set(saved);
+    if (threadLocal != null)
+      threadLocal.set(saved);
   }
 
   private synchronized static final int newPosition() {
-    if (local == null)
-      local = new ThreadLocal<>();
+    if (threadLocal == null)
+      threadLocal = new ThreadLocal<>();
     return size++;
   }
 
@@ -41,7 +41,7 @@ public final class Local<T> {
   }
 
   public final void set(final Optional<T> opt) {
-    Optional<?>[] ctx = local.get();
+    Optional<?>[] ctx = threadLocal.get();
 
     if (ctx == null)
       ctx = new Optional<?>[size];
@@ -52,12 +52,12 @@ public final class Local<T> {
     }
 
     ctx[position] = opt;
-    local.set(ctx);
+    threadLocal.set(ctx);
   }
 
   @SuppressWarnings("unchecked")
   public final Optional<T> get() {
-    final Optional<?>[] ctx = local.get();
+    final Optional<?>[] ctx = threadLocal.get();
     if (ctx == null || ctx.length <= position)
       return Optional.empty();
 

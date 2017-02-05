@@ -103,7 +103,7 @@ interface Future<T> extends InterruptHandler {
       return list.get(0).voided();
 
     default:
-      final JoinPromise<T> p = new JoinPromise<T>(list);
+      final JoinPromise<T> p = new JoinPromise<>(list);
 
       for (final Future<T> f : list) {
 

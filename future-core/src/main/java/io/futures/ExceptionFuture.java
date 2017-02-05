@@ -48,9 +48,9 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> onFailure(final Consumer<Throwable> c) {
     try {
       c.accept(ex);
-    } catch (final Throwable ex) {
+    } catch (final Throwable error) {
       logger.log(Level.WARNING, "Error executing `onFailure` callback " + c + "for" + this, ex);
-      NonFatalException.verify(ex);
+      NonFatalException.verify(error);
     }
     return this;
   }
@@ -59,9 +59,9 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> respond(final Responder<? super T> r) {
     try {
       r.onException(ex);
-    } catch (final Throwable ex) {
+    } catch (final Throwable error) {
       logger.log(Level.WARNING, "Error executing `respond` callback " + r + "for" + this, ex);
-      NonFatalException.verify(ex);
+      NonFatalException.verify(error);
     }
     return this;
   }
@@ -70,8 +70,8 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     try {
       return f.apply(ex);
-    } catch (final Throwable ex) {
-      return new ExceptionFuture<>(ex);
+    } catch (final Throwable error) {
+      return new ExceptionFuture<>(error);
     }
   }
 
@@ -79,8 +79,8 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> handle(final Function<Throwable, ? extends T> f) {
     try {
       return Future.value(f.apply(ex));
-    } catch (final Throwable ex) {
-      return new ExceptionFuture<>(ex);
+    } catch (final Throwable error) {
+      return new ExceptionFuture<>(error);
     }
   }
 
@@ -106,7 +106,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final int hashCode() {
-    return ((ex == null) ? 0 : ex.hashCode());
+    return (ex == null) ? 0 : ex.hashCode();
   }
 
   @Override

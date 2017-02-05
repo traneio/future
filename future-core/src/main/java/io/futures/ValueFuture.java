@@ -101,7 +101,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final int hashCode() {
-    return ((value == null) ? 0 : value.hashCode());
+    return (value == null) ? 0 : value.hashCode();
   }
 
   @Override

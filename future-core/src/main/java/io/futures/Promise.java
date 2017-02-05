@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 
 public abstract class Promise<T> implements Future<T> {
 
-  private static final long stateOffset = Unsafe.objectFieldOffset(Promise.class, "state");
-  private static final Logger logger = Logger.getLogger(Promise.class.getName());
+  private static final long STATE_OFFSET = Unsafe.objectFieldOffset(Promise.class, "state");
+  private static final Logger LOGGER = Logger.getLogger(Promise.class.getName());
 
   public static final <T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
     final Optional<?>[] savedContext = Local.save();
@@ -85,7 +85,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   private final boolean cas(final Object oldState, final Object newState) {
-    return Unsafe.compareAndSwapObject(this, stateOffset, oldState, newState);
+    return Unsafe.compareAndSwapObject(this, STATE_OFFSET, oldState, newState);
   }
 
   public final void become(final Future<T> result) {
@@ -114,7 +114,7 @@ public abstract class Promise<T> implements Future<T> {
         }
       }
     } catch (final StackOverflowError ex) {
-      logger.log(Level.SEVERE,
+      LOGGER.log(Level.SEVERE,
           "FATAL: Stack overflow when satisfying promise, the promise and its continuations won't be satisfied. "
               + "Use `Future.tailrec` or increase the stack size (-Xss).");
       throw ex;
