@@ -114,9 +114,10 @@ public abstract class Promise<T> implements Future<T> {
         }
       }
     } catch (final StackOverflowError ex) {
-      LOGGER.log(Level.SEVERE,
-          "FATAL: Stack overflow when satisfying promise, the promise and its continuations won't be satisfied. "
-              + "Use `Future.tailrec` or increase the stack size (-Xss).");
+      if (!(this instanceof Continuation))
+        LOGGER.log(Level.SEVERE,
+            "FATAL: Stack overflow when satisfying promise, the promise and its continuations won't be satisfied. "
+                + "Use `Future.tailrec` or increase the stack size (-Xss).", ex);
       throw ex;
     }
   }
