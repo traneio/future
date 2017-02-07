@@ -152,6 +152,6 @@ public class JavaAsyncFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.thenApplyAsync(mapF);
     p.complete(string);
-    return p.get();
+    return f.get();
   }
 }

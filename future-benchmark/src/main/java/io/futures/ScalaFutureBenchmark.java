@@ -28,8 +28,8 @@ public class ScalaFutureBenchmark {
   }
 
   @Benchmark
-  public Future<Integer> value() {
-    return Future.successful(1);
+  public Future<String> value() {
+    return Future.successful(string);
   }
 
   @Benchmark
@@ -154,6 +154,6 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
     p.success(string);
-    return Await.result(p.future(), Duration.Inf());
+    return Await.result(f, Duration.Inf());
   }
 }

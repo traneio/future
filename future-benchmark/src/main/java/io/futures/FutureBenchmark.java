@@ -147,6 +147,6 @@ public class FutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
     p.setValue(string);
-    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 }

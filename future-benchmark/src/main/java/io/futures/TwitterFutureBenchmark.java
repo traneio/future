@@ -26,8 +26,8 @@ public class TwitterFutureBenchmark {
   }
 
   @Benchmark
-  public Future<Integer> value() {
-    return Future.value(1);
+  public Future<String> value() {
+    return Future.value(string);
   }
 
   @Benchmark
@@ -151,6 +151,6 @@ public class TwitterFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
     p.setValue(string);
-    return Await.result(p);
+    return Await.result(f);
   }
 }

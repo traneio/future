@@ -152,6 +152,6 @@ public class JavaSyncFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.thenApply(mapF);
     p.complete(string);
-    return p.get();
+    return f.get();
   }
 }
