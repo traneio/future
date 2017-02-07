@@ -26,7 +26,7 @@ public class MonixAsyncTaskBenchmark {
 
   @Benchmark
   public Task<String> newPromise() {
-    return Task.apply(() -> string);
+    return Task.eval(() -> string);
   }
 
   @Benchmark
@@ -54,12 +54,12 @@ public class MonixAsyncTaskBenchmark {
 
   @Benchmark
   public String mapPromise() throws Exception {
-    return Await.result(Task.apply(() -> string).map(mapF).runAsync(scheduler), Duration.Inf());
+    return Await.result(Task.eval(() -> string).map(mapF).runAsync(scheduler), Duration.Inf());
   }
 
   @Benchmark
   public String mapPromiseN() throws Exception {
-    Task<String> p = Task.apply(() -> string);
+    Task<String> p = Task.eval(() -> string);
     for (int i = 0; i < 100; i++)
       p = p.map(mapF);
     return Await.result(p.runAsync(scheduler), Duration.Inf());
@@ -80,12 +80,12 @@ public class MonixAsyncTaskBenchmark {
 
   @Benchmark
   public String flatMapPromise() throws Exception {
-    return Await.result(Task.apply(() -> string).flatMap(flatMapF).runAsync(scheduler), Duration.Inf());
+    return Await.result(Task.eval(() -> string).flatMap(flatMapF).runAsync(scheduler), Duration.Inf());
   }
 
   @Benchmark
   public String flatMapPromiseN() throws Exception {
-    Task<String> p = Task.apply(() -> string);
+    Task<String> p = Task.eval(() -> string);
     for (int i = 0; i < 100; i++)
       p = p.flatMap(flatMapF);
     return Await.result(p.runAsync(scheduler), Duration.Inf());
@@ -106,12 +106,12 @@ public class MonixAsyncTaskBenchmark {
 
   @Benchmark
   public BoxedUnit ensurePromise() throws Exception {
-    return Await.result(Task.apply(() -> BoxedUnit.UNIT).foreachL(ensureF).runAsync(scheduler), Duration.Inf());
+    return Await.result(Task.eval(() -> BoxedUnit.UNIT).foreachL(ensureF).runAsync(scheduler), Duration.Inf());
   }
 
   @Benchmark
   public BoxedUnit ensurePromiseN() throws Exception {
-    Task<BoxedUnit> p = Task.apply(() -> BoxedUnit.UNIT);
+    Task<BoxedUnit> p = Task.eval(() -> BoxedUnit.UNIT);
     for (int i = 0; i < 100; i++)
       p = p.foreachL(ensureF);
     return Await.result(p.runAsync(scheduler), Duration.Inf());
@@ -119,12 +119,12 @@ public class MonixAsyncTaskBenchmark {
   
   @Benchmark
   public String setValue() throws Exception {
-    return Await.result(Task.apply(() -> string).runAsync(scheduler), Duration.Inf());
+    return Await.result(Task.eval(() -> string).runAsync(scheduler), Duration.Inf());
   }
 
   @Benchmark
   public String setValueWithContinuations() throws Exception {
-    Task<String> p = Task.apply(() -> string);
+    Task<String> p = Task.eval(() -> string);
     for (int i = 0; i < 100; i++)
       p.map(mapF);
     return Await.result(p.runAsync(scheduler), Duration.Inf());
@@ -132,7 +132,7 @@ public class MonixAsyncTaskBenchmark {
 
   @Benchmark
   public String setValueWithNestedContinuation() throws Exception {
-    Task<String> p = Task.apply(() -> string);
+    Task<String> p = Task.eval(() -> string);
     for (int i = 0; i < 100; i++)
       p = p.map(mapF);
     return Await.result(p.runAsync(scheduler), Duration.Inf());
