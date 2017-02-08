@@ -1,7 +1,10 @@
 package io.futures;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.openjdk.jmh.annotations.Benchmark;
 
@@ -138,6 +141,26 @@ public class TraneIOFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF);
     p.setValue(string);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+  
+  @Benchmark
+  public List<String> collectConst() throws CheckedFutureException {
+    List<Future<String>> list = new ArrayList<>(100);
+    for (int i = 0; i < 100; i++)
+      list.add(Future.value(string));
+    Future<List<String>> f = Future.collect(list);
+    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+  
+  @Benchmark
+  public List<String> collectPromise() throws CheckedFutureException {
+    List<Promise<String>> list = new ArrayList<>(100);
+    for (int i = 0; i < 100; i++)
+      list.add(Promise.apply());
+    Future<List<String>> f = Future.collect(list);
+    for (Promise<String> p : list)
+      p.setValue(string);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 }

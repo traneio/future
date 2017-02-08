@@ -6,3 +6,4 @@ bin
 .settings
 target/
 *.versionsBackup
+jmh-result.csv

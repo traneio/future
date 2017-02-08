@@ -72,20 +72,24 @@ interface Future<T> extends InterruptHandler {
         if (f instanceof ExceptionFuture)
           return f.unsafeCast();
 
-        final int ii = i;
-        final Responder<T> responder = new Responder<T>() {
-          @Override
-          public final void onException(final Throwable ex) {
-            p.setException(ex);
-          }
+        if (f instanceof ValueFuture)
+          p.collect(((ValueFuture<T>) f).value, i);
+        else {
+          final int ii = i;
+          final Responder<T> responder = new Responder<T>() {
+            @Override
+            public final void onException(final Throwable ex) {
+              p.setException(ex);
+            }
 
-          @Override
-          public final void onValue(final T value) {
-            p.collect(value, ii);
-          }
-        };
+            @Override
+            public final void onValue(final T value) {
+              p.collect(value, ii);
+            }
+          };
 
-        f.respond(responder);
+          f.respond(responder);
+        }
         i++;
       }
       return p;
