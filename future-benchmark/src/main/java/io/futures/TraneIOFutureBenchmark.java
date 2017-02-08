@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 import org.openjdk.jmh.annotations.Benchmark;
 
-public class FutureBenchmark {
+public class TraneIOFutureBenchmark {
 
   private static final String string = "s";
   private static final RuntimeException exception = new RuntimeException();

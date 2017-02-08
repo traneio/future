@@ -9,6 +9,7 @@ import scala.concurrent.Future;
 import scala.concurrent.Future$;
 import scala.concurrent.Promise;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.Duration.Infinite;
 import scala.util.Try;
 
 public class ScalaFutureBenchmark {
@@ -21,6 +22,7 @@ public class ScalaFutureBenchmark {
   private static final Function1<String, String> mapF = i -> string;
   private static final Function1<String, Future<String>> flatMapF = i -> constFuture;
   private static final Function1<Try<Void>, Try<Void>> ensureF = t -> t;
+  private static final Infinite inf = Duration.Inf();
 
   @Benchmark
   public Promise<String> newPromise() {
@@ -39,7 +41,7 @@ public class ScalaFutureBenchmark {
 
   @Benchmark
   public String mapConst() throws Exception {
-    return Await.result(constFuture.map(mapF, ec), Duration.Inf());
+    return Await.result(constFuture.map(mapF, ec), inf);
   }
 
   @Benchmark
@@ -47,7 +49,7 @@ public class ScalaFutureBenchmark {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -55,7 +57,7 @@ public class ScalaFutureBenchmark {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future().map(mapF, ec);
     p.success(string);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -65,12 +67,12 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
     p.success(string);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
   public String flatMapConst() throws Exception {
-    return Await.result(constFuture.flatMap(flatMapF, ec), Duration.Inf());
+    return Await.result(constFuture.flatMap(flatMapF, ec), inf);
   }
 
   @Benchmark
@@ -78,7 +80,7 @@ public class ScalaFutureBenchmark {
     Future<String> f = constFuture;
     for (int i = 0; i < 100; i++)
       f = f.flatMap(flatMapF, ec);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -86,7 +88,7 @@ public class ScalaFutureBenchmark {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future().flatMap(flatMapF, ec);
     p.success(string);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -96,12 +98,12 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.flatMap(flatMapF, ec);
     p.success(string);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
   public Void ensureConst() throws Exception {
-    return Await.result(constVoidFuture.transform(ensureF, ec), Duration.Inf());
+    return Await.result(constVoidFuture.transform(ensureF, ec), inf);
   }
 
   @Benchmark
@@ -109,7 +111,7 @@ public class ScalaFutureBenchmark {
     Future<Void> f = constVoidFuture;
     for (int i = 0; i < 100; i++)
       f.transform(ensureF, ec);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -117,7 +119,7 @@ public class ScalaFutureBenchmark {
     Promise<Void> p = Promise.<Void>apply();
     Future<Void> f = p.future().transform(ensureF, ec);
     p.success(null);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 
   @Benchmark
@@ -127,14 +129,14 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.transform(ensureF, ec);
     p.success(null);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
   
   @Benchmark
   public String setValue() throws Exception {
     Promise<String> p = Promise.<String>apply();
     p.success(string);
-    return Await.result(p.future(), Duration.Inf());
+    return Await.result(p.future(), inf);
   }
 
   @Benchmark
@@ -144,7 +146,7 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f.map(mapF, ec);
     p.success(string);
-    return Await.result(p.future(), Duration.Inf());
+    return Await.result(p.future(), inf);
   }
 
   @Benchmark
@@ -154,6 +156,6 @@ public class ScalaFutureBenchmark {
     for (int i = 0; i < 100; i++)
       f = f.map(mapF, ec);
     p.success(string);
-    return Await.result(f, Duration.Inf());
+    return Await.result(f, inf);
   }
 }
