@@ -140,17 +140,7 @@ public class ScalaFutureBenchmark {
   }
 
   @Benchmark
-  public String setValueWithContinuations() throws Exception {
-    Promise<String> p = Promise.<String>apply();
-    Future<String> f = p.future();
-    for (int i = 0; i < 100; i++)
-      f.map(mapF, ec);
-    p.success(string);
-    return Await.result(p.future(), inf);
-  }
-
-  @Benchmark
-  public String setValueWithNestedContinuation() throws Exception {
+  public String setValueN() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
     for (int i = 0; i < 100; i++)

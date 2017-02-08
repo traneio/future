@@ -167,18 +167,7 @@ public class MonixSyncTaskBenchmark {
   }
 
   @Benchmark
-  public String setValueWithContinuations() throws Exception {
-    Task<String> p = Task.create((s, c) -> {
-      c.apply(tryString);
-      return Cancelable.empty();
-    });
-    for (int i = 0; i < 100; i++)
-      p.map(mapF);
-    return Await.result(p.runAsync(scheduler), inf);
-  }
-
-  @Benchmark
-  public String setValueWithNestedContinuation() throws Exception {
+  public String setValueN() throws Exception {
     Task<String> p = Task.create((s, c) -> {
       c.apply(tryString);
       return Cancelable.empty();

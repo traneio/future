@@ -136,16 +136,7 @@ public class TwitterFutureBenchmark {
   }
   
   @Benchmark
-  public String setValueWithContinuations() throws Exception {
-    Promise<String> p = new Promise<String>();
-    for (int i = 0; i < 100; i++)
-      p.map(mapF);
-    p.setValue(string);
-    return Await.result(p);
-  }
-
-  @Benchmark
-  public String setValueWithNestedContinuation() throws Exception {
+  public String setValueN() throws Exception {
     Promise<String> p = new Promise<String>();
     Future<String> f = p;
     for (int i = 0; i < 100; i++)

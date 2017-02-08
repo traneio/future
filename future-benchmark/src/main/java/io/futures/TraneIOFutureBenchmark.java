@@ -132,16 +132,7 @@ public class TraneIOFutureBenchmark {
   }
 
   @Benchmark
-  public String setValueWithContinuations() throws CheckedFutureException {
-    Promise<String> p = Promise.<String>apply();
-    for (int i = 0; i < 100; i++)
-      p.map(mapF);
-    p.setValue(string);
-    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-  }
-
-  @Benchmark
-  public String setValueWithNestedContinuation() throws CheckedFutureException {
+  public String setValueN() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p;
     for (int i = 0; i < 100; i++)

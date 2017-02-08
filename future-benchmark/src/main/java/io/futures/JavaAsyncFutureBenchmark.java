@@ -137,16 +137,7 @@ public class JavaAsyncFutureBenchmark {
   }
 
   @Benchmark
-  public String setValueWithContinuations() throws InterruptedException, ExecutionException {
-    CompletableFuture<String> p = new CompletableFuture<>();
-    for (int i = 0; i < 100; i++)
-      p.thenApplyAsync(mapF);
-    p.complete(string);
-    return p.get();
-  }
-
-  @Benchmark
-  public String setValueWithNestedContinuation() throws InterruptedException, ExecutionException {
+  public String setValueN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<>();
     CompletableFuture<String> f = p;
     for (int i = 0; i < 100; i++)
