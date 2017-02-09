@@ -26,7 +26,7 @@ public final class Tailrec {
     return syncPermits-- > 0;
   }
 
-  private final void submit(final Runnable r, int batchSize) {
+  private final void submit(final Runnable r, final int batchSize) {
     syncPermits = batchSize;
     if (tasks == null)
       tasks = new ArrayList<>(1);
@@ -40,7 +40,7 @@ public final class Tailrec {
   private final void run() {
     running = true;
     while (tasks != null) {
-      List<Runnable> pending = tasks;
+      final List<Runnable> pending = tasks;
       tasks = null;
       for (int i = 0; i < pending.size(); i++)
         pending.get(i).run();
@@ -53,11 +53,11 @@ public final class Tailrec {
   }
 
   public static final <T> Future<T> apply(final int batchSize, final Supplier<Future<T>> sup) {
-    Tailrec scheduler = local.get();
+    final Tailrec scheduler = local.get();
     if (scheduler.runSync())
       return sup.get();
     else {
-      TailrecPromise<T> p = new TailrecPromise<>(sup);
+      final TailrecPromise<T> p = new TailrecPromise<>(sup);
       scheduler.submit(p, batchSize);
       return p;
     }
