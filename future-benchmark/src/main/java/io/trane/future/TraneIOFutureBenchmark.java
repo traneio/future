@@ -45,7 +45,7 @@ public class TraneIOFutureBenchmark {
   @Benchmark
   public String mapConstN() throws CheckedFutureException {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
@@ -62,7 +62,7 @@ public class TraneIOFutureBenchmark {
   public String mapPromiseN() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -76,7 +76,7 @@ public class TraneIOFutureBenchmark {
   @Benchmark
   public String flatMapConstN() throws CheckedFutureException {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
@@ -93,7 +93,7 @@ public class TraneIOFutureBenchmark {
   public String flatMapPromiseN() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     p.setValue(string);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -107,7 +107,7 @@ public class TraneIOFutureBenchmark {
   @Benchmark
   public Void ensureConstN() throws CheckedFutureException {
     Future<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
@@ -124,7 +124,7 @@ public class TraneIOFutureBenchmark {
   public Void ensurePromiseN() throws CheckedFutureException {
     Promise<Void> p = Promise.apply();
     Future<Void> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
     p.setValue(null);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -141,29 +141,43 @@ public class TraneIOFutureBenchmark {
   public String setValueN() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
-  
+
   @Benchmark
   public List<String> collectConst() throws CheckedFutureException {
-    List<Future<String>> list = new ArrayList<>(100);
-    for (int i = 0; i < 100; i++)
-      list.add(Future.value(string));
+    List<Future<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
+      list.add(constFuture);
     Future<List<String>> f = Future.collect(list);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
-  
+
   @Benchmark
   public List<String> collectPromise() throws CheckedFutureException {
-    List<Promise<String>> list = new ArrayList<>(100);
-    for (int i = 0; i < 100; i++)
+    List<Promise<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
       list.add(Promise.apply());
     Future<List<String>> f = Future.collect(list);
     for (Promise<String> p : list)
       p.setValue(string);
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+  }
+
+  private Future<Integer> loop(int i) {
+    return Tailrec.apply(() -> {
+      if (i > 0)
+        return Future.value(i - 1).flatMap(this::loop);
+      else
+        return Future.value(0);
+    });
+  }
+
+  @Benchmark
+  public Integer recursiveConst() throws CheckedFutureException {
+    return loop(N.n).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 }

@@ -1,5 +1,8 @@
 package io.trane.future;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openjdk.jmh.annotations.Benchmark;
 
 import com.twitter.util.Await;
@@ -43,7 +46,7 @@ public class TwitterFutureBenchmark {
   @Benchmark
   public String mapConstN() throws Exception {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     return Await.result(f);
   }
@@ -60,7 +63,7 @@ public class TwitterFutureBenchmark {
   public String mapPromiseN() throws Exception {
     Promise<String> p = new Promise<String>();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
     return Await.result(f);
@@ -74,7 +77,7 @@ public class TwitterFutureBenchmark {
   @Benchmark
   public String flatMapConstN() throws Exception {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     return Await.result(f);
   }
@@ -91,12 +94,12 @@ public class TwitterFutureBenchmark {
   public String flatMapPromiseN() throws Exception {
     Promise<String> p = new Promise<String>();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     p.setValue(string);
     return Await.result(f);
   }
-  
+
   @Benchmark
   public Void ensureConst() throws Exception {
     return Await.result(constVoidFuture.ensure(ensureF));
@@ -105,7 +108,7 @@ public class TwitterFutureBenchmark {
   @Benchmark
   public Void ensureConstN() throws Exception {
     Future<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
     return Await.result(f);
   }
@@ -122,26 +125,59 @@ public class TwitterFutureBenchmark {
   public Void ensurePromiseN() throws Exception {
     Promise<Void> p = new Promise<>();
     Future<Void> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
     p.setValue(null);
     return Await.result(f);
   }
-  
+
   @Benchmark
   public String setValue() throws Exception {
     Promise<String> p = new Promise<String>();
     p.setValue(string);
     return Await.result(p);
   }
-  
+
   @Benchmark
   public String setValueN() throws Exception {
     Promise<String> p = new Promise<String>();
     Future<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
     return Await.result(f);
+  }
+
+  @Benchmark
+  public List<String> collectConst() throws Exception {
+    List<Future<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
+      list.add(constFuture);
+    Future<List<String>> f = Future.collect(list);
+    return Await.result(f);
+  }
+
+  @Benchmark
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  public List<String> collectPromise() throws Exception {
+    List<Promise<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
+      list.add(Promise.apply());
+    Future<List<String>> f = Future.collect((List) list);
+    for (Promise<String> p : list)
+      p.setValue(string);
+    return Await.result(f);
+  }
+
+  private Future<Integer> loop(int i) {
+    if (i > 0)
+      return Future.value(i - 1).flatMap(this::loop);
+    else
+      return Future.value(0);
+  }
+
+  @Benchmark
+  public Integer recursiveConst() throws Exception {
+    return Await.result(loop(N.n));
   }
 }

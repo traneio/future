@@ -47,7 +47,7 @@ public class ScalaFutureBenchmark {
   @Benchmark
   public String mapConstN() throws Exception {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF, ec);
     return Await.result(f, inf);
   }
@@ -64,7 +64,7 @@ public class ScalaFutureBenchmark {
   public String mapPromiseN() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF, ec);
     p.success(string);
     return Await.result(f, inf);
@@ -78,7 +78,7 @@ public class ScalaFutureBenchmark {
   @Benchmark
   public String flatMapConstN() throws Exception {
     Future<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF, ec);
     return Await.result(f, inf);
   }
@@ -95,7 +95,7 @@ public class ScalaFutureBenchmark {
   public String flatMapPromiseN() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF, ec);
     p.success(string);
     return Await.result(f, inf);
@@ -109,7 +109,7 @@ public class ScalaFutureBenchmark {
   @Benchmark
   public Void ensureConstN() throws Exception {
     Future<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f.transform(ensureF, ec);
     return Await.result(f, inf);
   }
@@ -126,12 +126,12 @@ public class ScalaFutureBenchmark {
   public Void ensurePromiseN() throws Exception {
     Promise<Void> p = Promise.<Void>apply();
     Future<Void> f = p.future();
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.transform(ensureF, ec);
     p.success(null);
     return Await.result(f, inf);
   }
-  
+
   @Benchmark
   public String setValue() throws Exception {
     Promise<String> p = Promise.<String>apply();
@@ -143,9 +143,21 @@ public class ScalaFutureBenchmark {
   public String setValueN() throws Exception {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.future();
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF, ec);
     p.success(string);
     return Await.result(f, inf);
+  }
+
+  private Future<Integer> loop(int i) {
+    if (i > 0)
+      return Future.successful(i - 1).flatMap(this::loop, ec);
+    else
+      return Future.successful(0);
+  }
+
+  @Benchmark
+  public Integer recursiveConst() throws Exception {
+    return Await.result(loop(N.n), inf);
   }
 }

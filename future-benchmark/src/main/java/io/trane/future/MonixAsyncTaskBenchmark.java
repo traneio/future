@@ -46,7 +46,7 @@ public class MonixAsyncTaskBenchmark {
   public Task<Object> exception() {
     return Task.raiseError(exception);
   }
-  
+
   @Benchmark
   public String mapConst() throws Exception {
     return Await.result(constTask.map(mapF).runAsync(scheduler), inf);
@@ -55,7 +55,7 @@ public class MonixAsyncTaskBenchmark {
   @Benchmark
   public String mapConstN() throws Exception {
     Task<String> f = constTask;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     return Await.result(f.runAsync(scheduler), inf);
   }
@@ -76,7 +76,7 @@ public class MonixAsyncTaskBenchmark {
       return Cancelable.empty();
     });
     ;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       p = p.map(mapF);
     return Await.result(p.runAsync(scheduler), inf);
   }
@@ -89,7 +89,7 @@ public class MonixAsyncTaskBenchmark {
   @Benchmark
   public String flatMapConstN() throws Exception {
     Task<String> f = constTask;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     return Await.result(f.runAsync(scheduler), inf);
   }
@@ -109,7 +109,7 @@ public class MonixAsyncTaskBenchmark {
       c.apply(tryString);
       return Cancelable.empty();
     });
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       p = p.flatMap(flatMapF);
     return Await.result(p.runAsync(scheduler), inf);
   }
@@ -122,7 +122,7 @@ public class MonixAsyncTaskBenchmark {
   @Benchmark
   public BoxedUnit ensureConstN() throws Exception {
     Task<BoxedUnit> f = constVoidTask;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f.foreachL(ensureF);
     return Await.result(f.runAsync(scheduler), inf);
   }
@@ -142,7 +142,7 @@ public class MonixAsyncTaskBenchmark {
       c.apply(tryUnit);
       return Cancelable.empty();
     });
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       p = p.foreachL(ensureF);
     return Await.result(p.runAsync(scheduler), inf);
   }
@@ -162,8 +162,20 @@ public class MonixAsyncTaskBenchmark {
       c.apply(tryString);
       return Cancelable.empty();
     });
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       p = p.map(mapF);
     return Await.result(p.runAsync(scheduler), inf);
+  }
+
+  private Task<Integer> loop(int i) {
+    if (i > 0)
+      return Task.now(i - 1).flatMap(this::loop);
+    else
+      return Task.now(0);
+  }
+
+  @Benchmark
+  public Integer recursiveConst() throws Exception {
+    return Await.result(loop(N.n).runAsync(scheduler), inf);
   }
 }

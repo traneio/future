@@ -1,5 +1,7 @@
 package io.trane.future;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -20,6 +22,8 @@ public class JavaAsyncFutureBenchmark {
   private static final Function<String, CompletableFuture<String>> flatMapF = i -> constFuture;
   private static final Runnable ensureF = () -> {
   };
+  @SuppressWarnings("unchecked")
+  private static final CompletableFuture<String>[] emptyArray = new CompletableFuture[0];
 
   @Benchmark
   public CompletableFuture<String> newPromise() {
@@ -44,7 +48,7 @@ public class JavaAsyncFutureBenchmark {
   @Benchmark
   public String mapConstN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenApplyAsync(mapF);
     return f.get();
   }
@@ -61,7 +65,7 @@ public class JavaAsyncFutureBenchmark {
   public String mapPromiseN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<String>();
     CompletableFuture<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenApplyAsync(mapF);
     p.complete(string);
     return f.get();
@@ -75,7 +79,7 @@ public class JavaAsyncFutureBenchmark {
   @Benchmark
   public String flatMapConstN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> f = constFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenComposeAsync(flatMapF);
     return f.get();
   }
@@ -92,7 +96,7 @@ public class JavaAsyncFutureBenchmark {
   public String flatMapPromiseN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<>();
     CompletableFuture<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenComposeAsync(flatMapF);
     p.complete(string);
     return f.get();
@@ -106,7 +110,7 @@ public class JavaAsyncFutureBenchmark {
   @Benchmark
   public Void ensureConstN() throws InterruptedException, ExecutionException {
     CompletableFuture<Void> f = constVoidFuture;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenRunAsync(ensureF);
     return f.get();
   }
@@ -123,7 +127,7 @@ public class JavaAsyncFutureBenchmark {
   public Void ensurePromiseN() throws InterruptedException, ExecutionException {
     CompletableFuture<Void> p = new CompletableFuture<>();
     CompletableFuture<Void> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenRunAsync(ensureF);
     p.complete(null);
     return f.get();
@@ -140,9 +144,57 @@ public class JavaAsyncFutureBenchmark {
   public String setValueN() throws InterruptedException, ExecutionException {
     CompletableFuture<String> p = new CompletableFuture<>();
     CompletableFuture<String> f = p;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < N.n; i++)
       f = f.thenApplyAsync(mapF);
     p.complete(string);
     return f.get();
+  }
+
+  @Benchmark
+  public List<String> collectConst() throws InterruptedException, ExecutionException {
+    List<CompletableFuture<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
+      list.add(constFuture);
+
+    CompletableFuture<Void> done = CompletableFuture.allOf(list.toArray(emptyArray));
+    CompletableFuture<List<String>> f = done.thenApplyAsync(v -> {
+      List<String> result = new ArrayList<>(N.n);
+      for (int i = 0; i < N.n; i++)
+        result.add(list.get(i).join());
+      return result;
+    });
+
+    return f.get();
+  }
+
+  @Benchmark
+  public List<String> collectPromise() throws InterruptedException, ExecutionException {
+    List<CompletableFuture<String>> list = new ArrayList<>(N.n);
+    for (int i = 0; i < N.n; i++)
+      list.add(new CompletableFuture<>());
+
+    CompletableFuture<Void> done = CompletableFuture.allOf(list.toArray(emptyArray));
+    CompletableFuture<List<String>> f = done.thenApplyAsync(v -> {
+      List<String> result = new ArrayList<>(N.n);
+      for (int i = 0; i < N.n; i++)
+        result.add(list.get(i).join());
+      return result;
+    });
+
+    for (int i = 0; i < N.n; i++)
+      list.get(i).complete(string);
+    return f.get();
+  }
+
+  private CompletableFuture<Integer> loop(int i) {
+    if (i > 0)
+      return CompletableFuture.completedFuture(i - 1).thenComposeAsync(this::loop);
+    else
+      return CompletableFuture.completedFuture(0);
+  }
+
+  @Benchmark
+  public Integer recursiveConst() throws InterruptedException, ExecutionException {
+    return loop(N.n).get();
   }
 }
