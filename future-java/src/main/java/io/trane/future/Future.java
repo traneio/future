@@ -38,12 +38,6 @@ interface Future<T> extends InterruptHandler {
     return fut.flatMap(f -> f);
   }
 
-  public static <T> Future<T> tailrec(final Supplier<Future<T>> sup) {
-    final TailrecPromise<T> p = new TailrecPromise<>(sup);
-    Scheduler.submit(p);
-    return p;
-  }
-
   static Future<? extends List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
 
   public static <T> Future<List<T>> emptyList() {
@@ -147,7 +141,7 @@ interface Future<T> extends InterruptHandler {
   }
 
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
-    return tailrec(() -> {
+    return Tailrec.apply(() -> {
       if (cond.get())
         return f.get().flatMap(r -> whileDo(cond, f));
       else
@@ -206,20 +200,6 @@ interface Future<T> extends InterruptHandler {
   @SuppressWarnings("unchecked")
   default <R> Future<R> unsafeCast() {
     return (Future<R>) this;
-  }
-}
-
-final class TailrecPromise<T> extends Promise<T> implements Runnable {
-  private final Supplier<Future<T>> sup;
-
-  public TailrecPromise(final Supplier<Future<T>> sup) {
-    super();
-    this.sup = sup;
-  }
-
-  @Override
-  public final void run() {
-    become(sup.get());
   }
 }
 

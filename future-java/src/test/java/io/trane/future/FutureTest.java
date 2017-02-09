@@ -84,7 +84,7 @@ public class FutureTest {
   /*** tailrec ***/
 
   Future<Integer> tailrecLoop(Future<Integer> f) {
-    return Future.tailrec(() -> {
+    return Tailrec.apply(() -> {
       return f.flatMap(i -> {
         if (i == 0)
           return Future.value(0);
@@ -100,7 +100,7 @@ public class FutureTest {
   }
 
   Future<Integer> tailrecLoopDelayed(Future<Integer> f) {
-    return Future.tailrec(() -> {
+    return Tailrec.apply(() -> {
       return f.flatMap(i -> {
         if (i == 0)
           return Future.value(0);
