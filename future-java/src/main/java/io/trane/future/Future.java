@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-interface Future<T> extends InterruptHandler {
+public interface Future<T> extends InterruptHandler {
 
   /*** static ***/
 

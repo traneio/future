@@ -1,5 +1,5 @@
 package io.trane.future;
 
 public class N {
-  public static final int n = 1000;
+  public static final int n = 100;
 }

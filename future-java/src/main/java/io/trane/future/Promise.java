@@ -74,7 +74,7 @@ public abstract class Promise<T> implements Future<T> {
 
   // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) |
   // WaitQueue|Null (Pending)
-  private Object state;
+  private volatile Object state;
 
   protected InterruptHandler getInterruptHandler() {
     return null;
@@ -117,7 +117,7 @@ public abstract class Promise<T> implements Future<T> {
       if (!(this instanceof Continuation))
         LOGGER.log(Level.SEVERE,
             "FATAL: Stack overflow when satisfying promise, the promise and its continuations won't be satisfied. "
-                + "Use `Future.tailrec` or increase the stack size (-Xss).",
+                + "Use `Future.tailrec` or increase the stack size (-Xss) if the future isn't recursive.",
             ex);
       throw ex;
     }
@@ -159,19 +159,19 @@ public abstract class Promise<T> implements Future<T> {
   protected final <R> Future<R> continuation(final Continuation<T, R> c) {
     while (true) {
       final Object curr = state;
-      if (curr instanceof SatisfiedFuture) {
+      if (curr == null) {
+        if (cas(curr, c))
+          return c;
+      } else if (curr instanceof WaitQueue) {
+        if (cas(curr, ((WaitQueue<T>) curr).add(c)))
+          return c;
+      } else if (curr instanceof SatisfiedFuture) {
         c.flush((SatisfiedFuture<T>) curr);
         return c;
       } else if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).continuation(c);
       else if (curr instanceof LinkedContinuation)
         return ((LinkedContinuation<?, T>) curr).continuation(c);
-      else if (curr == null) {
-        if (cas(curr, c))
-          return c;
-      } else if (curr != null)
-        if (cas(curr, ((WaitQueue<T>) curr).add(c)))
-          return c;
     }
   }
 

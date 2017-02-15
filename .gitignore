@@ -7,3 +7,6 @@ bin
 target/
 *.versionsBackup
 jmh-result.csv
+*.iml
+*.csv
+.idea/
