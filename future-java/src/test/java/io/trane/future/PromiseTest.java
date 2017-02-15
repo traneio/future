@@ -721,6 +721,21 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p2));
     assertEquals(new Integer(2), get(f));
   }
+  
+  @Test
+  public void linkedContinuationWithWaitQueue() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> f1 = p2.map(i -> i + 1);
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    Future<Integer> f2 = p2.map(i -> i + 2);
+    p2.setValue(1);
+    assertEquals(new Integer(1), get(p2));
+    assertEquals(new Integer(2), get(f1));
+    assertEquals(new Integer(3), get(f2));
+  }
 
   @Test
   public void map() throws CheckedFutureException {

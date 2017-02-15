@@ -144,13 +144,17 @@ public abstract class Promise<T> implements Future<T> {
       if (curr instanceof SatisfiedFuture) {
         target.become((SatisfiedFuture<T>) curr);
         return;
-      } else if (target instanceof Continuation) {
-        if (cas(curr, new LinkedContinuation<>((Continuation<T, ?>) target)))
+      } else {
+        Object newState;
+        if (target instanceof Continuation)
+          newState = new LinkedContinuation<>((Continuation<T, ?>) target);
+        else
+          newState = target;
+        if (cas(curr, newState)) {
+          if (curr != null)
+            ((WaitQueue<T>) curr).forward(target);
           return;
-      } else if (cas(curr, target)) {
-        if (curr != null)
-          ((WaitQueue<T>) curr).forward(target);
-        return;
+        }
       }
     }
   }
