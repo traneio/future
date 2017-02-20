@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,29 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   @Override
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     return unsafeCast();
+  }
+
+  @Override
+  public final Future<T> filter(Predicate<? super T> p) {
+    return this;
+  }
+
+  @Override
+  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+    try {
+      return new ValueFuture<>(t.onException(ex));
+    } catch (final Throwable ex) {
+      return new ExceptionFuture<>(ex);
+    }
+  }
+
+  @Override
+  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+    try {
+      return t.onException(ex);
+    } catch (final Throwable ex) {
+      return new ExceptionFuture<>(ex);
+    }
   }
 
   @Override
@@ -82,6 +106,11 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
     } catch (final Throwable error) {
       return new ExceptionFuture<>(error);
     }
+  }
+  
+  @Override
+  public Future<T> fallbackTo(Future<T> other) {
+    return other;
   }
 
   @Override

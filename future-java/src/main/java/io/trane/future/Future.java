@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public interface Future<T> extends InterruptHandler {
@@ -17,6 +19,10 @@ public interface Future<T> extends InterruptHandler {
   /*** static ***/
 
   public static Future<Void> VOID = Future.value((Void) null);
+
+  public static <T> Future<T> never() {
+    return new NoFuture<>();
+  }
 
   public static <T> Future<T> apply(final Supplier<T> s) {
     try {
@@ -140,6 +146,20 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  public static <T> Future<T> firstCompletedOf(final List<Future<T>> list) {
+    FirstCompletedOfPromise<T> p = new FirstCompletedOfPromise<>(list);
+    for (final Future<T> f : list)
+      f.respond(p);
+    return p;
+  }
+  
+  public static <T> Future<Optional<T>> find(final List<Future<T>> list, final Predicate<T> pred) {
+//    FirstCompletedOfPromise<T> p = new FirstCompletedOfPromise<>(list);
+//    for (final Future<T> f : list)
+//      f.respond(p);
+    return null;
+  }
+
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
     return Tailrec.apply(() -> {
       if (cond.get())
@@ -162,6 +182,12 @@ public interface Future<T> extends InterruptHandler {
 
   <R> Future<R> flatMap(Function<? super T, ? extends Future<R>> f);
 
+  Future<T> filter(Predicate<? super T> p);
+
+  <R> Future<R> transform(Transformer<? super T, ? extends R> t);
+
+  <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t);
+
   <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f);
 
   <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f);
@@ -177,6 +203,8 @@ public interface Future<T> extends InterruptHandler {
   Future<T> rescue(Function<Throwable, ? extends Future<T>> f);
 
   Future<T> handle(Function<Throwable, ? extends T> f);
+
+  Future<T> fallbackTo(Future<T> other);
 
   boolean isDefined();
 
@@ -247,6 +275,30 @@ final class JoinPromise<T> extends Promise<Void> implements Responder<T> {
   public final void onValue(final T value) {
     if (count.decrementAndGet() == 0)
       become(Future.VOID);
+  }
+
+  @Override
+  protected InterruptHandler getInterruptHandler() {
+    return InterruptHandler.apply(list);
+  }
+}
+
+final class FirstCompletedOfPromise<T> extends Promise<T> implements Responder<T> {
+
+  private final List<? extends Future<T>> list;
+
+  public FirstCompletedOfPromise(final List<? extends Future<T>> list) {
+    this.list = list;
+  }
+
+  @Override
+  public final void onException(final Throwable ex) {
+    becomeIfEmpty(Future.exception(ex));
+  }
+
+  @Override
+  public final void onValue(final T value) {
+    becomeIfEmpty(Future.value(value));
   }
 
   @Override

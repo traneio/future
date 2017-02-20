@@ -1,5 +1,6 @@
 package io.trane.future;
 
+import java.util.Collection;
 import java.util.List;
 
 @FunctionalInterface
@@ -12,7 +13,7 @@ public interface InterruptHandler {
     };
   }
 
-  public static InterruptHandler apply(final List<? extends InterruptHandler> handlers) {
+  public static InterruptHandler apply(final Collection<? extends InterruptHandler> handlers) {
     return ex -> {
       for (final InterruptHandler handler : handlers)
         handler.raise(ex);

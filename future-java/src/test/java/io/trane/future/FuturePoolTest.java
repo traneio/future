@@ -22,7 +22,7 @@ import io.trane.future.FuturePool;
 public class FuturePoolTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(10, TimeUnit.MILLISECONDS);
+    return future.get(100, TimeUnit.MILLISECONDS);
   }
 
   @Test

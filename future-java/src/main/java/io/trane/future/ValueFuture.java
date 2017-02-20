@@ -1,9 +1,11 @@
 package io.trane.future;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +32,32 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     try {
       return f.apply(value);
+    } catch (final Throwable ex) {
+      return new ExceptionFuture<>(ex);
+    }
+  }
+  
+  @Override
+  public final Future<T> filter(Predicate<? super T> p) {
+    if(p.test(value)) 
+      return this;
+    else 
+      return Future.exception(new NoSuchElementException("Future.filter predicate is not satisfied"));
+  }
+  
+  @Override
+  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+    try {
+      return new ValueFuture<>(t.onValue(value));
+    } catch (final Throwable ex) {
+      return new ExceptionFuture<>(ex);
+    }
+  }
+  
+  @Override
+  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+    try {
+      return t.onValue(value);
     } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
@@ -81,6 +109,11 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final Future<T> handle(final Function<Throwable, ? extends T> f) {
+    return this;
+  }
+  
+  @Override
+  public Future<T> fallbackTo(Future<T> other) {
     return this;
   }
 

@@ -95,7 +95,7 @@ public class SatisfiedFutureTest {
     Future<Integer> future = Future.value(1);
     long delay = 10;
     long start = System.currentTimeMillis();
-    int result = future.delayed(delay, TimeUnit.MILLISECONDS, scheduler).get(20, TimeUnit.MILLISECONDS);
+    int result = future.delayed(delay, TimeUnit.MILLISECONDS, scheduler).get(200, TimeUnit.MILLISECONDS);
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }

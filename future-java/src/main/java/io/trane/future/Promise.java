@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,7 +75,7 @@ public abstract class Promise<T> implements Future<T> {
 
   // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) |
   // WaitQueue|Null (Pending)
-  private volatile Object state;
+  volatile Object state;
 
   protected InterruptHandler getInterruptHandler() {
     return null;
@@ -297,6 +298,51 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
+  public final Future<T> filter(Predicate<? super T> p) {
+    return continuation(new Continuation<T, T>() {
+      @Override
+      final Future<T> apply(final Future<T> result) {
+        return result.filter(p);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return Promise.this;
+      }
+    });
+  }
+
+  @Override
+  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+    return continuation(new Continuation<T, R>() {
+      @Override
+      final Future<R> apply(final Future<T> result) {
+        return result.transform(t);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return Promise.this;
+      }
+    });
+  }
+
+  @Override
+  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+    return continuation(new Continuation<T, R>() {
+      @Override
+      final Future<R> apply(final Future<T> result) {
+        return result.transformWith(t);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return Promise.this;
+      }
+    });
+  }
+
+  @Override
   public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
     return continuation(new Continuation<T, R>() {
       @Override
@@ -408,6 +454,21 @@ public abstract class Promise<T> implements Future<T> {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.handle(f);
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return Promise.this;
+      }
+    });
+  }
+  
+  @Override
+  public Future<T> fallbackTo(Future<T> other) {
+    return continuation(new Continuation<T, T>() {
+      @Override
+      final Future<T> apply(final Future<T> result) {
+        return result.fallbackTo(other);
       }
 
       @Override
@@ -550,7 +611,7 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
 
   @Override
   public final void flush(final Future<T> result) {
-    become(apply(result));
+    becomeIfEmpty(apply(result));
   }
 
   abstract Future<R> apply(Future<T> result);
