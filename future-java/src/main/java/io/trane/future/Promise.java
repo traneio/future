@@ -95,22 +95,6 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @SuppressWarnings("unchecked")
-  protected final WaitQueue<T> flushh(final Future<T> result) {
-    while (true) {
-      final Object curr = state;
-      if (curr instanceof Promise && !(curr instanceof Continuation))
-        return ((Promise<T>) curr).flushh(result);
-      else if (curr instanceof LinkedContinuation)
-        return ((LinkedContinuation<?, T>) curr).flushh(result);
-      else if (result instanceof Promise) {
-        ((Promise<T>) result).compress().link(this);
-        return null;
-      } else if (cas(curr, result))
-        return (WaitQueue<T>) curr;
-    }
-  }
-
-  @SuppressWarnings("unchecked")
   public final boolean becomeIfEmpty(final Future<T> result) {
     try {
       while (true) {
@@ -137,6 +121,22 @@ public abstract class Promise<T> implements Future<T> {
                 + "Use `Future.tailrec` or increase the stack size (-Xss) if the future isn't recursive.",
             ex);
       throw ex;
+    }
+  }
+  
+  @SuppressWarnings("unchecked")
+  protected final WaitQueue<T> safeFlush(final Future<T> result) {
+    while (true) {
+      final Object curr = state;
+      if (curr instanceof Promise && !(curr instanceof Continuation))
+        return ((Promise<T>) curr).safeFlush(result);
+      else if (curr instanceof LinkedContinuation)
+        return ((LinkedContinuation<?, T>) curr).safeFlush(result);
+      else if (result instanceof Promise) {
+        ((Promise<T>) result).compress().link(this);
+        return null;
+      } else if (cas(curr, result))
+        return (WaitQueue<T>) curr;
     }
   }
 
@@ -633,7 +633,7 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
     while (q instanceof Continuation) {
       Continuation<Object, Object> c = (Continuation<Object, Object>) q;
       r = c.apply(r);
-      q = c.flushh(r);
+      q = c.safeFlush(r);
     }
     if (q != null)
       q.flush(r);
@@ -668,8 +668,8 @@ final class LinkedContinuation<T, R> {
     return continuation.becomeIfEmpty(result);
   }
 
-  public final WaitQueue<R> flushh(final Future<R> result) {
-    return continuation.flushh(result);
+  public final WaitQueue<R> safeFlush(final Future<R> result) {
+    return continuation.safeFlush(result);
   }
 
   final <S> Future<S> continuation(final Continuation<R, S> c) {
