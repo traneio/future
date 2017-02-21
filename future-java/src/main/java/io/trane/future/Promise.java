@@ -95,6 +95,25 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @SuppressWarnings("unchecked")
+  protected final WaitQueue<T> flushh(final Future<T> result) {
+    while (true) {
+      final Object curr = state;
+      if (curr instanceof SatisfiedFuture)
+        return null;
+      else if (curr instanceof Promise && !(curr instanceof Continuation))
+        return ((Promise<T>) curr).flushh(result);
+      else if (curr instanceof LinkedContinuation)
+        return ((LinkedContinuation<?, T>) curr).flushh(result);
+      else if (result instanceof Promise) {
+        ((Promise<T>) result).compress().link(this);
+        return null;
+      } else if (cas(curr, result)) {
+        return (WaitQueue<T>) curr;
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
   public final boolean becomeIfEmpty(final Future<T> result) {
     try {
       while (true) {
@@ -462,7 +481,7 @@ public abstract class Promise<T> implements Future<T> {
       }
     });
   }
-  
+
   @Override
   public Future<T> fallbackTo(Future<T> other) {
     return continuation(new Continuation<T, T>() {
@@ -609,9 +628,18 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
     target.continuation(this);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public final void flush(final Future<T> result) {
-    becomeIfEmpty(apply(result));
+    Future<Object> r = (Future<Object>) result;
+    WaitQueue<Object> q = (Continuation<Object, Object>) this;
+    while(q instanceof Continuation) {
+      Continuation<Object, Object> c = (Continuation<Object, Object>) q;
+      r = c.apply(r);
+      q = c.flushh(r);
+    }
+    if(q != null)
+      q.flush(r);
   }
 
   abstract Future<R> apply(Future<T> result);
@@ -641,6 +669,10 @@ final class LinkedContinuation<T, R> {
 
   public final boolean becomeIfEmpty(final Future<R> result) {
     return continuation.becomeIfEmpty(result);
+  }
+  
+  public final WaitQueue<R> flushh(final Future<R> result) {
+    return continuation.flushh(result);
   }
 
   final <S> Future<S> continuation(final Continuation<R, S> c) {

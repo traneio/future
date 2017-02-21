@@ -1,7 +1,6 @@
 package io.trane.future;
 
 import java.util.Collection;
-import java.util.List;
 
 @FunctionalInterface
 public interface InterruptHandler {
