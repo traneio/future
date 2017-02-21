@@ -98,18 +98,15 @@ public abstract class Promise<T> implements Future<T> {
   protected final WaitQueue<T> flushh(final Future<T> result) {
     while (true) {
       final Object curr = state;
-      if (curr instanceof SatisfiedFuture)
-        return null;
-      else if (curr instanceof Promise && !(curr instanceof Continuation))
+      if (curr instanceof Promise && !(curr instanceof Continuation))
         return ((Promise<T>) curr).flushh(result);
       else if (curr instanceof LinkedContinuation)
         return ((LinkedContinuation<?, T>) curr).flushh(result);
       else if (result instanceof Promise) {
         ((Promise<T>) result).compress().link(this);
         return null;
-      } else if (cas(curr, result)) {
+      } else if (cas(curr, result))
         return (WaitQueue<T>) curr;
-      }
     }
   }
 
@@ -633,12 +630,12 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
   public final void flush(final Future<T> result) {
     Future<Object> r = (Future<Object>) result;
     WaitQueue<Object> q = (Continuation<Object, Object>) this;
-    while(q instanceof Continuation) {
+    while (q instanceof Continuation) {
       Continuation<Object, Object> c = (Continuation<Object, Object>) q;
       r = c.apply(r);
       q = c.flushh(r);
     }
-    if(q != null)
+    if (q != null)
       q.flush(r);
   }
 
@@ -670,7 +667,7 @@ final class LinkedContinuation<T, R> {
   public final boolean becomeIfEmpty(final Future<R> result) {
     return continuation.becomeIfEmpty(result);
   }
-  
+
   public final WaitQueue<R> flushh(final Future<R> result) {
     return continuation.flushh(result);
   }

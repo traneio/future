@@ -268,13 +268,25 @@ public class PromiseTest {
     p.becomeIfEmpty(null);
   }
 
+  @Test
   public void becomeIfEmptyNoStakOverflow() throws CheckedFutureException {
     Promise<Integer> p = Promise.<Integer>apply();
     Future<Integer> f = p;
     for (int i = 0; i < 20000; i++)
       f = f.map(v -> v + 1);
     p.becomeIfEmpty(Future.value(0));
-    assertEquals(new Integer(20000), get(p));
+    assertEquals(new Integer(20000), get(f));
+  }
+  
+  @Test(expected = StackOverflowError.class)
+  public void becomeIfEmptyStakOverflow() throws CheckedFutureException {
+    Promise<Integer> p = Promise.<Integer>apply();
+    Future<Integer> f = p;
+    for (int i = 0; i < 20000; i++) {
+      f.map(v -> v + 1);
+      f = f.map(v -> v + 1);
+    }
+    p.becomeIfEmpty(Future.value(0));
   }
 
   /*** setValue ***/
