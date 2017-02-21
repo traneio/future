@@ -136,16 +136,6 @@ public class MonixSyncTaskBenchmark {
     return Await.result(p.foreachL(ensureF).runAsync(scheduler), inf);
   }
 
-  public static void main(String[] args) throws Exception {
-    Task<BoxedUnit> p = Task.create((s, c) -> {
-      c.apply(tryUnit);
-      return Cancelable.empty();
-    });
-    for (int i = 0; i < N.n; i++)
-      p = p.foreachL(ensureF);
-    Await.result(p.runAsync(scheduler), inf);
-  }
-
   @Benchmark
   public BoxedUnit ensurePromiseN() throws Exception {
     Task<BoxedUnit> p = Task.create((s, c) -> {
