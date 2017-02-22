@@ -50,9 +50,13 @@ package object scalaFlavor {
 
     def apply[T](body: => T): Future[T] = new Future(JFuture.apply(() => body))
 
-    def sequence[A, M[X] <: TraversableOnce[X]](in: M[Future[A]])(implicit cbf: CanBuildFrom[M[Future[A]], A, M[A]]): Future[M[A]] = {
+    private[this] def toJList[A, M[X] <: TraversableOnce[X]](in: M[Future[A]]) = {
       import scala.collection.JavaConverters._
-      new Future(JFuture.collect(in.toSeq.asJava.asInstanceOf[java.util.List[JFuture[A]]])).map { jList =>
+      in.toSeq.asJava.asInstanceOf[java.util.List[JFuture[A]]]
+    }
+
+    def sequence[A, M[X] <: TraversableOnce[X]](in: M[Future[A]])(implicit cbf: CanBuildFrom[M[Future[A]], A, M[A]]): Future[M[A]] = {
+      new Future(JFuture.collect(toJList(in))).map { jList =>
         val builder = cbf()
         val size = jList.size
         var i = 0
@@ -64,51 +68,40 @@ package object scalaFlavor {
 
     def firstCompletedOf[T](futures: TraversableOnce[Future[T]]): Future[T] = {
       import scala.collection.JavaConverters._
-      new Future(JFuture.firstCompletedOf(futures.toSeq.asJava.asInstanceOf[java.util.List[JFuture[T]]]));
+      new Future(JFuture.firstCompletedOf(toJList(futures)));
     }
 
-    //   def find[T](futures: scala.collection.immutable.Iterable[Future[T]])(p: T => Boolean): Future[Option[T]] = {
-    //     def searchNext(i: Iterator[Future[T]]): Future[Option[T]] =
-    //       if (!i.hasNext) successful[Option[T]](None)
-    //       else {
-    //         i.next().transformWith {
-    //           case Success(r) if p(r) => successful(Some(r))
-    //           case other => searchNext(i)
-    //         }
-    //       }
-    //     searchNext(futures.iterator)
-    //   }
+    def find[T](futures: scala.collection.immutable.Iterable[Future[T]])(p: T => Boolean): Future[Option[T]] = {
+      def searchNext(i: Iterator[Future[T]]): Future[Option[T]] =
+        if (!i.hasNext) successful[Option[T]](None)
+        else {
+          i.next().transformWith {
+            case Success(r) if p(r) => successful(Some(r))
+            case other => searchNext(i)
+          }
+        }
+      searchNext(futures.iterator)
+    }
 
-    //   def foldLeft[T, R](futures: scala.collection.immutable.Iterable[Future[T]])(zero: R)(op: (R, T) => R): Future[R] =
-    //     foldNext(futures.iterator, zero, op)
+    def foldLeft[T, R](futures: scala.collection.immutable.Iterable[Future[T]])(zero: R)(op: (R, T) => R): Future[R] =
+      foldNext(futures.iterator, zero, op)
 
-    //   private[this] def foldNext[T, R](i: Iterator[Future[T]], prevValue: R, op: (R, T) => R): Future[R] =
-    //     if (!i.hasNext) successful(prevValue)
-    //     else i.next().flatMap { value => foldNext(i, op(prevValue, value), op) }
+    private[this] def foldNext[T, R](i: Iterator[Future[T]], prevValue: R, op: (R, T) => R): Future[R] =
+      if (!i.hasNext) successful(prevValue)
+      else i.next().flatMap { value => foldNext(i, op(prevValue, value), op) }
 
-    //   @deprecated("use Future.foldLeft instead", "2.12.0")
-    //   def fold[T, R](futures: TraversableOnce[Future[T]])(zero: R)(@deprecatedName('foldFun) op: (R, T) => R): Future[R] = {
-    //     if (futures.isEmpty) successful(zero)
-    //     else sequence(futures).map(_.foldLeft(zero)(op))
-    //   }
+    def reduceLeft[T, R >: T](futures: scala.collection.immutable.Iterable[Future[T]])(op: (R, T) => R): Future[R] = {
+      val i = futures.iterator
+      if (!i.hasNext) failed(new NoSuchElementException("reduceLeft attempted on empty collection"))
+      else i.next() flatMap { v => foldNext(i, v, op) }
+    }
 
-    //   @deprecated("use Future.reduceLeft instead", "2.12.0")
-    //   def reduce[T, R >: T](futures: TraversableOnce[Future[T]])(op: (R, T) => R): Future[R] = {
-    //     if (futures.isEmpty) failed(new NoSuchElementException("reduce attempted on empty collection"))
-    //     else sequence(futures).map(_ reduceLeft op)
-    //   }
-
-    //   def reduceLeft[T, R >: T](futures: scala.collection.immutable.Iterable[Future[T]])(op: (R, T) => R): Future[R] = {
-    //     val i = futures.iterator
-    //     if (!i.hasNext) failed(new NoSuchElementException("reduceLeft attempted on empty collection"))
-    //     else i.next() flatMap { v => foldNext(i, v, op) }
-    //   }
-
-    //   def traverse[A, B, M[X] <: TraversableOnce[X]](in: M[A])(fn: A => Future[B])(implicit cbf: CanBuildFrom[M[A], B, M[B]], executor: ExecutionContext): Future[M[B]] =
-    //     in.foldLeft(successful(cbf(in))) {
-    //       (fr, a) => fr.zipWith(fn(a))(_ += _)
-    //     }.map(_.result())(InternalCallbackExecutor)
-    //   }
+    def traverse[A, B, M[X] <: TraversableOnce[X]](in: M[A])(fn: A => Future[B])(implicit cbf: CanBuildFrom[M[A], B, M[B]]): Future[M[B]] =
+      JFuture.collect(toJList(in.map(fn))).map { jList =>
+        val builder = cbf()
+        jList.forEach(builder += _)
+        builder.result()
+      }
   }
   class Future[+T](private val _impl: JFuture[_ <: T]) extends AnyVal {
 

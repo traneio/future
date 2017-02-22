@@ -3,6 +3,7 @@ package io.trane.future;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,6 +49,12 @@ public interface Future<T> extends InterruptHandler {
 
   public static <T> Future<List<T>> emptyList() {
     return emptyListInstance.unsafeCast();
+  }
+
+  static Future<? extends Optional<?>> emptyOptionalInstance = Future.value(Optional.empty());
+
+  public static <T> Future<Optional<T>> emptyOptional() {
+    return emptyOptionalInstance.unsafeCast();
   }
 
   public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
@@ -151,13 +158,6 @@ public interface Future<T> extends InterruptHandler {
     for (final Future<T> f : list)
       f.respond(p);
     return p;
-  }
-  
-  public static <T> Future<Optional<T>> find(final List<Future<T>> list, final Predicate<T> pred) {
-//    FirstCompletedOfPromise<T> p = new FirstCompletedOfPromise<>(list);
-//    for (final Future<T> f : list)
-//      f.respond(p);
-    return null;
   }
 
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
