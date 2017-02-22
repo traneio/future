@@ -147,26 +147,6 @@ public class TraneIOFutureBenchmark {
     return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
   }
 
-  @Benchmark
-  public List<String> collectConst() throws CheckedFutureException {
-    List<Future<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(constFuture);
-    Future<List<String>> f = Future.collect(list);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-  }
-
-  @Benchmark
-  public List<String> collectPromise() throws CheckedFutureException {
-    List<Promise<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(Promise.apply());
-    Future<List<String>> f = Future.collect(list);
-    for (Promise<String> p : list)
-      p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-  }
-
   private Future<Integer> loop(int i) {
     return Tailrec.apply(() -> {
       if (i > 0)

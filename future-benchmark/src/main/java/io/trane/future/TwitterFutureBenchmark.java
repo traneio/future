@@ -148,27 +148,6 @@ public class TwitterFutureBenchmark {
     return Await.result(f);
   }
 
-  @Benchmark
-  public List<String> collectConst() throws Exception {
-    List<Future<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(constFuture);
-    Future<List<String>> f = Future.collect(list);
-    return Await.result(f);
-  }
-
-  @Benchmark
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public List<String> collectPromise() throws Exception {
-    List<Promise<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(Promise.apply());
-    Future<List<String>> f = Future.collect((List) list);
-    for (Promise<String> p : list)
-      p.setValue(string);
-    return Await.result(f);
-  }
-
   private Future<Integer> loop(int i) {
     if (i > 0)
       return Future.value(i - 1).flatMap(this::loop);

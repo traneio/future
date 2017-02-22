@@ -150,42 +150,6 @@ public class JavaAsyncFutureBenchmark {
     return f.get();
   }
 
-  @Benchmark
-  public List<String> collectConst() throws InterruptedException, ExecutionException {
-    List<CompletableFuture<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(constFuture);
-
-    CompletableFuture<Void> done = CompletableFuture.allOf(list.toArray(emptyArray));
-    CompletableFuture<List<String>> f = done.thenApplyAsync(v -> {
-      List<String> result = new ArrayList<>(N.n);
-      for (int i = 0; i < N.n; i++)
-        result.add(list.get(i).join());
-      return result;
-    });
-
-    return f.get();
-  }
-
-  @Benchmark
-  public List<String> collectPromise() throws InterruptedException, ExecutionException {
-    List<CompletableFuture<String>> list = new ArrayList<>(N.n);
-    for (int i = 0; i < N.n; i++)
-      list.add(new CompletableFuture<>());
-
-    CompletableFuture<Void> done = CompletableFuture.allOf(list.toArray(emptyArray));
-    CompletableFuture<List<String>> f = done.thenApplyAsync(v -> {
-      List<String> result = new ArrayList<>(N.n);
-      for (int i = 0; i < N.n; i++)
-        result.add(list.get(i).join());
-      return result;
-    });
-
-    for (int i = 0; i < N.n; i++)
-      list.get(i).complete(string);
-    return f.get();
-  }
-
   private CompletableFuture<Integer> loop(int i) {
     if (i > 0)
       return CompletableFuture.completedFuture(i - 1).thenComposeAsync(this::loop);
