@@ -1,7 +1,6 @@
 package io.trane.future;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -17,7 +16,7 @@ public final class Tailrec {
     }
   };
 
-  private List<Runnable> tasks = null;
+  private ArrayList<Runnable> tasks = null;
   private int syncPermits = 0;
 
   private boolean running = false;
@@ -40,7 +39,7 @@ public final class Tailrec {
   private final void run() {
     running = true;
     while (tasks != null) {
-      final List<Runnable> pending = tasks;
+      final ArrayList<Runnable> pending = tasks;
       tasks = null;
       for (int i = 0; i < pending.size(); i++)
         pending.get(i).run();
