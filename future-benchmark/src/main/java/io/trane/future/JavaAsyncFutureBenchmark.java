@@ -1,7 +1,5 @@
 package io.trane.future;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -22,8 +20,6 @@ public class JavaAsyncFutureBenchmark {
   private static final Function<String, CompletableFuture<String>> flatMapF = i -> constFuture;
   private static final Runnable ensureF = () -> {
   };
-  @SuppressWarnings("unchecked")
-  private static final CompletableFuture<String>[] emptyArray = new CompletableFuture[0];
 
   @Benchmark
   public CompletableFuture<String> newPromise() {

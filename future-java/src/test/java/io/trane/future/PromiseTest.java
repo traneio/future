@@ -71,13 +71,14 @@ public class PromiseTest {
     p.raise(ex);
     assertEquals(ex, interrupt.get());
   }
-  
+
   @Test
   public void applyHandlerWithLocal() {
     AtomicReference<Optional<Integer>> localValue = new AtomicReference<>();
     Local<Integer> l = Local.apply();
     l.update(1);
-    Promise<Integer> p = Promise.apply((ex) -> {});
+    Promise<Integer> p = Promise.apply((ex) -> {
+    });
     l.update(2);
     p.ensure(() -> localValue.set(l.get()));
     p.setValue(1);
@@ -95,13 +96,15 @@ public class PromiseTest {
     assertEquals(ex, interrupt1.get());
     assertEquals(ex, interrupt2.get());
   }
-  
+
   @Test
   public void applyTwoHandlersWithLocal() {
     AtomicReference<Optional<Integer>> localValue = new AtomicReference<>();
     Local<Integer> l = Local.apply();
     l.update(1);
-    Promise<Integer> p = Promise.apply((ex) -> {}, (ex) -> {});
+    Promise<Integer> p = Promise.apply((ex) -> {
+    }, (ex) -> {
+    });
     l.update(2);
     p.ensure(() -> localValue.set(l.get()));
     p.setValue(1);
@@ -119,13 +122,15 @@ public class PromiseTest {
     assertEquals(ex, interrupt1.get());
     assertEquals(ex, interrupt2.get());
   }
-  
+
   @Test
   public void applyHandlersWithLocal() {
     AtomicReference<Optional<Integer>> localValue = new AtomicReference<>();
     Local<Integer> l = Local.apply();
     l.update(1);
-    Promise<Integer> p = Promise.apply(Arrays.asList((ex) -> {}, (ex) -> {}));
+    Promise<Integer> p = Promise.apply(Arrays.asList((ex) -> {
+    }, (ex) -> {
+    }));
     l.update(2);
     p.ensure(() -> localValue.set(l.get()));
     p.setValue(1);
@@ -277,7 +282,7 @@ public class PromiseTest {
     p.becomeIfEmpty(Future.value(0));
     assertEquals(new Integer(20000), get(f));
   }
-  
+
   @Test(expected = StackOverflowError.class)
   public void becomeIfEmptyStakOverflow() throws CheckedFutureException {
     Promise<Integer> p = Promise.<Integer>apply();
@@ -349,7 +354,7 @@ public class PromiseTest {
     p2.raise(ex);
     assertEquals(ex, interrupt.get());
   }
-  
+
   @Test
   public void raiseLinkedContinuation() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -361,7 +366,7 @@ public class PromiseTest {
     p2.raise(ex);
     assertEquals(ex, intr.get());
   }
-  
+
   @Test
   public void raiseNoHandler() {
     Promise<Integer> p = Promise.apply();
@@ -496,7 +501,7 @@ public class PromiseTest {
     p2.become(p1);
     assertFalse(p2.isDefined());
   }
-  
+
   @Test
   public void isDefinedLinkedContinuationDone() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -508,7 +513,7 @@ public class PromiseTest {
     p2.setValue(1);
     assertTrue(p2.isDefined());
   }
-  
+
   @Test
   public void isDefinedLinkedContinuationWaiting() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -543,7 +548,7 @@ public class PromiseTest {
     p.setException(ex);
     get(future);
   }
-  
+
   @Test
   public void voidedInterrupt() throws CheckedFutureException {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -648,7 +653,7 @@ public class PromiseTest {
     Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
     get(future);
   }
-  
+
   @Test
   public void withinInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -720,7 +725,7 @@ public class PromiseTest {
     assertEquals(new Integer(3), get(f2));
     assertEquals(new Integer(4), get(f3));
   }
-  
+
   @Test
   public void linkedContinuation() throws CheckedFutureException {
     Promise<Integer> p1 = Promise.apply();
@@ -733,7 +738,7 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p2));
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void linkedContinuationWithWaitQueue() throws CheckedFutureException {
     Promise<Integer> p1 = Promise.apply();
@@ -757,7 +762,7 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p));
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void mapInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -775,12 +780,110 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p));
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void flatMapInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
     Future<Integer> f = p.flatMap(i -> Future.value(i + 1));
+    f.raise(ex);
+    assertEquals(ex, intr.get());
+  }
+
+  @Test
+  public void filter() throws CheckedFutureException {
+    Promise<Integer> p = Promise.apply();
+    Future<Integer> f = p.filter(i -> i == 1);
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+    assertEquals(new Integer(1), get(f));
+  }
+
+  @Test
+  public void filterInterrupt() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = Promise.apply(intr::set);
+    Future<Integer> f = p.filter(i -> i == 1);
+    f.raise(ex);
+    assertEquals(ex, intr.get());
+  }
+
+  @Test
+  public void transform() throws CheckedFutureException {
+    Promise<Integer> p = Promise.apply();
+    Future<Integer> f = p.transform(new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return value + 1;
+      }
+    });
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+    assertEquals(new Integer(2), get(f));
+  }
+
+  @Test
+  public void transformInterrupt() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = Promise.apply(intr::set);
+    Future<Integer> f = p.transform(new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return null;
+      }
+    });
+    f.raise(ex);
+    assertEquals(ex, intr.get());
+  }
+  
+  @Test
+  public void transformWith() throws CheckedFutureException {
+    Promise<Integer> p = Promise.apply();
+    Future<Integer> f = p.transformWith(new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return Future.value(value + 1);
+      }
+    });
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+    assertEquals(new Integer(2), get(f));
+  }
+
+  @Test
+  public void transformWithInterrupt() {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = Promise.apply(intr::set);
+    Future<Integer> f = p.transformWith(new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return null;
+      }
+    });
     f.raise(ex);
     assertEquals(ex, intr.get());
   }
@@ -794,12 +897,13 @@ public class PromiseTest {
     assertTrue(called.get());
     assertEquals(new Integer(1), get(f));
   }
-  
+
   @Test
   public void ensureInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.ensure(() -> {});
+    Future<Integer> f = p.ensure(() -> {
+    });
     f.raise(ex);
     assertEquals(ex, intr.get());
   }
@@ -812,7 +916,7 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p));
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void biMapInterrupt() {
     AtomicReference<Throwable> intr1 = new AtomicReference<>();
@@ -845,7 +949,7 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p));
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void biFlatMapInterrupt() {
     AtomicReference<Throwable> intr1 = new AtomicReference<>();
@@ -879,12 +983,13 @@ public class PromiseTest {
     assertEquals(new Integer(1), get(p));
     assertEquals(new Integer(1), get(f));
   }
-  
+
   @Test
   public void onSuccessInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.onSuccess(i -> {});
+    Future<Integer> f = p.onSuccess(i -> {
+    });
     f.raise(ex);
     assertEquals(ex, intr.get());
   }
@@ -898,12 +1003,13 @@ public class PromiseTest {
     assertEquals(ex, result.get());
     get(f);
   }
-  
+
   @Test
   public void onFailureInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.onFailure(i -> {});
+    Future<Integer> f = p.onFailure(i -> {
+    });
     f.raise(ex);
     assertEquals(ex, intr.get());
   }
@@ -954,7 +1060,7 @@ public class PromiseTest {
     assertFalse(success.get());
     get(f);
   }
-  
+
   @Test
   public void respondInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -963,6 +1069,7 @@ public class PromiseTest {
       @Override
       public void onException(Throwable ex) {
       }
+
       @Override
       public void onValue(Integer value) {
       }
@@ -984,7 +1091,7 @@ public class PromiseTest {
     assertEquals(ex, exception.get());
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void rescueInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -1006,7 +1113,7 @@ public class PromiseTest {
     assertEquals(ex, exception.get());
     assertEquals(new Integer(2), get(f));
   }
-  
+
   @Test
   public void handleInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -1036,7 +1143,7 @@ public class PromiseTest {
     p1.become(p2);
     assertEquals("Promise(Linked(" + p1.toString() + "))@" + hexHashCode(p2), p2.toString());
   }
-  
+
   @Test
   public void toStringLinkedContinuationWaiting() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -1047,7 +1154,7 @@ public class PromiseTest {
     c.become(p2);
     assertEquals("Promise(Linked(" + c.toString() + "))@" + hexHashCode(p2), p2.toString());
   }
-  
+
   @Test
   public void toStringWaiting() {
     Promise<Integer> p = Promise.apply();

@@ -10,82 +10,78 @@ import java.util.function.Predicate;
 public class NoFuture<T> implements Future<T> {
 
   @Override
-  public void raise(Throwable ex) {
+  public void raise(final Throwable ex) {
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <R> Future<R> map(Function<? super T, ? extends R> f) {
+  public <R> Future<R> map(final Function<? super T, ? extends R> f) {
     return (Future<R>) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <R> Future<R> flatMap(Function<? super T, ? extends Future<R>> f) {
+  public <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     return (Future<R>) this;
   }
 
   @Override
-  public Future<T> filter(Predicate<? super T> p) {
+  public Future<T> filter(final Predicate<? super T> p) {
     return this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+  public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     return (Future<R>) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+  public <R> Future<R> transformWith(final Transformer<? super T, ? extends Future<R>> t) {
     return (Future<R>) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <U, R> Future<R> biMap(Future<U> other, BiFunction<? super T, ? super U, ? extends R> f) {
+  public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
     return (Future<R>) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <U, R> Future<R> biFlatMap(Future<U> other, BiFunction<? super T, ? super U, ? extends Future<R>> f) {
+  public <U, R> Future<R> biFlatMap(final Future<U> other,
+      final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
     return (Future<R>) this;
   }
 
   @Override
-  public Future<T> ensure(Runnable r) {
+  public Future<T> ensure(final Runnable r) {
     return this;
   }
 
   @Override
-  public Future<T> onSuccess(Consumer<? super T> c) {
+  public Future<T> onSuccess(final Consumer<? super T> c) {
     return this;
   }
 
   @Override
-  public Future<T> onFailure(Consumer<Throwable> c) {
+  public Future<T> onFailure(final Consumer<Throwable> c) {
     return this;
   }
 
   @Override
-  public Future<T> respond(Responder<? super T> r) {
+  public Future<T> respond(final Responder<? super T> r) {
     return this;
   }
 
   @Override
-  public Future<T> rescue(Function<Throwable, ? extends Future<T>> f) {
+  public Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     return this;
   }
 
   @Override
-  public Future<T> handle(Function<Throwable, ? extends T> f) {
-    return this;
-  }
-
-  @Override
-  public Future<T> fallbackTo(Future<T> other) {
+  public Future<T> handle(final Function<Throwable, ? extends T> f) {
     return this;
   }
 
@@ -95,16 +91,16 @@ public class NoFuture<T> implements Future<T> {
   }
 
   @Override
-  public T get(long timeout, TimeUnit unit) throws CheckedFutureException {
+  public T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     join(timeout, unit);
     throw new TimeoutException();
   }
 
   @Override
-  public void join(long timeout, TimeUnit unit) throws CheckedFutureException {
+  public void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
     try {
       Thread.sleep(unit.toMillis(timeout));
-    } catch (InterruptedException e) {
+    } catch (final InterruptedException e) {
       throw new CheckedFutureException(e);
     }
   }
@@ -116,16 +112,17 @@ public class NoFuture<T> implements Future<T> {
   }
 
   @Override
-  public Future<T> delayed(long delay, TimeUnit timeUnit, ScheduledExecutorService scheduler) {
+  public Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
     return this;
   }
 
   @Override
-  public void proxyTo(Promise<T> p) {
+  public void proxyTo(final Promise<T> p) {
   }
 
   @Override
-  public Future<T> within(long timeout, TimeUnit timeUnit, ScheduledExecutorService scheduler, Throwable exception) {
+  public Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+      final Throwable exception) {
     return this;
   }
 }

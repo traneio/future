@@ -39,6 +39,90 @@ public class ExceptionFutureTest {
     assertEquals(future, future.flatMap(i -> Future.value(i + 1)));
   }
 
+  /*** filter ***/
+
+  @Test
+  public void filter() throws CheckedFutureException {
+    Future<Integer> future = Future.exception(ex);
+    assertEquals(future, future.filter(i -> i == 1));
+  }
+
+  /*** transform ***/
+
+  @Test
+  public void transform() throws CheckedFutureException {
+    Transformer<Integer, Integer> t = new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        assertEquals(ExceptionFutureTest.this.ex, ex);
+        return 2;
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        return null;
+      }
+    };
+    Future<Integer> future = Future.exception(ex);
+    assertEquals(new Integer(2), get(future.transform(t)));
+  }
+  
+  @Test(expected = TestException.class)
+  public void transformException() throws CheckedFutureException {
+    Transformer<Integer, Integer> t = new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        assertEquals(ExceptionFutureTest.this.ex, ex);
+        throw new TestException();
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        return null;
+      }
+    };
+    Future<Integer> future = Future.exception(ex);
+    get(future.transform(t));
+  }
+  
+  /*** transformWith ***/
+
+  @Test
+  public void transformWith() throws CheckedFutureException {
+    Transformer<Integer, Future<Integer>> t = new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        assertEquals(ExceptionFutureTest.this.ex, ex);
+        return Future.value(2);
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        return null;
+      }
+    };
+    Future<Integer> future = Future.exception(ex);
+    assertEquals(new Integer(2), get(future.transformWith(t)));
+  }
+  
+  @Test(expected = TestException.class)
+  public void transformWithException() throws CheckedFutureException {
+    Transformer<Integer, Future<Integer>> t = new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        assertEquals(ExceptionFutureTest.this.ex, ex);
+        throw new TestException();
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        return null;
+      }
+    };
+    Future<Integer> future = Future.exception(ex);
+    get(future.transformWith(t));
+  }
+
   /*** biMap ***/
 
   @Test

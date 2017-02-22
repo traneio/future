@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +49,90 @@ public class ValueFutureTest {
   public void flatMapException() throws CheckedFutureException {
     Future<Integer> future = Future.value(1).flatMap(i -> Future.value(i / 0));
     get(future);
+  }
+
+  /*** filter ***/
+
+  @Test
+  public void filter() throws CheckedFutureException {
+    assertEquals(new Integer(1), get(Future.value(1).filter(i -> i == 1)));
+  }
+
+  @Test(expected = NoSuchElementException.class)
+  public void filterNoSuchElement() throws CheckedFutureException {
+    assertEquals(new Integer(1), get(Future.value(1).filter(i -> i == 2)));
+  }
+
+  /*** transform ***/
+
+  @Test
+  public void transform() throws CheckedFutureException {
+    Transformer<Integer, Integer> t = new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return value + 1;
+      }
+    };
+    assertEquals(new Integer(2), get(Future.value(1).transform(t)));
+  }
+
+  @Test(expected = TestException.class)
+  public void transformException() throws CheckedFutureException {
+    Transformer<Integer, Integer> t = new Transformer<Integer, Integer>() {
+      @Override
+      public Integer onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Integer onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        throw new TestException();
+      }
+    };
+    get(Future.value(1).transform(t));
+  }
+
+  /*** transformWith ***/
+
+  @Test
+  public void transformWith() throws CheckedFutureException {
+    Transformer<Integer, Future<Integer>> t = new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        return Future.value(value + 1);
+      }
+    };
+    assertEquals(new Integer(2), get(Future.value(1).transformWith(t)));
+  }
+
+  @Test(expected = TestException.class)
+  public void transformWithException() throws CheckedFutureException {
+    Transformer<Integer, Future<Integer>> t = new Transformer<Integer, Future<Integer>>() {
+      @Override
+      public Future<Integer> onException(Throwable ex) {
+        return null;
+      }
+
+      @Override
+      public Future<Integer> onValue(Integer value) {
+        assertEquals(new Integer(1), value);
+        throw new TestException();
+      }
+    };
+    get(Future.value(1).transformWith(t));
   }
 
   /*** biMap ***/

@@ -1,8 +1,5 @@
 package io.trane.future;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.openjdk.jmh.annotations.Benchmark;
 
 import com.twitter.util.Await;

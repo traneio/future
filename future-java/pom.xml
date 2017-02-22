@@ -29,10 +29,10 @@
 				<version>1.1.11</version>
 				<configuration>
 					<targetClasses>
-						<param>io.futures*</param>
+						<param>io.trane*</param>
 					</targetClasses>
 					<targetTests>
-						<param>io.futures*</param>
+						<param>io.trane*</param>
 					</targetTests>
 					<threads>8</threads>
 					<exportLineCoverage>true</exportLineCoverage>

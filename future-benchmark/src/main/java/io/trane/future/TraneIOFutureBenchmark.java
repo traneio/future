@@ -1,15 +1,9 @@
 package io.trane.future;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.openjdk.jmh.annotations.Benchmark;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Promise;
 
 public class TraneIOFutureBenchmark {
 

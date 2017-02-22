@@ -123,7 +123,7 @@ public abstract class Promise<T> implements Future<T> {
       throw ex;
     }
   }
-  
+
   @SuppressWarnings("unchecked")
   protected final WaitQueue<T> safeFlush(final Future<T> result) {
     while (true) {
@@ -314,7 +314,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> filter(Predicate<? super T> p) {
+  public final Future<T> filter(final Predicate<? super T> p) {
     return continuation(new Continuation<T, T>() {
       @Override
       final Future<T> apply(final Future<T> result) {
@@ -329,7 +329,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+  public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -344,7 +344,7 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+  public <R> Future<R> transformWith(final Transformer<? super T, ? extends Future<R>> t) {
     return continuation(new Continuation<T, R>() {
       @Override
       final Future<R> apply(final Future<T> result) {
@@ -470,21 +470,6 @@ public abstract class Promise<T> implements Future<T> {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.handle(f);
-      }
-
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return Promise.this;
-      }
-    });
-  }
-
-  @Override
-  public Future<T> fallbackTo(Future<T> other) {
-    return continuation(new Continuation<T, T>() {
-      @Override
-      final Future<T> apply(final Future<T> result) {
-        return result.fallbackTo(other);
       }
 
       @Override
@@ -631,7 +616,7 @@ abstract class Continuation<T, R> extends Promise<R> implements WaitQueue<T> {
     Future<Object> r = (Future<Object>) result;
     WaitQueue<Object> q = (Continuation<Object, Object>) this;
     while (q instanceof Continuation) {
-      Continuation<Object, Object> c = (Continuation<Object, Object>) q;
+      final Continuation<Object, Object> c = (Continuation<Object, Object>) q;
       r = c.apply(r);
       q = c.safeFlush(r);
     }

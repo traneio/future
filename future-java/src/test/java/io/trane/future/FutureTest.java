@@ -3,12 +3,14 @@ package io.trane.future;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -20,11 +22,6 @@ import java.util.stream.Stream;
 
 import org.junit.After;
 import org.junit.Test;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Promise;
-import io.trane.future.TimeoutException;
 
 public class FutureTest {
 
@@ -38,6 +35,13 @@ public class FutureTest {
   @After
   public void shutdownScheduler() {
     scheduler.shutdown();
+  }
+
+  /*** never ***/
+
+  @Test
+  public void never() {
+    assertTrue(Future.never() instanceof NoFuture);
   }
 
   /*** apply ***/
@@ -157,6 +161,14 @@ public class FutureTest {
     get(future).add("s");
   }
 
+  /*** emptyOptional ***/
+
+  @Test
+  public void emptyOptional() throws CheckedFutureException {
+    Future<Optional<String>> future = Future.emptyOptional();
+    assertFalse(get(future).isPresent());
+  }
+
   /*** collect ***/
 
   @Test
@@ -188,7 +200,8 @@ public class FutureTest {
 
   @Test(expected = TestException.class)
   public void collectSatisfiedFuturesException() throws CheckedFutureException {
-    Future<List<Integer>> future = Future.collect(Arrays.asList(Future.value(1), Future.exception(ex), Future.value(3)));
+    Future<List<Integer>> future = Future
+        .collect(Arrays.asList(Future.value(1), Future.exception(ex), Future.value(3)));
     get(future);
   }
 
@@ -299,7 +312,7 @@ public class FutureTest {
     Future<Void> future = Future.join(new ArrayList<>());
     assertEquals(Future.VOID, future);
   }
-  
+
   @Test
   public void joinOne() throws CheckedFutureException {
     Future<Integer> f = Future.value(1);
@@ -402,10 +415,10 @@ public class FutureTest {
   /*** selectIndex **/
 
   @Test(expected = IllegalArgumentException.class)
-  public void selectIndexEmpty() {
-    Future.selectIndex(new ArrayList<>());
+  public void selectIndexEmpty() throws CheckedFutureException {
+    get(Future.selectIndex(new ArrayList<>()));
   }
-  
+
   @Test
   public void selectIndexOne() throws CheckedFutureException {
     Future<Integer> f = Future.selectIndex(Arrays.asList(Future.value(1)));
@@ -458,7 +471,6 @@ public class FutureTest {
 
   @Test
   public void selectIndexInterrupts() {
-
     AtomicReference<Throwable> p1Intr = new AtomicReference<>();
     AtomicReference<Throwable> p2Intr = new AtomicReference<>();
     Promise<Integer> p1 = Promise.apply(p1Intr::set);
@@ -477,6 +489,86 @@ public class FutureTest {
     Promise<Integer> p1 = Promise.apply();
     Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
+    future.get(10, TimeUnit.MILLISECONDS);
+  }
+  
+  /*** firstCompletedOf **/
+
+  @Test(expected = IllegalArgumentException.class)
+  public void firstCompletedOfEmpty() throws CheckedFutureException {
+    get(Future.firstCompletedOf(new ArrayList<>()));
+  }
+
+  @Test
+  public void firstCompletedOfOne() throws CheckedFutureException {
+    Future<Integer> f = Future.firstCompletedOf(Arrays.asList(Future.value(1)));
+    assertEquals(new Integer(1), get(f));
+  }
+
+  @Test
+  public void firstCompletedOfSatisfiedFutures() throws CheckedFutureException {
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(Future.value(1), Future.value(2)));
+    assertEquals(new Integer(1), get(future));
+  }
+
+  @Test
+  public void firstCompletedOfPromises() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2));
+    p2.setValue(2);
+    assertEquals(new Integer(2), get(future));
+  }
+
+  @Test(expected = TestException.class)
+  public void firstCompletedOfPromisesException() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2));
+    p1.setException(new TestException());
+    get(future);
+  }
+
+  @Test
+  public void firstCompletedOfMixed() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2, Future.value(3)));
+    p1.setValue(1);
+    p2.setValue(2);
+    assertEquals(new Integer(3), get(future));
+  }
+
+  @Test
+  public void firstCompletedOfMixedException() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2, Future.value(3)));
+    p1.setValue(1);
+    p2.setException(new Throwable());
+    assertEquals(new Integer(3), get(future));
+  }
+
+  @Test
+  public void firstCompletedOfInterrupts() {
+    AtomicReference<Throwable> p1Intr = new AtomicReference<>();
+    AtomicReference<Throwable> p2Intr = new AtomicReference<>();
+    Promise<Integer> p1 = Promise.apply(p1Intr::set);
+    Promise<Integer> p2 = Promise.apply(p2Intr::set);
+
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2));
+
+    future.raise(ex);
+
+    assertEquals(ex, p1Intr.get());
+    assertEquals(ex, p2Intr.get());
+  }
+
+  @Test(expected = TimeoutException.class)
+  public void firstCompletedOfTimeout() throws CheckedFutureException {
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2));
     future.get(10, TimeUnit.MILLISECONDS);
   }
 

@@ -36,26 +36,26 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
       return new ExceptionFuture<>(ex);
     }
   }
-  
+
   @Override
-  public final Future<T> filter(Predicate<? super T> p) {
-    if(p.test(value)) 
+  public final Future<T> filter(final Predicate<? super T> p) {
+    if (p.test(value))
       return this;
-    else 
+    else
       return Future.exception(new NoSuchElementException("Future.filter predicate is not satisfied"));
   }
-  
+
   @Override
-  public <R> Future<R> transform(Transformer<? super T, ? extends R> t) {
+  public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     try {
       return new ValueFuture<>(t.onValue(value));
     } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }
   }
-  
+
   @Override
-  public <R> Future<R> transformWith(Transformer<? super T, ? extends Future<R>> t) {
+  public <R> Future<R> transformWith(final Transformer<? super T, ? extends Future<R>> t) {
     try {
       return t.onValue(value);
     } catch (final Throwable ex) {
@@ -109,11 +109,6 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final Future<T> handle(final Function<Throwable, ? extends T> f) {
-    return this;
-  }
-  
-  @Override
-  public Future<T> fallbackTo(Future<T> other) {
     return this;
   }
 

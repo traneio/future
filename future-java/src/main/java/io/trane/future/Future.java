@@ -3,7 +3,6 @@ package io.trane.future;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,8 +20,10 @@ public interface Future<T> extends InterruptHandler {
 
   public static Future<Void> VOID = Future.value((Void) null);
 
+  static Future<?> neverInstance = new NoFuture<>();
+
   public static <T> Future<T> never() {
-    return new NoFuture<>();
+    return neverInstance.unsafeCast();
   }
 
   public static <T> Future<T> apply(final Supplier<T> s) {
@@ -132,7 +133,7 @@ public interface Future<T> extends InterruptHandler {
     switch (list.size()) {
 
     case 0:
-      throw new IllegalArgumentException("Can't select from empty list.");
+      return Future.exception(new IllegalArgumentException("Can't select from empty list."));
 
     case 1:
       return list.get(0).map(v -> 0);
@@ -154,10 +155,25 @@ public interface Future<T> extends InterruptHandler {
   }
 
   public static <T> Future<T> firstCompletedOf(final List<Future<T>> list) {
-    FirstCompletedOfPromise<T> p = new FirstCompletedOfPromise<>(list);
-    for (final Future<T> f : list)
-      f.respond(p);
-    return p;
+    switch (list.size()) {
+
+    case 0:
+      return Future.exception(new IllegalArgumentException("Can't select first completed future from empty list."));
+
+    case 1:
+      return list.get(0);
+
+    default:
+      final FirstCompletedOfPromise<T> p = new FirstCompletedOfPromise<>(list);
+      for (final Future<T> f : list) {
+
+        if (f instanceof SatisfiedFuture)
+          return f;
+
+        f.respond(p);
+      }
+      return p;
+    }
   }
 
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
@@ -203,8 +219,6 @@ public interface Future<T> extends InterruptHandler {
   Future<T> rescue(Function<Throwable, ? extends Future<T>> f);
 
   Future<T> handle(Function<Throwable, ? extends T> f);
-
-  Future<T> fallbackTo(Future<T> other);
 
   boolean isDefined();
 
