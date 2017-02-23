@@ -27,8 +27,7 @@ public final class Tailrec {
 
   private final void submit(final Runnable r, final int batchSize) {
     syncPermits = batchSize;
-    if (tasks == null)
-      tasks = new ArrayList<>(1);
+    tasks = new ArrayList<>(1);
     tasks.add(r);
     if (!running) {
       run();
