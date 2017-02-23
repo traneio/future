@@ -16,8 +16,6 @@ import java.util.function.Supplier;
 
 public interface Future<T> extends InterruptHandler {
 
-  /*** static ***/
-
   public static Future<Void> VOID = Future.value((Void) null);
 
   static Future<?> neverInstance = new NoFuture<>();
@@ -191,8 +189,6 @@ public interface Future<T> extends InterruptHandler {
       result.add(f.get());
     return result;
   }
-
-  /*** methods ***/
 
   <R> Future<R> map(Function<? super T, ? extends R> f);
 

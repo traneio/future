@@ -202,7 +202,7 @@ public abstract class Promise<T> implements Future<T> {
       final Object curr = state;
       if (curr instanceof Promise && !(curr instanceof Continuation)) { // Linked
         final Promise<T> target = ((Promise<T>) curr).compress();
-        if (cas(curr, target))
+        if (curr == target || cas(curr, target))
           return target;
       } else
         return this;

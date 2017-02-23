@@ -284,7 +284,7 @@ public class PromiseTest {
   }
 
   @Test(expected = StackOverflowError.class)
-  public void becomeIfEmptyStakOverflow() throws CheckedFutureException {
+  public void becomeIfEmptyStackOverflow() throws CheckedFutureException {
     Promise<Integer> p = Promise.<Integer>apply();
     Future<Integer> f = p;
     for (int i = 0; i < 20000; i++) {
@@ -293,7 +293,7 @@ public class PromiseTest {
     }
     p.becomeIfEmpty(Future.value(0));
   }
-
+  
   /*** setValue ***/
 
   @Test
