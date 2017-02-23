@@ -8,6 +8,7 @@ then
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/deploy_key.pem.enc -out $BUILD_DIR/local.deploy_key.pem -d
 	if [[ $TRAVIS_BRANCH == "master" && [ -e "release.properties" ] ]]
 	then
+		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
 		chmod 600 $BUILD_DIR/local.deploy_key.pem
 		ssh-add $BUILD_DIR/local.deploy_key.pem
@@ -20,8 +21,10 @@ then
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings $BUILD_DIR/settings.xml -DperformRelease=true
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
+		echo "Publishing a snapshot..."
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings $BUILD_DIR/settings.xml
 	else
+		echo "Publishing a branch snapshot..."
 		mvn clean versions:set -DnewVersion=$TRAVIS_BRANCH-SNAPSHOT org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings $BUILD_DIR/settings.xml 
 	fi
 else
