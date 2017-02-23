@@ -36,7 +36,6 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <gpg.executable>gpg</gpg.executable>
-    <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
     <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
     <gpg.defaultKeyring>false</gpg.defaultKeyring>
   </properties>
