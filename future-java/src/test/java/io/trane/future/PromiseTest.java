@@ -247,6 +247,7 @@ public class PromiseTest {
       }
       start.set(true);
       int result = p.get(100, TimeUnit.MILLISECONDS);
+      Thread.sleep(100);
       assertEquals(expected.get(), result);
     } finally {
       es.shutdown();
