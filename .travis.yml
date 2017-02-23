@@ -13,6 +13,7 @@ cache:
   directories:
   - $HOME/.m2/repository
   - $HOME/.sonar/cache
+sudo: true
 env:
   global:
   - BUILD_DIR="`pwd`/build"
