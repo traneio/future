@@ -6,7 +6,7 @@ then
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/pubring.gpg.enc -out $BUILD_DIR/local.pubring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/secring.gpg.enc -out $BUILD_DIR/local.secring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/deploy_key.pem.enc -out $BUILD_DIR/local.deploy_key.pem -d
-	if [[ $TRAVIS_BRANCH == "master" && [ -e "release.properties" ] ]]
+	if [[ [ -e "release.properties" ] && $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
