@@ -10,3 +10,4 @@ jmh-result.csv
 *.iml
 *.csv
 .idea/
+local.*
