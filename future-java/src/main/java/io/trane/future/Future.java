@@ -236,6 +236,10 @@ public interface Future<T> extends InterruptHandler {
 }
 
 final class FutureConstants {
+
+  private FutureConstants() {
+  }
+
   static final Future<?> NEVER = new NoFuture<>();
   static final Future<? extends List<?>> EMPTY_LIST = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
   static final Future<? extends Optional<?>> EMPTY_OPIONAL = Future.value(Optional.empty());
