@@ -3,8 +3,8 @@ set -e # Any subsequent(*) commands which fail will cause the shell script to ex
 
 if [[ $TRAVIS_PULL_REQUEST == "false" ]]
 then
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/pubring.gpg.enc -out build/pubring.gpg -d
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/secring.gpg.enc -out build/secring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in ./build/pubring.gpg.enc -out ./build/pubring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in ./build/secring.gpg.enc -out ./build/secring.gpg -d
 	if [[ $TRAVIS_BRANCH == "master" && $(cat pom.xml) != *"SNAPSHOT"* ]]
 	then
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings build/settings.xml -DperformRelease=true

@@ -25,8 +25,8 @@
         <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
         <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
         <gpg.defaultKeyring>false</gpg.defaultKeyring>
-        <gpg.publicKeyring>build/pubring.gpg</gpg.publicKeyring>
-        <gpg.secretKeyring>build/secring.gpg</gpg.secretKeyring>
+        <gpg.publicKeyring>./build/pubring.gpg</gpg.publicKeyring>
+        <gpg.secretKeyring>./build/secring.gpg</gpg.secretKeyring>
       </properties>
       <activation>
         <property>
