@@ -38,8 +38,8 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     try {
       return new ValueFuture<>(t.onException(ex));
-    } catch (final Throwable ex) {
-      return new ExceptionFuture<>(ex);
+    } catch (final Throwable error) {
+      return new ExceptionFuture<>(error);
     }
   }
 
@@ -47,8 +47,8 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public <R> Future<R> transformWith(final Transformer<? super T, ? extends Future<R>> t) {
     try {
       return t.onException(ex);
-    } catch (final Throwable ex) {
-      return new ExceptionFuture<>(ex);
+    } catch (final Throwable error) {
+      return new ExceptionFuture<>(error);
     }
   }
 

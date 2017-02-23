@@ -16,12 +16,10 @@ import java.util.function.Supplier;
 
 public interface Future<T> extends InterruptHandler {
 
-  public static Future<Void> VOID = Future.value((Void) null);
-
-  static Future<?> neverInstance = new NoFuture<>();
+  static final Future<Void> VOID = Future.value((Void) null);
 
   public static <T> Future<T> never() {
-    return neverInstance.unsafeCast();
+    return FutureConstants.NEVER.unsafeCast();
   }
 
   public static <T> Future<T> apply(final Supplier<T> s) {
@@ -44,16 +42,12 @@ public interface Future<T> extends InterruptHandler {
     return fut.flatMap(f -> f);
   }
 
-  static Future<? extends List<?>> emptyListInstance = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
-
   public static <T> Future<List<T>> emptyList() {
-    return emptyListInstance.unsafeCast();
+    return FutureConstants.EMPTY_LIST.unsafeCast();
   }
 
-  static Future<? extends Optional<?>> emptyOptionalInstance = Future.value(Optional.empty());
-
   public static <T> Future<Optional<T>> emptyOptional() {
-    return emptyOptionalInstance.unsafeCast();
+    return FutureConstants.EMPTY_OPIONAL.unsafeCast();
   }
 
   public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
@@ -239,6 +233,12 @@ public interface Future<T> extends InterruptHandler {
   default <R> Future<R> unsafeCast() {
     return (Future<R>) this;
   }
+}
+
+final class FutureConstants {
+  static final Future<?> NEVER = new NoFuture<>();
+  static final Future<? extends List<?>> EMPTY_LIST = Future.value(Collections.unmodifiableList(new ArrayList<>(0)));
+  static final Future<? extends Optional<?>> EMPTY_OPIONAL = Future.value(Optional.empty());
 }
 
 final class CollectPromise<T> extends Promise<List<T>> {

@@ -145,7 +145,6 @@ public class NoFutureTest {
       }
     };
     t.start();
-    Thread.sleep(100);
     t.interrupt();
     t.join();
     assertTrue(cause.get() instanceof InterruptedException);

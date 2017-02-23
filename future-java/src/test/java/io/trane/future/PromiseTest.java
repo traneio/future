@@ -247,7 +247,6 @@ public class PromiseTest {
       }
       start.set(true);
       int result = p.get(100, TimeUnit.MILLISECONDS);
-      Thread.sleep(10);
       assertEquals(expected.get(), result);
     } finally {
       es.shutdown();
@@ -706,7 +705,6 @@ public class PromiseTest {
       }
     };
     t.start();
-    Thread.sleep(100);
     t.interrupt();
     t.join();
     assertTrue(cause.get() instanceof InterruptedException);

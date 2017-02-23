@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 
 public final class Tailrec {
 
-  private static final int defaultBatchSize = Optional
+  private static final int DEFAULT_BATCH_SIZE = Optional
       .ofNullable(System.getProperty("io.trane.future.defaultBatchSize")).map(Integer::parseInt).orElseGet(() -> 512);
 
   private static final ThreadLocal<Tailrec> local = new ThreadLocal<Tailrec>() {
@@ -48,7 +48,7 @@ public final class Tailrec {
   }
 
   public static final <T> Future<T> apply(final Supplier<Future<T>> sup) {
-    return apply(defaultBatchSize, sup);
+    return apply(DEFAULT_BATCH_SIZE, sup);
   }
 
   public static final <T> Future<T> apply(final int batchSize, final Supplier<Future<T>> sup) {

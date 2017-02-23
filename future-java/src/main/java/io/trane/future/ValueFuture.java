@@ -65,14 +65,13 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
-    return other.map(u -> f.apply(value, u)); // TODO avoid lambda allocation?
+    return other.map(u -> f.apply(value, u));
   }
 
   @Override
   public <U, R> Future<R> biFlatMap(final Future<U> other,
       final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
-    return other.flatMap(u -> f.apply(value, u)); // TODO avoid lambda
-                                                  // allocation?
+    return other.flatMap(u -> f.apply(value, u));
   }
 
   @Override

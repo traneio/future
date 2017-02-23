@@ -5,15 +5,12 @@ import java.util.function.Supplier;
 
 public final class Local<T> {
 
-  public static final <T> Local<T> apply() {
-    return new Local<>();
-  }
-
   private static final Optional<?>[] EMPTY = new Optional<?>[0];
   private static ThreadLocal<Optional<?>[]> threadLocal = null;
   private static int size = 0;
 
-  private Local() {
+  public static final <T> Local<T> apply() {
+    return new Local<>();
   }
 
   protected static final Optional<?>[] save() {
@@ -28,13 +25,16 @@ public final class Local<T> {
       threadLocal.set(saved);
   }
 
-  private synchronized static final int newPosition() {
+  private static final synchronized int newPosition() {
     if (threadLocal == null)
       threadLocal = new ThreadLocal<>();
     return size++;
   }
 
   private final int position = newPosition();
+
+  private Local() {
+  }
 
   public final void update(final T value) {
     set(Optional.of(value));
