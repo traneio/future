@@ -18,7 +18,7 @@ then
 		git fetch --unshallow
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
-		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar release:perform deploy --settings $BUILD_DIR/settings.xml
+		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar release:perform deploy --settings $BUILD_DIR/settings.xml -DperformRelease=true
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Publishing a snapshot..."
