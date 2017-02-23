@@ -12,3 +12,5 @@ jmh-result.csv
 .idea/
 local.*
 *.releaseBackup
+.pem
+.gpg
