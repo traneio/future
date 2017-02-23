@@ -11,4 +11,8 @@
     </server>
   </servers>
 
+  <activeProfiles>
+    <activeProfile>ossrh</activeProfile>
+  </activeProfiles>
+
 </settings>
