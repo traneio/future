@@ -6,7 +6,7 @@ then
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/pubring.gpg.enc -out $BUILD_DIR/local.pubring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/secring.gpg.enc -out $BUILD_DIR/local.secring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/deploy_key.pem.enc -out $BUILD_DIR/local.deploy_key.pem -d
-	if [[ [ -e "release.properties" ] && $TRAVIS_BRANCH == "master" ]]
+	if [ -e "release.properties" ] && [ $TRAVIS_BRANCH == "master" ]
 	then
 		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
@@ -28,5 +28,6 @@ then
 		mvn clean versions:set -DnewVersion=$TRAVIS_BRANCH-SNAPSHOT org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings $BUILD_DIR/settings.xml 
 	fi
 else
+	echo "Running build..."
 	mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
 fi
