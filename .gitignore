@@ -11,3 +11,4 @@ jmh-result.csv
 *.csv
 .idea/
 local.*
+*.releaseBackup
