@@ -10,9 +10,5 @@
       <password>${env.SONATYPE_PASSWORD}</password>
     </server>
   </servers>
-
-  <activeProfiles>
-    <activeProfile>ossrh</activeProfile>
-  </activeProfiles>
-
+  
 </settings>
