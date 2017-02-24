@@ -3,29 +3,29 @@ set -e # Any subsequent(*) commands which fail will cause the shell script to ex
 
 if [[ $TRAVIS_PULL_REQUEST == "false" ]]
 then
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/pubring.gpg.enc -out $BUILD_DIR/pubring.gpg -d
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/secring.gpg.enc -out $BUILD_DIR/secring.gpg -d
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/deploy_key.pem.enc -out $BUILD_DIR/deploy_key.pem -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/pubring.gpg.enc -out build/pubring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/secring.gpg.enc -out build/secring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/deploy_key.pem.enc -out build/deploy_key.pem -d
 	if [ -e "release.properties" ] && [ $TRAVIS_BRANCH == "master" ]
 	then
 		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
-		chmod 600 $BUILD_DIR/deploy_key.pem
-		ssh-add $BUILD_DIR/deploy_key.pem
+		chmod 600 build/deploy_key.pem
+		ssh-add build/deploy_key.pem
 		git config --global user.name "TraneIO CI"
 		git config --global user.email "ci@trane.io"
 		git remote set-url origin git@github.com:traneio/future.git
 		git fetch --unshallow
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
-		mvn clean release:perform --settings $BUILD_DIR/settings.xml
+		mvn clean release:perform --settings build/settings.xml
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Publishing a snapshot..."
-		mvn clean release:perform --settings $BUILD_DIR/settings.xml
+		mvn clean release:perform --settings build/settings.xml
 	else
 		echo "Publishing a branch snapshot..."
-		mvn clean versions:set -DnewVersion=$TRAVIS_BRANCH-SNAPSHOT org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings $BUILD_DIR/settings.xml 
+		mvn clean versions:set -DnewVersion=$TRAVIS_BRANCH-SNAPSHOT org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings build/settings.xml 
 	fi
 else
 	echo "Running build..."
