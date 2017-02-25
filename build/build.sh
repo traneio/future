@@ -20,7 +20,7 @@ then
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
 		mvn clean release:perform --settings build/settings.xml
-		git add .
+		git rm release.properties
 		git commit -m "remove release.properties"
 		git push
 	elif [[ $TRAVIS_BRANCH == "master" ]]
