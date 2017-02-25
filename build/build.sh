@@ -3,15 +3,15 @@ set -e # Any subsequent(*) commands which fail will cause the shell script to ex
 
 if [[ $TRAVIS_PULL_REQUEST == "false" ]]
 then
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/pubring.gpg.enc -out build/pubring.gpg -d
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/secring.gpg.enc -out build/secring.gpg -d
-	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/deploy_key.pem.enc -out build/deploy_key.pem -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/pubring.gpg.enc -out pubring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/secring.gpg.enc -out secring.gpg -d
+	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in build/deploy_key.pem.enc -out deploy_key.pem -d
 	if [ -e "release.properties" ] && [ $TRAVIS_BRANCH == "master" ]
 	then
 		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
-		chmod 600 build/deploy_key.pem
-		ssh-add build/deploy_key.pem
+		chmod 600 deploy_key.pem
+		ssh-add deploy_key.pem
 		git config --global user.name "TraneIO CI"
 		git config --global user.email "ci@trane.io"
 		git remote set-url origin git@github.com:traneio/future.git
