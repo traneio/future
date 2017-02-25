@@ -21,6 +21,7 @@ then
 		git reset --hard origin/master
 		git rm release.version
 		git commit -m "remove release.version"
+		git push
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
 		mvn release:perform --settings build/settings.xml
 	elif [[ $TRAVIS_BRANCH == "master" ]]
