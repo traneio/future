@@ -20,7 +20,7 @@ then
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
 		git rm release.version
-		git commit -m "remove release.version"
+		git commit -m "[skip ci] [release] remove release.version"
 		git push
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
 		mvn release:perform --settings build/settings.xml
