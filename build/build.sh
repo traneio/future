@@ -19,7 +19,7 @@ then
 		git fetch --unshallow
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
-		mvn clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
+		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
 		mvn release:perform --settings build/settings.xml
 		git pull
 		git rm release.properties
