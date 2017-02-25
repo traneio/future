@@ -7,9 +7,6 @@ addons:
       secure: r5KhIDmLmv0/ZiOS3llLd3Feh1L/UKAgXZAy1RrNdxIFJoAkRhdDyFkset0l1jnnesg947+crDm3/wZhji1ZnMlYsQ69ZqO30eW8CuiaOCxO3KKprop2/2by4WvunUbmJYX9xBar/Kpp7DesKgKhg9JWiqNQ2da6WEKrG6APNKwFOEqsK2qnsQ/ra8n0SvcgzzpPtAlFe8m3XstO9WkL+SnS0q+vD2tg6sIrRT2B6m3xSzzOk1nn//otvCiMPcDTmLQLoErqV57nkRfk+FTUBFZZ5QcsBR8qiArUunrkZqYVkXUVftlmudTvxfctP3sxxRCrifNJBxQ1Ylh+KkbNfKdzsZ1mDNgCd307pF1IU/M2HxqacLsS9/dTxUQS865Sq+md8K+lLxqwXuQSjcEpL/KuS9qKz5bShKwTnZAHbiXf1fuz7W7x2H5YfBcZMPFYmi9fJhB0H2xrRkBddyziOcvMuZSjmCRYvCUewAh9eZ4jbdAdGxuONZC4qkx+OfmEIWPh4Mgmw3lF9oJSns4hiiZD54T7OL+cZN+PFvb/726h1397LsHSSGGdfPeRV9C4edLhlDEPyg84taPoHaSh+0tZvv7OA96u0J/jdtVQey+k1umrfLec6REnKtrUO0NJNP8XfxGSS4EbbXDfOlertKpyU+CpECkZDoFRclKfXuo=
 jdk:
 - oraclejdk8
-branches:
-  except:
-    - /^future-.*$/
 script:
 - ./build/build.sh
 cache:
