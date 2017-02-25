@@ -6,7 +6,7 @@ then
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/pubring.gpg.enc -out $BUILD_DIR/pubring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/secring.gpg.enc -out $BUILD_DIR/secring.gpg -d
 	openssl aes-256-cbc -pass pass:$ENCRYPTION_PASSWORD -in $BUILD_DIR/deploy_key.pem.enc -out $BUILD_DIR/deploy_key.pem -d
-	if [ -e "release.properties" ] && [ $TRAVIS_BRANCH == "master" ]
+	if [ -e "release.version" ] && [ $TRAVIS_BRANCH == "master" ]
 	then
 		echo "Performing a release..."
 		eval "$(ssh-agent -s)"
@@ -19,9 +19,12 @@ then
 		git fetch --unshallow
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
-		mvn clean release:perform --settings build/settings.xml
+		mvn clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
+		mvn release:perform --settings build/settings.xml
+		git pull
 		git rm release.properties
-		git commit -m "remove release.properties"
+		git rm release.version
+		git commit -m "remove release files"
 		git push
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
