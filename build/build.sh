@@ -14,11 +14,14 @@ then
 		ssh-add $BUILD_DIR/deploy_key.pem
 		git config --global user.name "TraneIO CI"
 		git config --global user.email "ci@trane.io"
+		git config --global push.default matching
 		git remote set-url origin git@github.com:traneio/future.git
 		git fetch --unshallow
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
 		mvn clean release:perform --settings build/settings.xml
+		git add .
+		git commit -m "remove release.properties"
 		git push
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
