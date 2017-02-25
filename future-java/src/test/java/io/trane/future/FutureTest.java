@@ -116,7 +116,7 @@ public class FutureTest {
 
   @Test
   public void tailrecDelayed() throws CheckedFutureException {
-    assertEquals(new Integer(0), get(tailrecLoopDelayed(Future.value(20000))));
+    assertEquals(new Integer(0), tailrecLoopDelayed(Future.value(20000)).get(10, TimeUnit.SECONDS));
   }
 
   Future<Integer> nonTailrecLoop(Future<Integer> f) {
