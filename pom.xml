@@ -37,6 +37,8 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <gpg.executable>gpg</gpg.executable>
     <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+    <gpg.publicKeyring>${env.BUILD_DIR}/pubring.gpg</gpg.publicKeyring>
+    <gpg.secretKeyring>${env.BUILD_DIR}/secring.gpg</gpg.secretKeyring>
     <gpg.defaultKeyring>false</gpg.defaultKeyring>
   </properties>
 
