@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.trane</groupId>
     <artifactId>future</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8-SNAPSHOT</version>
   </parent>
   <artifactId>future-java</artifactId>
   <packaging>jar</packaging>
