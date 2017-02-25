@@ -19,6 +19,7 @@ then
 		git checkout master || git checkout -b master
 		git reset --hard origin/master
 		mvn clean release:perform --settings build/settings.xml
+		git push
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Publishing a snapshot..."
