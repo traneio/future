@@ -51,18 +51,6 @@ public class ValueFutureTest {
     get(future);
   }
 
-  /*** filter ***/
-
-  @Test
-  public void filter() throws CheckedFutureException {
-    assertEquals(new Integer(1), get(Future.value(1).filter(i -> i == 1)));
-  }
-
-  @Test(expected = NoSuchElementException.class)
-  public void filterNoSuchElement() throws CheckedFutureException {
-    assertEquals(new Integer(1), get(Future.value(1).filter(i -> i == 2)));
-  }
-
   /*** transform ***/
 
   @Test

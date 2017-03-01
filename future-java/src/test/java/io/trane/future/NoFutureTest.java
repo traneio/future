@@ -29,11 +29,6 @@ public class NoFutureTest {
   }
 
   @Test
-  public void filter() {
-    assertEquals(noFuture, noFuture.filter(i -> i == 1));
-  }
-
-  @Test
   public void transform() {
     assertEquals(noFuture, noFuture.transform(new Transformer<Integer, Integer>() {
       @Override

@@ -30,11 +30,6 @@ public class NoFuture<T> implements Future<T> {
     return (Future<R>) this;
   }
 
-  @Override
-  public Future<T> filter(final Predicate<? super T> p) {
-    return this;
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {

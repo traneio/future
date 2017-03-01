@@ -14,14 +14,77 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+/**
+ * `Future` is an abstraction to deal with asynchronicity without having to use
+ * callbacks directly or blocking threads. From the user perspective, a `Future`
+ * can be in three states:
+ * 
+ * 1. Uncompleted 2. Completed with a value 3. Completed with an exception
+ * 
+ * Instead of exposing this state to the user, `Future` provides combinators to
+ * express computations that run once the `Future` completes. The results of
+ * these combinators are `Future` instances that can be used to perform other
+ * transformations, giving the user a powerful tool to express complex chains of
+ * asynchronous transformations.
+ * 
+ * Let's say that we need to call a remote service to get the username given an
+ * id:
+ * 
+ * Future<User> user = userService.get(userId);
+ * 
+ * It's possible to apply the `map` transformation that produces a `Future` for
+ * the username string:
+ * 
+ * Future<String> username = user.map(user -> user.username);
+ * 
+ * Let's say that now we need to call a service to validate the username string.
+ * This is the result if we use the `map` combinator for it:
+ * 
+ * Future<Future<Boolean>> isValid = username.map(username ->
+ * usernameService.isValid(username));
+ * 
+ * Given that the lambda expression calls another service and returns a
+ * `Future`, the produced result is a nested future (`Future<Future<Boolean>>`).
+ * One alternative to flatten this nested result is using `Future.flatten`:
+ * 
+ * Future<Boolean> isValidFlat = Future.flatten(isValid);
+ * 
+ * There's a convenient combinator called `flatMap` that applies both `map` and
+ * `Future.flatten` at once:
+ * 
+ * Future<Boolean> isValid = username.flatMap(username ->
+ * usernameService.isValid(username));
+ * 
+ * The API contains many other useful operators to deal with exceptions,
+ * collections of futures, and others.
+ *
+ * @param <T>
+ *          the type of the asynchronous computation result
+ */
 public interface Future<T> extends InterruptHandler {
 
+  /**
+   * A constant void `Future`. Useful to represent completed side effects.
+   */
   static final Future<Void> VOID = Future.value((Void) null);
 
+  /**
+   * @return a `Future` that is never satisfied.
+   */
   public static <T> Future<T> never() {
     return FutureConstants.NEVER.unsafeCast();
   }
 
+  /**
+   * Creates a future with the result of the supplier. Note that the supplier is
+   * executed by the current thread. Use `FuturePool.async` to execute the
+   * supplier on a separate thread.
+   * 
+   * @param s
+   *          a supplier that may throw an exception
+   * @return a satisfied future if `s` doesn't throw or else a failed future
+   *         with the supplier exception.
+   */
   public static <T> Future<T> apply(final Supplier<T> s) {
     try {
       return new ValueFuture<>(s.get());
@@ -30,26 +93,63 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  /**
+   * Creates a successful `Future`.
+   * 
+   * @param v
+   *          the value that satisfies the `Future`.
+   * @return the successful `Future`.
+   */
   public static <T> Future<T> value(final T v) {
     return new ValueFuture<>(v);
   }
 
+  /**
+   * Creates a failed `Future`.
+   * 
+   * @param ex
+   *          the failure.
+   * @return the failed `Future`.
+   */
   public static <T> Future<T> exception(final Throwable ex) {
     return new ExceptionFuture<>(ex);
   }
 
+  /**
+   * Flattens a nested `Future<Future<T>>` to `Future<T>`. The usage of this
+   * method indicates a code smell: a `map` may have been used instead of
+   * `flatMap`. There are genuine scenarios where `flatten` is required, though.
+   * 
+   * @param fut
+   *          the nested `Future`
+   * @return the flat `Future`
+   */
   public static <T> Future<T> flatten(final Future<Future<T>> fut) {
     return fut.flatMap(f -> f);
   }
 
+  /**
+   * @return a satisfied `Future` with an immutable empty list.
+   */
   public static <T> Future<List<T>> emptyList() {
     return FutureConstants.EMPTY_LIST.unsafeCast();
   }
 
+  /**
+   * @return a satisfied `Future` with an empty optional.
+   */
   public static <T> Future<Optional<T>> emptyOptional() {
     return FutureConstants.EMPTY_OPIONAL.unsafeCast();
   }
 
+  /**
+   * Transforms a list of `Future`s (`List<Future<T>>`) into a `Future` of a
+   * list (`Future<List<T>>`).
+   * 
+   * @param list
+   *          the futures to collect from
+   * @return a `Future` that is satisfied with the `Future` results.
+   */
   public static <T> Future<List<T>> collect(final List<? extends Future<T>> list) {
 
     switch (list.size()) {
@@ -96,6 +196,14 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  /**
+   * This method is similar to `collect`, but it discards the result of the
+   * `Future`s. It's useful to wait for a list of pending `Future` side effects.
+   * 
+   * @param list
+   *          the futures to wait for
+   * @return a void future that indicates that all futures are satisfied.
+   */
   public static <T> Future<Void> join(final List<? extends Future<T>> list) {
 
     switch (list.size()) {
@@ -120,6 +228,14 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  /**
+   * Selects the index of the first satisfied `Future`.
+   * 
+   * @param list
+   *          the list of futures to select from
+   * @return a `Future` with the index of the first satisfied `Future` of the
+   *         list.
+   */
   public static <T> Future<Integer> selectIndex(final List<Future<T>> list) {
 
     switch (list.size()) {
@@ -146,6 +262,14 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  /**
+   * Finds the first future that completes.
+   * 
+   * @param list
+   *          futures to select from.
+   * @return a `Future` that is satisfied with the result of the first future to
+   *         complete.
+   */
   public static <T> Future<T> firstCompletedOf(final List<Future<T>> list) {
     switch (list.size()) {
 
@@ -168,6 +292,16 @@ public interface Future<T> extends InterruptHandler {
     }
   }
 
+  /**
+   * Executes the supplier function while the condition is valid.
+   * 
+   * @param cond
+   *          a supplier that determines if the while should stop or not
+   * @param f
+   *          the body of the while that is executed on each asynchronous
+   *          iteration
+   * @return a void future that is satisfied when the while stops.
+   */
   public static <T> Future<Void> whileDo(final Supplier<Boolean> cond, final Supplier<Future<T>> f) {
     return Tailrec.apply(() -> {
       if (cond.get())
@@ -177,18 +311,24 @@ public interface Future<T> extends InterruptHandler {
     });
   }
 
-  public static <T> List<Future<T>> parallel(final int n, final Supplier<Future<T>> f) {
-    final List<Future<T>> result = new ArrayList<>(n);
-    for (int i = 0; i < n; i++)
-      result.add(f.get());
-    return result;
-  }
-
+  /**
+   * Maps the result of this `Future` to another value (Future<T> => Future<R>).
+   * 
+   * @param f
+   *          the mapping function.
+   * @return a future transformed by the mapping function.
+   */
   <R> Future<R> map(Function<? super T, ? extends R> f);
 
+  /**
+   * Maps the result of this `Future` to another `Future` and then flattens the
+   * result.
+   * 
+   * @param f
+   *          the mapping function that returns another future instance.
+   * @return a mapped and flattened future with the transformed result.
+   */
   <R> Future<R> flatMap(Function<? super T, ? extends Future<R>> f);
-
-  Future<T> filter(Predicate<? super T> p);
 
   <R> Future<R> transform(Transformer<? super T, ? extends R> t);
 

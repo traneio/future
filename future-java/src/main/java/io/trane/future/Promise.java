@@ -339,21 +339,6 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> filter(final Predicate<? super T> p) {
-    return continuation(new Continuation<T, T>() {
-      @Override
-      final Future<T> apply(final Future<T> result) {
-        return result.filter(p);
-      }
-
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return Promise.this;
-      }
-    });
-  }
-
-  @Override
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     return continuation(new Continuation<T, R>() {
       @Override

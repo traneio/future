@@ -39,14 +39,6 @@ public class ExceptionFutureTest {
     assertEquals(future, future.flatMap(i -> Future.value(i + 1)));
   }
 
-  /*** filter ***/
-
-  @Test
-  public void filter() throws CheckedFutureException {
-    Future<Integer> future = Future.exception(ex);
-    assertEquals(future, future.filter(i -> i == 1));
-  }
-
   /*** transform ***/
 
   @Test

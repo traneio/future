@@ -805,24 +805,6 @@ public class PromiseTest {
   }
 
   @Test
-  public void filter() throws CheckedFutureException {
-    Promise<Integer> p = Promise.apply();
-    Future<Integer> f = p.filter(i -> i == 1);
-    p.setValue(1);
-    assertEquals(new Integer(1), get(p));
-    assertEquals(new Integer(1), get(f));
-  }
-
-  @Test
-  public void filterInterrupt() {
-    AtomicReference<Throwable> intr = new AtomicReference<>();
-    Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.filter(i -> i == 1);
-    f.raise(ex);
-    assertEquals(ex, intr.get());
-  }
-
-  @Test
   public void transform() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
     Future<Integer> f = p.transform(new Transformer<Integer, Integer>() {

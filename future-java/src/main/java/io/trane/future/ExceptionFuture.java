@@ -30,11 +30,6 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> filter(final Predicate<? super T> p) {
-    return this;
-  }
-
-  @Override
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     try {
       return new ValueFuture<>(t.onException(ex));

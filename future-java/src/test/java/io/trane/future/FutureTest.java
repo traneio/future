@@ -8,7 +8,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -584,16 +583,6 @@ public class FutureTest {
     get(future);
     assertEquals(-1, count.get());
     assertEquals(iterations, callCount.get());
-  }
-
-  /*** parallel ***/
-
-  @Test
-  public void parallel() {
-    List<Future<Integer>> list = Arrays.asList(Future.value(1), Future.value(2));
-    Iterator<Future<Integer>> iterator = list.iterator();
-    List<Future<Integer>> result = Future.parallel(2, () -> iterator.next());
-    assertArrayEquals(list.toArray(), result.toArray());
   }
 
   /*** within ***/

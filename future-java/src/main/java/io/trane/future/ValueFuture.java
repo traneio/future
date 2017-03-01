@@ -38,14 +38,6 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final Future<T> filter(final Predicate<? super T> p) {
-    if (p.test(value))
-      return this;
-    else
-      return Future.exception(new NoSuchElementException("Future.filter predicate is not satisfied"));
-  }
-
-  @Override
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     try {
       return new ValueFuture<>(t.onValue(value));
