@@ -147,7 +147,7 @@ Given the optimization that this library implements to avoid thread context swit
 
 ```java
 public Future<Integer> factorial(Integer i) {
-  Future.tailrec(() ->
+  Tailrec.apply(() ->
     if (i ==0) return Future.value(1);
     else factorial(i - 1).map(j -> i * j);
   )
@@ -162,14 +162,39 @@ The default batch size is defined by the system property "io.trane.future.defaul
 
 ```java
 public Future<Integer> factorial(Integer i) {
-  Future.tailrec(1024, () ->
+  Tailrec.apply(1024, () ->
     if (i ==0) return Future.value(1);
     else factorial(i - 1).map(j -> i * j);
   )
 }
 ```
 
-Note that the first parameter defines the batch size as `1024`. Typically the users do not need to tune this parameter unless a `StackOverflowException` is thrown or the user wants to increase the batch size for performance reasons. Larger batches tend to improve performance but increase the risk of a `StackOverflowException`.
+Note that the first parameter defines the batch size as `1024`. Typically, the users do not need to tune this parameter unless a `StackOverflowException` is thrown or the user wants to increase the batch size for performance reasons. Larger batches tend to improve performance but increase the risk of a `StackOverflowException`.
+
+Isolating thread pools
+======================
+
+It is possible to isolate portions of a `Future` composition on a separate thread pool:
+
+```java
+FuturePool futurePool = new FuturePool(Executors.newCachedThreadPool());
+
+Future<List<Token>> user = 
+  documentService.get(docId)
+    .flatMap(doc -> futurePool.async(tokenize(doc)))
+```
+
+This feature useful to isolate cpu-intensive tasks and blocking operations. Please refer to the Java documentation to decide wich type of executor is the best for the kind of task that needs to be performed. For instance, a `ForkJoinPool` is useful for cpu-intensive tasks, but can't be used for blocking operations.
+
+The `FuturePool` also has the method `isolate` that isolates the execution of a `Future`:
+
+```java
+FuturePool futurePool = new FuturePool(Executors.newCachedThreadPool());
+
+Future<User> user = futurePool.isolate(userRepo.get(userId));
+```
+
+`isolate` is just a shortcut for `async` + `Future.flatten`.
 
 `Local`s
 ========
@@ -203,7 +228,7 @@ public class TweetStorage {
 
 This feature is implemented with a `ThreadLocal` that is saved at the point of an asynchronous boundary as a `Promise` field and is restored when the `Promise` is satisfied, flushing its continuations with the original `ThreadLocal` contents.
 
-Note: This feature does not have the same behavior as Twitter's `Local`. The `ThreadLocal` state is captured when a `Promise` is created, whereas the Twitter's implementation captures the state only when a `Promise` continuation is created (for instance, `map` is called on a `Promise` instance). In practice, it is most `Promise` creations are followed by a continuation, so the behavior is usually the same.
+Note: This feature does not have the same behavior as Twitter's `Local`. The `ThreadLocal` state is captured when a `Promise` is created, whereas the Twitter's implementation captures the state only when a `Promise` continuation is created (for instance, `map` is called on a `Promise` instance). In practice, most `Promise` creations are followed by a continuation, so the behavior is usually the same.
 
 Interrupts/cancellations
 ======================
@@ -245,7 +270,7 @@ To run the benchmarks, use the `run.sh` script under the `future-benchmark` fold
 FAQ
 ====
 
-Why create a new `Future` implementation?
+**Why create a new `Future` implementation?**
 
 This project aims to provide a `Future` implementation with the following characteristics:
 
