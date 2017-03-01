@@ -45,6 +45,14 @@ public class SatisfiedFutureTest {
     });
     assertEquals("s", get(future));
   }
+  
+  /*** interruptible ***/
+
+  @Test
+  public void interruptible() {
+    Future<Integer> future = Future.value(1);
+    assertEquals(future, future.interruptible());
+  }
 
   /*** raise ***/
 

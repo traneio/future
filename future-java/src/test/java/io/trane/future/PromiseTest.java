@@ -136,6 +136,21 @@ public class PromiseTest {
     p.setValue(1);
     assertEquals(Optional.of(1), localValue.get());
   }
+  
+  /*** create ***/
+  
+  @Test
+  public void create() {
+    AtomicReference<Promise<Integer>> pRef = new AtomicReference<>();
+    AtomicReference<Throwable> interrupt = new AtomicReference<Throwable>();
+    Promise<Integer> p = Promise.create(p2 -> {
+      pRef.set(p2);
+      return interrupt::set;
+    });
+    p.raise(ex);
+    assertEquals(p, pRef.get());
+    assertEquals(interrupt.get(), ex);
+  }
 
   /*** becomeIfEmpty ***/
 
@@ -1112,7 +1127,7 @@ public class PromiseTest {
     assertEquals(ex, exception.get());
     assertEquals(new Integer(2), get(f));
   }
-
+  
   @Test
   public void handleInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
@@ -1120,6 +1135,32 @@ public class PromiseTest {
     Future<Integer> f = p.handle(ex -> 1);
     f.raise(ex);
     assertEquals(ex, intr.get());
+  }
+  
+  public void interruptibleValue() throws CheckedFutureException {
+    Promise<Integer> p = Promise.apply();
+    Future<Integer> f = p.interruptible();
+    p.setValue(1);
+    assertEquals(new Integer(1), get(p));
+    assertEquals(new Integer(1), get(f));
+  }
+  
+  @Test(expected = TestException.class)
+  public void interruptibleException() throws CheckedFutureException {
+    Promise<Integer> p = Promise.apply();
+    Future<Integer> f = p.interruptible();
+    p.setException(ex);
+    get(f);
+  }
+  
+  @Test(expected = TestException.class)
+  public void interruptibleInterrupt() throws CheckedFutureException {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = Promise.apply(intr::set);
+    Future<Integer> f = p.interruptible();
+    f.raise(ex);
+    assertNull(intr.get());
+    get(f);
   }
 
   /*** toString ***/

@@ -221,7 +221,7 @@ public class ExceptionFutureTest {
     Future<Integer> future = Future.<Integer>exception(ex).handle(r -> 1 / 0);
     get(future);
   }
-
+  
   /*** rescue ***/
 
   @Test

@@ -113,6 +113,12 @@ public class NoFutureTest {
   public void handle() {
     assertEquals(noFuture, noFuture.handle(ex -> 1));
   }
+  
+  @Test
+  public void interruptible() {
+    Future<Integer> future = Future.value(1);
+    assertEquals(future, future.interruptible());
+  }
 
   @Test
   public void isDefined() {

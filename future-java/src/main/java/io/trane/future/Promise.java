@@ -73,6 +73,24 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
+  public static final <T> Promise<T> create(final Function<Promise<T>, InterruptHandler> handlerBuilder) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+
+      final InterruptHandler handler = handlerBuilder.apply(this);
+
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return handler;
+      }
+    };
+  }
+
   // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) |
   // WaitQueue|Null (Pending)
   volatile Object state;
@@ -230,6 +248,13 @@ public abstract class Promise<T> implements Future<T> {
       ((LinkedContinuation<?, T>) curr).raise(ex);
     else if ((interruptHandler = getInterruptHandler()) != null)
       interruptHandler.raise(ex);
+  }
+
+  @Override
+  public Future<T> interruptible() {
+    final Promise<T> r = Promise.create(p -> ex -> p.setException(ex));
+    this.proxyTo(r);
+    return r;
   }
 
   @SuppressWarnings("unchecked")

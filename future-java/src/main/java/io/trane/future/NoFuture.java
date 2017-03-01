@@ -13,6 +13,11 @@ public class NoFuture<T> implements Future<T> {
   public void raise(final Throwable ex) {
   }
 
+  @Override
+  public Future<T> interruptible() {
+    return this;
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <R> Future<R> map(final Function<? super T, ? extends R> f) {

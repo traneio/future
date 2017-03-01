@@ -210,6 +210,8 @@ public interface Future<T> extends InterruptHandler {
 
   Future<T> handle(Function<Throwable, ? extends T> f);
 
+  Future<T> interruptible();
+
   boolean isDefined();
 
   T get(long timeout, TimeUnit unit) throws CheckedFutureException;

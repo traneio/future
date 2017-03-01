@@ -25,6 +25,11 @@ interface SatisfiedFuture<T> extends Future<T> {
   }
 
   @Override
+  default Future<T> interruptible() {
+    return this;
+  }
+
+  @Override
   default boolean isDefined() {
     return true;
   }

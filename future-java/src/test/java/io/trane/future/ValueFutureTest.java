@@ -251,7 +251,7 @@ public class ValueFutureTest {
     Future<Integer> future = Future.value(1);
     assertEquals(future, future.handle(t -> 2));
   }
-
+  
   /*** rescue ***/
 
   @Test
