@@ -1097,28 +1097,6 @@ public class PromiseTest {
     assertEquals(ex, intr.get());
   }
 
-  @Test
-  public void handle() throws CheckedFutureException {
-    Promise<Integer> p = Promise.apply();
-    AtomicReference<Throwable> exception = new AtomicReference<>();
-    Future<Integer> f = p.handle(t -> {
-      exception.set(t);
-      return 2;
-    });
-    p.setException(ex);
-    assertEquals(ex, exception.get());
-    assertEquals(new Integer(2), get(f));
-  }
-  
-  @Test
-  public void handleInterrupt() {
-    AtomicReference<Throwable> intr = new AtomicReference<>();
-    Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.handle(ex -> 1);
-    f.raise(ex);
-    assertEquals(ex, intr.get());
-  }
-  
   public void interruptibleValue() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
     Future<Integer> f = p.interruptible();

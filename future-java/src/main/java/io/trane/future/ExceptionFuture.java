@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,15 +88,6 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     try {
       return f.apply(ex);
-    } catch (final Throwable error) {
-      return new ExceptionFuture<>(error);
-    }
-  }
-
-  @Override
-  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
-    try {
-      return Future.value(f.apply(ex));
     } catch (final Throwable error) {
       return new ExceptionFuture<>(error);
     }

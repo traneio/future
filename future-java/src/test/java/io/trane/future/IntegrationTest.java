@@ -43,7 +43,7 @@ public class IntegrationTest {
       return gen(depth - 1).ensure(() -> {
       });
     case 6:
-      return gen(depth - 1).handle(ex -> 1);
+      return gen(depth - 1).rescue(ex -> Future.value(1));
     case 7:
       Promise<Integer> p = Promise.apply();
       gen(depth - 1).proxyTo(p);

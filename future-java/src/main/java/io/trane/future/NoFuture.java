@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 public class NoFuture<T> implements Future<T> {
 
@@ -77,11 +76,6 @@ public class NoFuture<T> implements Future<T> {
 
   @Override
   public Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
-    return this;
-  }
-
-  @Override
-  public Future<T> handle(final Function<Throwable, ? extends T> f) {
     return this;
   }
 

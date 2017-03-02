@@ -197,23 +197,6 @@ public class ExceptionFutureTest {
     get(f);
   }
 
-  /*** handle ***/
-
-  @Test
-  public void handle() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).handle(r -> {
-      assertEquals(ex, r);
-      return 1;
-    });
-    assertEquals(new Integer(1), get(future));
-  }
-
-  @Test(expected = ArithmeticException.class)
-  public void handleException() throws CheckedFutureException {
-    Future<Integer> future = Future.<Integer>exception(ex).handle(r -> 1 / 0);
-    get(future);
-  }
-  
   /*** rescue ***/
 
   @Test

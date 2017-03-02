@@ -1,11 +1,9 @@
 package io.trane.future;
 
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,11 +93,6 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
 
   @Override
   public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
-    return this;
-  }
-
-  @Override
-  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
     return this;
   }
 

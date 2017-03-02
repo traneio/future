@@ -5,17 +5,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
-import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Responder;
 
 public class ValueFutureTest {
 
@@ -232,14 +227,6 @@ public class ValueFutureTest {
     assertFalse(failure.get());
   }
 
-  /*** handle ***/
-
-  @Test
-  public void handle() {
-    Future<Integer> future = Future.value(1);
-    assertEquals(future, future.handle(t -> 2));
-  }
-  
   /*** rescue ***/
 
   @Test

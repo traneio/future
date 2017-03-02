@@ -9,15 +9,32 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Promise is a Future that provides methods to set its result. They are useful
+ * to interact with callback-based APIs like the ones that are typically
+ * provided by network libraries. A promise can be created and returned
+ * synchronously to the caller, but it completion is deferred until the value is
+ * set, typically by a callback.
+ * 
+ * @param <T>
+ *          the type of the asynchronous computation result
+ */
 public abstract class Promise<T> implements Future<T> {
 
   private static final long STATE_OFFSET = Unsafe.objectFieldOffset(Promise.class, "state");
   private static final Logger LOGGER = Logger.getLogger(Promise.class.getName());
 
+  /**
+   * Creates a promise that triggers the provided handlers in case it receives
+   * an interrupt.
+   * 
+   * @param handlers
+   *          the list of handlers to be triggered.
+   * @return the new promise instance.
+   */
   public static final <T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
@@ -33,21 +50,14 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
-  public static final <T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
-    final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
-
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return InterruptHandler.apply(h1, h2);
-      }
-    };
-  }
-
+  /**
+   * Creates a promise that triggers the provided handler in case it receives an
+   * interrupt.
+   * 
+   * @param handler
+   *          the handler to be triggered.
+   * @return the new promise instance.
+   */
   public static final <T> Promise<T> apply(final InterruptHandler handler) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
@@ -63,6 +73,12 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
+  /**
+   * Creates a promise without an interrupt handler. Interrupt signals are
+   * ignored by the created promise since there's no handler.
+   * 
+   * @return the new promise instance.
+   */
   public static final <T> Promise<T> apply() {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
@@ -73,6 +89,16 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
+  /**
+   * Creates a new promise using a handler builder that it's based on the
+   * promise under creation. This method allows the user to define handlers that
+   * use the it's own promise.
+   * 
+   * @param handlerBuilder
+   *          a builder that receives the new promise and returns the interrupt
+   *          handler of the new promise.
+   * @return the new promise.
+   */
   public static final <T> Promise<T> create(final Function<Promise<T>, InterruptHandler> handlerBuilder) {
     final Optional<?>[] savedContext = Local.save();
     return new Promise<T>() {
@@ -91,6 +117,24 @@ public abstract class Promise<T> implements Future<T> {
     };
   }
 
+  protected static final <T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
+    final Optional<?>[] savedContext = Local.save();
+    return new Promise<T>() {
+      @Override
+      protected final Optional<?>[] getSavedContext() {
+        return savedContext;
+      }
+
+      @Override
+      protected final InterruptHandler getInterruptHandler() {
+        return InterruptHandler.apply(h1, h2);
+      }
+    };
+  }
+
+  protected Promise() {
+  }
+
   // Future<T> (Done) | Promise<T>|LinkedContinuation<?, T> (Linked) |
   // WaitQueue|Null (Pending)
   volatile Object state;
@@ -107,11 +151,27 @@ public abstract class Promise<T> implements Future<T> {
     return Unsafe.compareAndSwapObject(this, STATE_OFFSET, oldState, newState);
   }
 
+  /**
+   * Becomes another future. This and result become the same: both are
+   * completed with the same result and both receive the same interrupt signals.
+   * 
+   * @param result
+   *          the future to become.
+   */
   public final void become(final Future<T> result) {
     if (!becomeIfEmpty(result))
       throw new IllegalStateException("Can't set result " + result + " for promise with state " + state);
   }
 
+  /**
+   * Becomes another future only if this promise is undefined. This and result
+   * become the same: both are completed with the same result and both receive
+   * the same interrupt signals.
+   * 
+   * @param result
+   *          the future to become.
+   * @return if the operation was successful
+   */
   @SuppressWarnings("unchecked")
   public final boolean becomeIfEmpty(final Future<T> result) {
     try {
@@ -227,14 +287,32 @@ public abstract class Promise<T> implements Future<T> {
     }
   }
 
+  /**
+   * Completes this promise with value.
+   * 
+   * @param value
+   *          the result.
+   */
   public final void setValue(final T value) {
     become(new ValueFuture<>(value));
   }
 
+  /**
+   * Completes this promise with a failure ex.
+   * 
+   * @param ex
+   *          the failure.
+   */
   public final void setException(final Throwable ex) {
     become(new ExceptionFuture<>(ex));
   }
 
+  /**
+   * Raises an interrupt.
+   * 
+   * @param ex
+   *          the interrupt exception.
+   */
   @SuppressWarnings("unchecked")
   @Override
   public final void raise(final Throwable ex) {
@@ -465,21 +543,6 @@ public abstract class Promise<T> implements Future<T> {
       @Override
       final Future<T> apply(final Future<T> result) {
         return result.rescue(f);
-      }
-
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return Promise.this;
-      }
-    });
-  }
-
-  @Override
-  public final Future<T> handle(final Function<Throwable, ? extends T> f) {
-    return continuation(new Continuation<T, T>() {
-      @Override
-      final Future<T> apply(final Future<T> result) {
-        return result.handle(f);
       }
 
       @Override
