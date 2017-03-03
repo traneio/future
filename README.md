@@ -182,7 +182,7 @@ Future<List<Token>> user =
     .flatMap(doc -> futurePool.async(tokenize(doc)))
 ```
 
-This feature useful to isolate cpu-intensive tasks and blocking operations. Please refer to the Java documentation to decide wich type of executor is the best for the kind of task that needs to be performed. For instance, a `ForkJoinPool` is useful for cpu-intensive tasks, but can't be used for blocking operations.
+This feature useful to isolate cpu-intensive tasks and blocking operations. Please refer to the Java documentation to decide which type of executor is the best for the kind of task that needs to be performed. For instance, a `ForkJoinPool` is useful for cpu-intensive tasks, but can't be used for blocking operations.
 
 The `FuturePool` also has the method `isolate` that isolates the execution of a `Future`:
 
