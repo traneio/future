@@ -37,17 +37,30 @@ public abstract class Promise<T> implements Future<T> {
    */
   public static final <T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
     final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
+    if (savedContext.length == 0)
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return Local.EMPTY;
+        }
 
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return InterruptHandler.apply(handlers);
-      }
-    };
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return InterruptHandler.apply(handlers);
+        }
+      };
+    else
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return savedContext;
+        }
+
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return InterruptHandler.apply(handlers);
+        }
+      };
   }
 
   /**
@@ -60,17 +73,30 @@ public abstract class Promise<T> implements Future<T> {
    */
   public static final <T> Promise<T> apply(final InterruptHandler handler) {
     final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
+    if (savedContext.length == 0)
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return Local.EMPTY;
+        }
 
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return handler;
-      }
-    };
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return handler;
+        }
+      };
+    else
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return savedContext;
+        }
+
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return handler;
+        }
+      };
   }
 
   /**
@@ -81,12 +107,20 @@ public abstract class Promise<T> implements Future<T> {
    */
   public static final <T> Promise<T> apply() {
     final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
-    };
+    if (savedContext.length == 0)
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return Local.EMPTY;
+        }
+      };
+    else
+      return new Promise<T>() {
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return savedContext;
+        }
+      };
   }
 
   /**
@@ -101,20 +135,36 @@ public abstract class Promise<T> implements Future<T> {
    */
   public static final <T> Promise<T> create(final Function<Promise<T>, InterruptHandler> handlerBuilder) {
     final Optional<?>[] savedContext = Local.save();
-    return new Promise<T>() {
+    if (savedContext.length == 0)
+      return new Promise<T>() {
 
-      final InterruptHandler handler = handlerBuilder.apply(this);
+        final InterruptHandler handler = handlerBuilder.apply(this);
 
-      @Override
-      protected final Optional<?>[] getSavedContext() {
-        return savedContext;
-      }
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return Local.EMPTY;
+        }
 
-      @Override
-      protected final InterruptHandler getInterruptHandler() {
-        return handler;
-      }
-    };
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return handler;
+        }
+      };
+    else
+      return new Promise<T>() {
+
+        final InterruptHandler handler = handlerBuilder.apply(this);
+
+        @Override
+        protected final Optional<?>[] getSavedContext() {
+          return savedContext;
+        }
+
+        @Override
+        protected final InterruptHandler getInterruptHandler() {
+          return handler;
+        }
+      };
   }
 
   protected static final <T> Promise<T> apply(final InterruptHandler h1, final InterruptHandler h2) {
@@ -152,8 +202,8 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   /**
-   * Becomes another future. This and result become the same: both are
-   * completed with the same result and both receive the same interrupt signals.
+   * Becomes another future. This and result become the same: both are completed
+   * with the same result and both receive the same interrupt signals.
    * 
    * @param result
    *          the future to become.
