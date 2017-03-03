@@ -93,7 +93,7 @@ Future<Profile> profile =
   )
 ```
 
-This implementation of `Future` leverages this behavior to avoid context thread switches. The execution of the asynchronous computation reuses the current thread until it reaches an asynchronous boundary. For instance, this computation runs entirely on the current thread synchronously:
+This implementation of `Future` leverages this behavior to avoid context thread switches. The execution of the asynchronous computation reuses the current thread until it reaches an asynchronous boundary, where it cannot continue executing since it needs to wait for the completion of an asynchronous operation like a remote system call. For instance, this computation runs entirely on the current thread synchronously:
 
 ```java
 Future.value(1).map(i -> i + 1);
@@ -138,12 +138,10 @@ public void processRequest(Request request, Connection conn) {
 }
 ```
 
-The only blocking necessary in a fully non-blocking architecture is the head of tail blocking when selecting from the network channels. If there's no network traffic, the non-blocking IO loop blocks until there's something to be processed. Once the head (first event) is received, the processing of the tail is non-blocking.
-
 Recursive `Future`s
 ==================
 
-Given the optimization that this library implements to avoid thread context switch, compositions are not stack-safe by default. It is necessary to wrap recursive computations with a `Trailrec` call:
+Given the optimization that this library implements to avoid thread context switch, compositions are not stack-safe by default. It is necessary to wrap recursive computations with a `Tailrec` call:
 
 ```java
 public Future<Integer> factorial(Integer i) {
@@ -211,7 +209,23 @@ public class UserSession {
 
 public class MyService {
   public Future<List<Tweet>> getTweetsEndpoint(Request request) {
-    UserSession.local.let(request.getSession(), tweetRepo.get(request.getUserId()));
+    UserSession.local.let(request.getSession(), () -> tweetRepo.get(request.getUserId()));
+  }
+}
+```
+
+Note that the `let` method is used to define the local value, execute the function defined by the second parameter, and then set the local to its previous value. It is a convenient method to avoid having to set and clear the value manually:
+
+```java
+public class MyService {
+  public Future<List<Tweet>> getTweetsEndpoint(Request request) {
+    final Optional<UserSessuib> saved = UserSession.local.get();
+    UserSession.local.set(Optional.of(request.getSession()));
+    try {
+      return tweetRepo.get(request.getUserId());
+    } finally {
+      UserSession.local.set(saved);
+    }
   }
 }
 ```
