@@ -436,281 +436,315 @@ public abstract class Promise<T> implements Future<T> {
     }
   }
 
+  private static class Map<T, R> extends Continuation<T, R> {
+    private final Function<? super T, ? extends R> f;
+
+    public Map(final Function<? super T, ? extends R> f) {
+      this.f = f;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.map(f);
+    }
+  }
+
   @Override
   public final <R> Future<R> map(final Function<? super T, ? extends R> f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.map(f);
-        }
-
+      return continuation(new Map<T, R>(f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.map(f);
-        }
-      });
+      return continuation(new Map<T, R>(f));
+  }
+
+  private static class FlatMap<T, R> extends Continuation<T, R> {
+    private final Function<? super T, ? extends Future<R>> f;
+
+    public FlatMap(final Function<? super T, ? extends Future<R>> f) {
+      this.f = f;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.flatMap(f);
+    }
   }
 
   @Override
   public final <R> Future<R> flatMap(final Function<? super T, ? extends Future<R>> f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.flatMap(f);
-        }
-
+      return continuation(new FlatMap<T, R>(f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.flatMap(f);
-        }
-      });
+      return continuation(new FlatMap<T, R>(f));
+  }
+
+  private static class Transform<T, R> extends Continuation<T, R> {
+    private final Transformer<? super T, ? extends R> t;
+
+    public Transform(final Transformer<? super T, ? extends R> t) {
+      this.t = t;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.transform(t);
+    }
   }
 
   @Override
   public <R> Future<R> transform(final Transformer<? super T, ? extends R> t) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.transform(t);
-        }
-
+      return continuation(new Transform<T, R>(t) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.transform(t);
-        }
-      });
+      return continuation(new Transform<T, R>(t));
+  }
+
+  private static class TransformWith<T, R> extends Continuation<T, R> {
+    private final Transformer<? super T, ? extends Future<R>> t;
+
+    public TransformWith(final Transformer<? super T, ? extends Future<R>> t) {
+      this.t = t;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.transformWith(t);
+    }
   }
 
   @Override
   public <R> Future<R> transformWith(final Transformer<? super T, ? extends Future<R>> t) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.transformWith(t);
-        }
-
+      return continuation(new TransformWith<T, R>(t) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.transformWith(t);
-        }
-      });
+      return continuation(new TransformWith<T, R>(t));
+  }
+
+  private static class BiMap<T, U, R> extends Continuation<T, R> {
+    private final BiFunction<? super T, ? super U, ? extends R> f;
+    private final Future<U> other;
+
+    public BiMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
+      this.other = other;
+      this.f = f;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.biMap(other, f);
+    }
   }
 
   @Override
   public <U, R> Future<R> biMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends R> f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.biMap(other, f);
-        }
-
+      return continuation(new BiMap<T, U, R>(other, f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return InterruptHandler.apply(Promise.this, other);
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.biMap(other, f);
-        }
-      });
+      return continuation(new BiMap<T, U, R>(other, f));
+  }
+
+  private static class BiFlatMap<T, U, R> extends Continuation<T, R> {
+    private final BiFunction<? super T, ? super U, ? extends Future<R>> f;
+    private final Future<U> other;
+
+    public BiFlatMap(final Future<U> other, final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
+      this.other = other;
+      this.f = f;
+    }
+
+    @Override
+    final Future<R> apply(final Future<T> result) {
+      return result.biFlatMap(other, f);
+    }
   }
 
   @Override
   public <U, R> Future<R> biFlatMap(final Future<U> other,
       final BiFunction<? super T, ? super U, ? extends Future<R>> f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.biFlatMap(other, f);
-        }
-
+      return continuation(new BiFlatMap<T, U, R>(other, f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return InterruptHandler.apply(Promise.this, other);
         }
       });
     else
-      return continuation(new Continuation<T, R>() {
-        @Override
-        final Future<R> apply(final Future<T> result) {
-          return result.biFlatMap(other, f);
-        }
-      });
+      return continuation(new BiFlatMap<T, U, R>(other, f));
+  }
+
+  private static class Ensure<T> extends Continuation<T, T> {
+    private final Runnable f;
+
+    public Ensure(final Runnable f) {
+      this.f = f;
+    }
+
+    @Override
+    final Future<T> apply(final Future<T> result) {
+      return result.ensure(f);
+    }
   }
 
   @Override
   public final Future<T> ensure(final Runnable f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.ensure(f);
-        }
-
+      return continuation(new Ensure<T>(f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.ensure(f);
-        }
-      });
+      return continuation(new Ensure<T>(f));
+  }
+
+  private static class OnSuccess<T> extends Continuation<T, T> {
+    private final Consumer<? super T> c;
+
+    public OnSuccess(final Consumer<? super T> c) {
+      this.c = c;
+    }
+
+    @Override
+    final Future<T> apply(final Future<T> result) {
+      return result.onSuccess(c);
+    }
   }
 
   @Override
   public final Future<T> onSuccess(final Consumer<? super T> c) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.onSuccess(c);
-        }
-
+      return continuation(new OnSuccess<T>(c) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.onSuccess(c);
-        }
-      });
+      return continuation(new OnSuccess<T>(c));
+  }
+
+  private static class OnFailure<T> extends Continuation<T, T> {
+    private final Consumer<Throwable> c;
+
+    public OnFailure(final Consumer<Throwable> c) {
+      this.c = c;
+    }
+
+    @Override
+    final Future<T> apply(final Future<T> result) {
+      return result.onFailure(c);
+    }
   }
 
   @Override
   public final Future<T> onFailure(final Consumer<Throwable> c) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.onFailure(c);
-        }
-
+      return continuation(new OnFailure<T>(c) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.onFailure(c);
-        }
-      });
+      return continuation(new OnFailure<T>(c));
+  }
+
+  private static class Respond<T> extends Continuation<T, T> {
+    private final Responder<? super T> r;
+
+    public Respond(final Responder<? super T> r) {
+      this.r = r;
+    }
+
+    @Override
+    final Future<T> apply(final Future<T> result) {
+      return result.respond(r);
+    }
   }
 
   @Override
   public final Future<T> respond(final Responder<? super T> r) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.respond(r);
-        }
-
+      return continuation(new Respond<T>(r) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.respond(r);
-        }
-      });
+      return continuation(new Respond<T>(r));
+  }
+
+  private static class Rescue<T> extends Continuation<T, T> {
+    private final Function<Throwable, ? extends Future<T>> f;
+
+    public Rescue(final Function<Throwable, ? extends Future<T>> f) {
+      this.f = f;
+    }
+
+    @Override
+    final Future<T> apply(final Future<T> result) {
+      return result.rescue(f);
+    }
   }
 
   @Override
   public final Future<T> rescue(final Function<Throwable, ? extends Future<T>> f) {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.rescue(f);
-        }
-
+      return continuation(new Rescue<T>(f) {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, T>() {
-        @Override
-        final Future<T> apply(final Future<T> result) {
-          return result.rescue(f);
-        }
-      });
+      return continuation(new Rescue<T>(f));
+  }
+
+  private static class Voided<T> extends Continuation<T, Void> {
+    @Override
+    final Future<Void> apply(final Future<T> result) {
+      return result.voided();
+    }
   }
 
   @Override
   public final Future<Void> voided() {
     if (getInterruptHandler() != null)
-      return continuation(new Continuation<T, Void>() {
-        @Override
-        final Future<Void> apply(final Future<T> result) {
-          return result.voided();
-        }
-
+      return continuation(new Voided<T>() {
         @Override
         protected final InterruptHandler getInterruptHandler() {
           return Promise.this;
         }
       });
     else
-      return continuation(new Continuation<T, Void>() {
-        @Override
-        final Future<Void> apply(final Future<T> result) {
-          return result.voided();
-        }
-      });
+      return continuation(new Voided<T>());
   }
 
   private final class DelayedPromise extends Promise<T> implements Runnable {
