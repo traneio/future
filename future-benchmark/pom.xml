@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.trane</groupId>
     <artifactId>future</artifactId>
-    <version>0.0.18</version>
+    <version>0.0.19-SNAPSHOT</version>
   </parent>
   <artifactId>future-benchmark</artifactId>
   <packaging>jar</packaging>
@@ -34,7 +34,7 @@
     <dependency>
       <groupId>io.trane</groupId>
       <artifactId>future-java</artifactId>
-      <version>0.0.18</version>
+      <version>0.0.19-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
