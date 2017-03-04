@@ -32,11 +32,6 @@
       <version>6.41.0</version>
     </dependency>
     <dependency>
-      <groupId>io.monix</groupId>
-      <artifactId>monix-eval_2.12</artifactId>
-      <version>2.2.1</version>
-    </dependency>
-    <dependency>
       <groupId>io.trane</groupId>
       <artifactId>future-java</artifactId>
       <version>0.0.18-SNAPSHOT</version>
