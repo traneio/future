@@ -30,7 +30,7 @@ then
 
 		rm -rf docs/api/future-java/$(cat release.version)
 		mkdir -p docs/api/future-java/$(cat release.version)
-		cp -r future-java/target/site/apidocs docs/api/future-java/$(cat release.version)
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/$(cat release.version)
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
@@ -43,7 +43,7 @@ then
 
 		rm -rf docs/api/future-java/SNAPSHOT
 		mkdir -p docs/api/future-java/SNAPSHOT
-		cp -r future-java/target/site/apidocs docs/api/future-java/SNAPSHOT
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/SNAPSHOT
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
