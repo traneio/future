@@ -2,7 +2,7 @@ package io.trane.future;
 
 import java.lang.reflect.Field;
 
-public interface Unsafe {
+interface Unsafe {
 
   static sun.misc.Unsafe instance = getDeclaredStaticField(sun.misc.Unsafe.class, "theUnsafe");
 

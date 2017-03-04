@@ -175,7 +175,7 @@ Isolating thread pools
 It is possible to isolate portions of a `Future` composition on a separate thread pool:
 
 ```java
-FuturePool futurePool = new FuturePool(Executors.newCachedThreadPool());
+FuturePool futurePool = FuturePool.apply(Executors.newCachedThreadPool());
 
 Future<List<Token>> user = 
   documentService.get(docId)
@@ -187,7 +187,7 @@ This feature useful to isolate cpu-intensive tasks and blocking operations. Plea
 The `FuturePool` also has the method `isolate` that isolates the execution of a `Future`:
 
 ```java
-FuturePool futurePool = new FuturePool(Executors.newCachedThreadPool());
+FuturePool futurePool = FuturePool.apply(Executors.newCachedThreadPool());
 
 Future<User> user = futurePool.isolate(userRepo.get(userId));
 ```

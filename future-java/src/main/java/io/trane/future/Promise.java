@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * Promise is a Future that provides methods to set its result. They are useful
  * to interact with callback-based APIs like the ones that are typically
  * provided by network libraries. A promise can be created and returned
- * synchronously to the caller, but it completion is deferred until the value is
+ * synchronously to the caller, but its completion is deferred until the value is
  * set, typically by a callback.
  * 
  * @param <T>
@@ -31,9 +31,8 @@ public abstract class Promise<T> implements Future<T> {
    * Creates a promise that triggers the provided handlers in case it receives
    * an interrupt.
    * 
-   * @param handlers
-   *          the list of handlers to be triggered.
-   * @return the new promise instance.
+   * @param handlers  the list of handlers to be triggered.
+   * @return          the new promise instance.
    */
   public static final <T> Promise<T> apply(final List<? extends InterruptHandler> handlers) {
     final Optional<?>[] savedContext = Local.save();
@@ -67,9 +66,8 @@ public abstract class Promise<T> implements Future<T> {
    * Creates a promise that triggers the provided handler in case it receives an
    * interrupt.
    * 
-   * @param handler
-   *          the handler to be triggered.
-   * @return the new promise instance.
+   * @param handler  the handler to be triggered.
+   * @return         the new promise instance.
    */
   public static final <T> Promise<T> apply(final InterruptHandler handler) {
     final Optional<?>[] savedContext = Local.save();
@@ -103,7 +101,7 @@ public abstract class Promise<T> implements Future<T> {
    * Creates a promise without an interrupt handler. Interrupt signals are
    * ignored by the created promise since there's no handler.
    * 
-   * @return the new promise instance.
+   * @return  the new promise instance.
    */
   public static final <T> Promise<T> apply() {
     final Optional<?>[] savedContext = Local.save();
@@ -205,8 +203,7 @@ public abstract class Promise<T> implements Future<T> {
    * Becomes another future. This and result become the same: both are completed
    * with the same result and both receive the same interrupt signals.
    * 
-   * @param result
-   *          the future to become.
+   * @param result  the future to become.
    */
   public final void become(final Future<T> result) {
     if (!becomeIfEmpty(result))
@@ -218,9 +215,8 @@ public abstract class Promise<T> implements Future<T> {
    * become the same: both are completed with the same result and both receive
    * the same interrupt signals.
    * 
-   * @param result
-   *          the future to become.
-   * @return if the operation was successful
+   * @param result  the future to become.
+   * @return        if the operation was successful
    */
   @SuppressWarnings("unchecked")
   public final boolean becomeIfEmpty(final Future<T> result) {
@@ -340,8 +336,7 @@ public abstract class Promise<T> implements Future<T> {
   /**
    * Completes this promise with value.
    * 
-   * @param value
-   *          the result.
+   * @param value  the result.
    */
   public final void setValue(final T value) {
     become(new ValueFuture<>(value));
@@ -350,8 +345,7 @@ public abstract class Promise<T> implements Future<T> {
   /**
    * Completes this promise with a failure ex.
    * 
-   * @param ex
-   *          the failure.
+   * @param ex  the failure.
    */
   public final void setException(final Throwable ex) {
     become(new ExceptionFuture<>(ex));
@@ -360,8 +354,7 @@ public abstract class Promise<T> implements Future<T> {
   /**
    * Raises an interrupt.
    * 
-   * @param ex
-   *          the interrupt exception.
+   * @param ex  the interrupt exception.
    */
   @SuppressWarnings("unchecked")
   @Override

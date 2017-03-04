@@ -6,7 +6,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class NoFuture<T> implements Future<T> {
+class NoFuture<T> implements Future<T> {
 
   @Override
   public void raise(final Throwable ex) {

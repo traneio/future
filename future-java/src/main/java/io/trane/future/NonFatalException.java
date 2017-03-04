@@ -1,6 +1,6 @@
 package io.trane.future;
 
-public interface NonFatalException {
+interface NonFatalException {
 
   public static Throwable verify(final Throwable ex) {
 
