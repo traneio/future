@@ -29,7 +29,7 @@ public class FuturePoolTest {
   public void isolate() throws CheckedFutureException {
     ExecutorService es = Executors.newCachedThreadPool();
     try {
-      FuturePool pool = new FuturePool(es);
+      FuturePool pool = FuturePool.apply(es);
       Thread originalThread = Thread.currentThread();
 
       Future<Integer> future = pool.isolate(() -> {
@@ -47,7 +47,7 @@ public class FuturePoolTest {
   public void async() throws CheckedFutureException {
     ExecutorService es = Executors.newCachedThreadPool();
     try {
-      FuturePool pool = new FuturePool(es);
+      FuturePool pool = FuturePool.apply(es);
       Thread originalThread = Thread.currentThread();
 
       Future<Integer> future = pool.async(() -> {
@@ -64,7 +64,7 @@ public class FuturePoolTest {
   @Test(expected = RejectedExecutionException.class)
   public void asyncRejected() throws CheckedFutureException {
     ExecutorService es = new RejectExecutorService();
-    FuturePool pool = new FuturePool(es);
+    FuturePool pool = FuturePool.apply(es);
     get(pool.async(() -> 1));
   }
 
