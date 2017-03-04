@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.trane</groupId>
   <artifactId>future</artifactId>
   <packaging>pom</packaging>
-  <version>0.0.18-SNAPSHOT</version>
+  <version>0.0.18</version>
   <name>future</name>
   <description>High-performance Future implementation for the JVM </description>
   <url>http://trane.io</url>
@@ -21,7 +20,7 @@
     <url>https://github.com/traneio/future</url>
     <connection>scm:git:git://github.com/traneio/future.git</connection>
     <developerConnection>scm:git:git@github.com:traneio/future.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>future-0.0.18</tag>
   </scm>
 
   <developers>
