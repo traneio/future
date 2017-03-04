@@ -270,7 +270,7 @@ public class FutureTest {
       }
       start.set(true);
       List<Integer> expected = promises.stream().map(p -> p.hashCode()).collect(toList());
-      List<Integer> result = future.get(100, TimeUnit.MILLISECONDS);
+      List<Integer> result = future.get(1, TimeUnit.SECONDS);
       assertArrayEquals(expected.toArray(), result.toArray());
     } finally {
       ex.shutdown();
