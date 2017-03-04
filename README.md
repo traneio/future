@@ -154,7 +154,7 @@ public Future<Integer> factorial(Integer i) {
 
 This is just an example, there's no reason to use `Future`s to implement a factorial function. Requiring the `Tailrec` call for recursive computations is a reasonable compromise since recursive futures are uncommon.
 
-Even though the computation is wrapped by `Tailrec`, the execution still leverages the synchronous execution optimizations in batches. It executes the composition synchronously until it reaches the batch size and then uses a `Promise` to unfold the stack and then run the next batch.
+Even though the computation is wrapped by `Tailrec`, the execution still leverages the synchronous execution optimizations in batches. It executes the composition synchronously until it reaches the batch size and then uses a `Promise` to unwind the stack and then run the next batch.
 
 The default batch size is defined by the system property "io.trane.future.defaultBatchSize", which is `512` by default. Alternatively, it is possible to set the batch size when calling `Tailrec.apply`:
 
