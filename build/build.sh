@@ -28,11 +28,9 @@ then
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
 		mvn release:perform javadoc:javadoc --settings build/settings.xml
 
-        DOCS_PATH=docs/api/future-java/$(cat release.version)
-
-		rm -rf $DOCS_PATH
-		mkdir -p $DOCS_PATH
-		cp -r future-java/target/site/apidocs/* $DOCS_PATH
+		rm -rf docs/api/future-java/$(cat release.version)
+		mkdir -p docs/api/future-java/$(cat release.version)
+		cp -r future-java/target/site/apidocs docs/api/future-java/$(cat release.version)
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
@@ -42,12 +40,10 @@ then
 	then
 		echo "Publishing a snapshot..."
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy javadoc:javadoc --settings build/settings.xml
-		
-		DOCS_PATH=docs/api/future-java/$(echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v /)
-        
-		rm -rf $DOCS_PATH
-		mkdir -p $DOCS_PATH
-		cp -r future-java/target/site/apidocs/* $DOCS_PATH
+
+		rm -rf docs/api/future-java/$CURRENT_VERSION
+		mkdir -p docs/api/future-java/$CURRENT_VERSION
+		cp -r future-java/target/site/apidocs docs/api/future-java/$CURRENT_VERSION
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
