@@ -41,9 +41,9 @@ then
 		echo "Publishing a snapshot..."
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy javadoc:javadoc --settings build/settings.xml
 
-		rm -rf docs/api/future-java/$CURRENT_VERSION
-		mkdir -p docs/api/future-java/$CURRENT_VERSION
-		cp -r future-java/target/site/apidocs docs/api/future-java/$CURRENT_VERSION
+		rm -rf docs/api/future-java/SNAPSHOT
+		mkdir -p docs/api/future-java/SNAPSHOT
+		cp -r future-java/target/site/apidocs docs/api/future-java/SNAPSHOT
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
