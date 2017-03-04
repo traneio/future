@@ -26,7 +26,7 @@ then
 		git push
 
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
-		mvn release:perform javadoc:javadoc --settings build/settings.xml
+		mvn release:perform --settings build/settings.xml
 
 		rm -rf docs/api/future-java/$(cat release.version)
 		mkdir -p docs/api/future-java/$(cat release.version)
