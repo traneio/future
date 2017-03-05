@@ -312,7 +312,11 @@ Currently, there aren't other `Future` libraries with this feature set.
 
 **Why `trane`?**
 
-The name is in honor of the great saxophonist [John Coltrane](http://www.johncoltrane.com/), also known by his nickname Trane.
+The name is in honor of the great saxophonist [John Coltrane](http://www.johncoltrane.com/), also known as Trane (his nickname).
 
 > “Invest yourself in everything you do. There's fun in being serious.” 
 -- John Coltrane
+
+**Why is it high-performance?**
+
+Several techniques were used to optimize this library. For an overview, please refer to [CONTRIBUTING.md](https://github.com/traneio/future/blob/master/CONTRIBUTING.md).
