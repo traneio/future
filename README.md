@@ -9,7 +9,7 @@ This project is a high-performance implementation of the `Future` abstraction. T
 
 It allows the user to express complex asynchronous code in a composable and type-safe manner. It also supports more advanced features that are currently only available for Twitter futures and are essential to developing non-trivial systems. Namely, it provides `Local`s, that are similar to `ThreadLocal`s but for asynchronous code, and `interrupt`s, also known as cancellations.
  
-The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic.
+The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic in multiple languages.
 
 Getting started
 ===============
