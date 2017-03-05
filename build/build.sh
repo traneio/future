@@ -21,16 +21,23 @@ then
 	if [ -e "release.version" ] && [ $TRAVIS_BRANCH == "master" ]
 	then
 		echo "Performing a release..."
+		RELEASE_VERSION=$(cat release.version)
+
 		git rm release.version
 		git commit -m "[skip ci] [release] remove release.version"
 		git push
 
-		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$(cat release.version)
+		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$RELEASE_VERSION
 		mvn release:perform --settings build/settings.xml
 
-		rm -rf docs/api/future-java/$(cat release.version)
-		mkdir -p docs/api/future-java/$(cat release.version)
-		cp -r future-java/target/site/apidocs/* docs/api/future-java/$(cat release.version)
+		rm -rf docs/api/future-java/$RELEASE_VERSION
+		rm -rf docs/api/future-java/current
+
+		mkdir -p docs/api/future-java/$RELEASE_VERSION
+		mkdir -p docs/api/future-java/current
+
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/$RELEASE_VERSION
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/current
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
@@ -39,11 +46,11 @@ then
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Publishing a snapshot..."
-		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy javadoc:javadoc --settings build/settings.xml
+		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar javadoc:jar deploy --settings build/settings.xml
 
 		rm -rf docs/api/future-java/SNAPSHOT
 		mkdir -p docs/api/future-java/SNAPSHOT
-		cp -r future-java/target/site/apidocs/* docs/api/future-java/SNAPSHOT
+		cp -r future-java/target/apidocs/* docs/api/future-java/SNAPSHOT
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
