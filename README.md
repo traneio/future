@@ -11,14 +11,14 @@ Trane.io Future
 
 This project is a high-performance implementation of the `Future` abstraction. The library was designed from scratch with a focus on reducing CPU usage and memory footprint, and having the [Twitter `Future`](https://github.com/twitter/util) as its main inspiration.
 
-It allows the user to express complex asynchronous code in a composable and type-safe manner. It also supports more advanced features that are currently only available for Twitter futures and are essential to developing non-trivial systems. Namely, it provides `Local`s, that are similar to `ThreadLocal`s but for asynchronous code, and `interrupt`s, also known as cancellations.
+It allows the user to express complex asynchronous code in a composable and type-safe manner. It also supports more advanced features that are currently only available for Twitter's Future and are essential to developing non-trivial systems. Namely, it provides `Local`s, that are similar to `ThreadLocal`s but for asynchronous code, and `interrupt`s, also known as cancellations.
  
-The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic in each applicable JVM language.
+The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic in each language.
 
 Getting started
 ===============
 
-The library binaries are distributed through maven central. Click on the maven central badge for information on how to add the project dependency to your project:
+The library binaries are distributed through maven central. Click on the maven central badge for information on how to add the library dependency to your project:
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future)
 
@@ -43,7 +43,7 @@ From the user perspective, a `Future` can be in three states:
 2. Completed with a value
 3. Completed with an exception
 
-Instead of exposing this state to the user, `Future` provides combinators to express computations that run once the `Future` completes. The results of these combinators are `Future` instances that can be used to perform other transformations, giving the user a powerful tool to express complex chains of asynchronous transformations.
+Instead of exposing this state, `Future` provides combinators to express computations that run once the `Future` completes. The results of these combinators are `Future` instances that can be used to perform other transformations, giving the user a powerful tool to express complex chains of asynchronous transformations.
 
 Let's say that we need to call a remote service to get the username given an id:
 
@@ -132,7 +132,7 @@ This composition is executed by the current thread and stops at the point where 
 Future.value(1)
   .map(i -> i + 1) // Runs on the current thread
   .flatMap(i -> callAService(i)) // Issues the request on the current thread
-  .map(i -> i == 10); // Runs on the network thread that satisfies the future continuation
+  .map(i -> i == 10); // Runs on the network thread that satisfies the async boundary
 ```
 
 Asynchronous boundaries are defined using `Promise`s:
@@ -145,7 +145,7 @@ public Future<Integer> callAService(Integer i) {
 }
 ```
 
-Note that `Promise` is a `Future` but provides methods to set its result. They are useful to interact with callback-based APIs like the ones that are typically provided by network libraries. The promise is created and returned synchronously to the caller, but it is pending until the `onComplete` callback is executed by the network layer.
+Note that `Promise` is a `Future` that provides methods to set its result. They are useful to interact with callback-based APIs like the ones that are typically provided by network libraries. The promise is created and returned synchronously to the caller, but it is pending until the `onComplete` callback is executed by the network layer.
 
 Using `Promise`s, it is possible to create fully asynchronous code throughout the application stack and never block threads. It is a common misconception that blocking must happen at some layer of the application. For instance, it is possible to satisfy a request to a server and avoid blocking to write the result back to the client using a lambda that captures a reference to the network connection/session. Example:
 
