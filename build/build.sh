@@ -31,14 +31,14 @@ then
 		mvn release:perform --settings build/settings.xml
 	    mvn install javadoc:javadoc
 
-		rm -rf docs/api/future-java/$RELEASE_VERSION
-		rm -rf docs/api/future-java/current
+		rm -rf docs/apidocs/future-java/$RELEASE_VERSION
+		rm -rf docs/apidocs/future-java/current
 
-		mkdir -p docs/api/future-java/$RELEASE_VERSION
-		mkdir -p docs/api/future-java/current
+		mkdir -p docs/apidocs/future-java/$RELEASE_VERSION
+		mkdir -p docs/apidocs/future-java/current
 
-		cp -r future-java/target/site/apidocs/* docs/api/future-java/$RELEASE_VERSION
-		cp -r future-java/target/site/apidocs/* docs/api/future-java/current
+		cp -r future-java/target/site/apidocs/* docs/apidocs/future-java/$RELEASE_VERSION
+		cp -r future-java/target/site/apidocs/* docs/apidocs/future-java/current
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
@@ -49,9 +49,9 @@ then
 		echo "Publishing a snapshot..."
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar javadoc:jar deploy --settings build/settings.xml
 
-		rm -rf docs/api/future-java/SNAPSHOT
-		mkdir -p docs/api/future-java/SNAPSHOT
-		cp -r future-java/target/apidocs/* docs/api/future-java/SNAPSHOT
+		rm -rf docs/apidocs/future-java/SNAPSHOT
+		mkdir -p docs/apidocs/future-java/SNAPSHOT
+		cp -r future-java/target/apidocs/* docs/apidocs/future-java/SNAPSHOT
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
