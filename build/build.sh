@@ -29,7 +29,7 @@ then
 
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$RELEASE_VERSION
 		mvn release:perform --settings build/settings.xml
-	    mvn javadoc:javadoc
+	    mvn install javadoc:javadoc
 
 		rm -rf docs/api/future-java/$RELEASE_VERSION
 		rm -rf docs/api/future-java/current
