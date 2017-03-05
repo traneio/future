@@ -319,4 +319,4 @@ The name is in honor of the great saxophonist [John Coltrane](http://www.johncol
 
 **Why is it high-performance?**
 
-Several techniques were used to optimize this library. For an overview, please refer to [CONTRIBUTING.md](https://github.com/traneio/future/blob/master/CONTRIBUTING.md).
+Several techniques were used to optimize this library. For an overview, please refer to [CONTRIBUTING.md](https://github.com/traneio/future/blob/master/CONTRIBUTING.md#analyzing-performance).
