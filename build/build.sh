@@ -29,6 +29,7 @@ then
 
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$RELEASE_VERSION
 		mvn release:perform --settings build/settings.xml
+	    mvn javadoc:javadoc
 
 		rm -rf docs/api/future-java/$RELEASE_VERSION
 		rm -rf docs/api/future-java/current
@@ -36,8 +37,8 @@ then
 		mkdir -p docs/api/future-java/$RELEASE_VERSION
 		mkdir -p docs/api/future-java/current
 
-		cp -r future-java/target/apidocs/* docs/api/future-java/$RELEASE_VERSION
-		cp -r future-java/target/apidocs/* docs/api/future-java/current
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/$RELEASE_VERSION
+		cp -r future-java/target/site/apidocs/* docs/api/future-java/current
 
 		git add .
 		git commit -m "[skip ci] update javadocs"
