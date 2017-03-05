@@ -324,3 +324,13 @@ The name is in honor of the great saxophonist [John Coltrane](http://www.johncol
 **Why is it high-performance?**
 
 Several techniques were used to optimize this library. For an overview, please refer to [CONTRIBUTING.md](https://github.com/traneio/future/blob/master/CONTRIBUTING.md#analyzing-performance).
+
+Code of Conduct
+---------------
+
+Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms. See [CODE_OF_CONDUCT.md](https://github.com/traneio/future/blob/master/CODE_OF_CONDUCT.md) for details.
+
+License
+-------
+
+See the [LICENSE](https://github.com/traneio/future/blob/master/LICENSE.txt) file for details.
