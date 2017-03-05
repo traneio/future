@@ -1,15 +1,30 @@
 [![Build Status](https://travis-ci.org/traneio/future.svg?branch=master)](https://travis-ci.org/traneio/future)
 [![Code Coverage](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=coverage)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
 [![Tech Debt](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
-[![Libraries.io for GitHub](https://img.shields.io/librariesio/github/traneio/future.svg)](https://libraries.io/github/traneio/future)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future)
+[![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
 [![Join the chat at https://gitter.im/traneio/future](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/traneio/future?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-This project is a high-performance implementation of the `Future` abstraction. The library was designed from scratch with a focus on reducing CPU usage and memory footprint, and having the Twitter `Future` as its main inspiration.
+This project is a high-performance implementation of the `Future` abstraction. The library was designed from scratch with a focus on reducing CPU usage and memory footprint, and having the [Twitter `Future`](https://github.com/twitter/util) as its main inspiration.
 
 It allows the user to express complex asynchronous code in a composable and type-safe manner. It also supports more advanced features that are currently only available for Twitter futures and are essential to developing non-trivial systems. Namely, it provides `Local`s, that are similar to `ThreadLocal`s but for asynchronous code, and `interrupt`s, also known as cancellations.
  
 The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic.
+
+Getting started
+===============
+
+The library binaries are distributed through maven central. Click on the maven central badge for information on how to add the project dependency to your project:
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future)
+
+This project does not have a mailing list; please use our gitter channel:
+
+[![Join the chat at https://gitter.im/traneio/future](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/traneio/future?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+Please refer to the Javadoc for detailed information about the library and its features:
+
+[![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
 
 The `Future` abstraction
 =======================
@@ -61,7 +76,7 @@ Future<Boolean> isValid = username.flatMap(username -> usernameService.isValid(u
 The `flatMap` combinator is very flexible and comes from the monad abstraction. Although useful, learning monads and category theory is not a requirement to use `Future`s. Strictly speaking,
 `Future` isn't a monad since it uses eager evaluation and thus breaks referential transparency. Once a `Future` is created, it is already running. See the "Execution Model" section for more information.
 
-There are many other useful operators to deal with exceptions, collections of futures, and others. For a complete reference, please see the javadocs.
+There are many other useful operators to deal with exceptions, collections of futures, and others. For a complete reference, please see the [javadocs](http://trane.io/apidocs/future-java/current/).
 
 Execution model
 ===============
@@ -294,3 +309,10 @@ This project aims to provide a `Future` implementation with the following charac
 4. Low CPU usage and memory footprint
 
 Currently, there aren't other `Future` libraries with this feature set.
+
+**Why `trane`?**
+
+The name is in honor of the great saxophonist [John Coltrane](http://www.johncoltrane.com/), also known by his nickname Trane.
+
+> “Invest yourself in everything you do. There's fun in being serious.” 
+-- John Coltrane
