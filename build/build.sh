@@ -49,14 +49,6 @@ then
 		echo "Publishing a snapshot..."
 		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar javadoc:jar deploy --settings build/settings.xml
 
-		rm -rf docs/apidocs/future-java/SNAPSHOT
-		mkdir -p docs/apidocs/future-java/SNAPSHOT
-		cp -r future-java/target/apidocs/* docs/apidocs/future-java/SNAPSHOT
-
-		git add .
-		git commit -m "[skip ci] update javadocs"
-		git push
-
 	else
 		echo "Publishing a branch snapshot..."
 		mvn clean versions:set -DnewVersion=$TRAVIS_BRANCH-SNAPSHOT org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings build/settings.xml 
