@@ -59,7 +59,8 @@ Note that we are using a lambda expression (`user -> user.username`) that takes 
 Let's say that now we need to call a service to validate the username string. This is the result if we use the `map` combinator for it:
 
 ```java
-Future<Future<Boolean>> isValid = username.map(username -> usernameService.isValid(username));
+Future<Future<Boolean>> isValid = 
+  username.map(username -> usernameService.isValid(username));
 ```
 
 Given that the lambda expression calls another service and returns a `Future`, the produced result is a nested future (`Future<Future<Boolean>>`). One alternative to flatten this nested result is using `Future.flatten`:
@@ -71,7 +72,8 @@ Future<Boolean> isValidFlat = Future.flatten(isValid);
 There's a convenient combinator called `flatMap` that applies both `map` and `Future.flatten` at once:
 
 ```java
-Future<Boolean> isValid = username.flatMap(username -> usernameService.isValid(username));
+Future<Boolean> isValid = 
+  username.flatMap(username -> usernameService.isValid(username));
 ```
 
 The `flatMap` combinator is very flexible and comes from the monad abstraction. Although useful, learning monads and category theory is not a requirement to use `Future`s. Strictly speaking,
@@ -221,7 +223,10 @@ public class UserSession {
 
 public class MyService {
   public Future<List<Tweet>> getTweetsEndpoint(Request request) {
-    UserSession.local.let(request.getSession(), () -> tweetRepo.get(request.getUserId()));
+    UserSession.local.let(
+      request.getSession(), 
+      () -> tweetRepo.get(request.getUserId())
+    );
   }
 }
 ```
@@ -277,7 +282,9 @@ The `Promise` created by `userService.get` can define a custom handler that perf
 The method `interruptible` is a shortcut to fail the `Promise` if it receives any interrupt signal:
 
 ```java
-Future<String> username = userService.get(userId).interruptible().map(user -> user.username);
+Future<String> username = 
+  userService.get(userId).interruptible().map(user -> user.username);
+  
 username.raise(new TimeoutException);
 ```
 
