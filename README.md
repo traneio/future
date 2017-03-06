@@ -185,7 +185,7 @@ public Future<Integer> factorial(Integer i) {
 
 Note that the first parameter defines the batch size as `1024`. Typically, the users do not need to tune this parameter unless a `StackOverflowException` is thrown or the user wants to increase the batch size for performance reasons. Larger batches tend to improve performance but increase the risk of a `StackOverflowException`.
 
-## Isolating thread pool
+## Isolating thread pools
 
 It is possible to isolate portions of a `Future` composition on a separate thread pool:
 
@@ -284,7 +284,7 @@ The method `interruptible` is a shortcut to fail the `Promise` if it receives an
 ```java
 Future<String> username = 
   userService.get(userId).interruptible().map(user -> user.username);
-  
+
 username.raise(new TimeoutException);
 ```
 
@@ -300,7 +300,7 @@ To run the benchmarks, use the `run.sh` script under the `future-benchmark` fold
 
 ## FAQ
 
-**Why create a new `Future` implementation?**
+**Why create a new Future implementation?**
 
 This project aims to provide a `Future` implementation with the following characteristics:
 
@@ -311,7 +311,7 @@ This project aims to provide a `Future` implementation with the following charac
 
 Currently, there aren't other `Future` libraries with this feature set.
 
-**Why `trane`?**
+**Why trane?**
 
 The name is in honor of the great saxophonist [John Coltrane](http://www.johncoltrane.com/), also known as Trane (his nickname).
 
