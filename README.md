@@ -1,6 +1,5 @@
 
-Trane.io Future
-===============
+# Trane.io Future
 
 [![Build Status](https://travis-ci.org/traneio/future.svg?branch=master)](https://travis-ci.org/traneio/future)
 [![Code Coverage](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=coverage)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
@@ -15,8 +14,7 @@ It allows the user to express complex asynchronous code in a composable and type
  
 The current version has only one implementation in Java, but the intent is to create modules for other JVM languages to make the API idiomatic in each language.
 
-Getting started
-===============
+## Getting started
 
 The library binaries are distributed through maven central. Click on the maven central badge for information on how to add the library dependency to your project:
 
@@ -30,8 +28,7 @@ Please refer to the Javadoc for detailed information about the library and its f
 
 [![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
 
-The `Future` abstraction
-=======================
+## The `Future` abstraction
 
 `Future` is an abstraction to deal with asynchronicity without having to use callbacks directly or blocking threads. The primary usage for `Futures` on the JVM is to perform IO operations, which are asynchronous by nature. 
 
@@ -82,8 +79,7 @@ The `flatMap` combinator is very flexible and comes from the monad abstraction. 
 
 There are many other useful operators to deal with exceptions, collections of futures, and others. For a complete reference, please see the [javadocs](http://trane.io/apidocs/future-java/current/).
 
-Execution model
-===============
+## Execution model
 
 `Future`s are eager by nature. Once a future is created, the asynchronous computation is triggered. For instance, even though these two futures are composed sequentially through the `flatMap` combinator, they are already running in parallel:
 
@@ -157,8 +153,7 @@ public void processRequest(Request request, Connection conn) {
 }
 ```
 
-Recursive `Future`s
-==================
+## Recursive `Future`s
 
 Given the optimization that this library implements to avoid thread context switch, compositions are not stack-safe by default. It is necessary to wrap recursive computations with a `Tailrec` call:
 
@@ -188,8 +183,7 @@ public Future<Integer> factorial(Integer i) {
 
 Note that the first parameter defines the batch size as `1024`. Typically, the users do not need to tune this parameter unless a `StackOverflowException` is thrown or the user wants to increase the batch size for performance reasons. Larger batches tend to improve performance but increase the risk of a `StackOverflowException`.
 
-Isolating thread pools
-======================
+## Isolating thread pool
 
 It is possible to isolate portions of a `Future` composition on a separate thread pool:
 
@@ -213,8 +207,7 @@ Future<User> user = futurePool.isolate(userRepo.get(userId));
 
 `isolate` is just a shortcut for `async` + `Future.flatten`.
 
-`Local`s
-========
+## `Local`s
 
 It is not possible to use `ThreadLocal`s with `Future` because the data it holds become invalid when the computation reaches an asynchronous boundary. The thread returns to its thread pool to execute other computations, and the continuations are performed by the thread that sets the result of the `Promise`.
 
@@ -263,8 +256,7 @@ This feature is implemented with a `ThreadLocal` that is saved at the point of a
 
 Note: This feature does not have the same behavior as Twitter's `Local`. The `ThreadLocal` state is captured when a `Promise` is created, whereas the Twitter's implementation captures the state only when a `Promise` continuation is created (for instance, `map` is called on a `Promise` instance). In practice, most `Promise` creations are followed by a continuation, so the behavior is usually the same.
 
-Interrupts/cancellations
-======================
+## Interrupts/cancellations
 
 This feature provides a way to send signals to the current pending `Promise` given a `Future` composition. It is a mechanism that enables cancellations. For instance, given this composition that involves an async boundary (`userService.get`) and a continuation (`.map`):
 
@@ -293,15 +285,13 @@ In this case, even if `userService.get` does not handle interrupts, the `Promise
 
 The interrupt propagation happens through pointers from each continuation to its parent that are created automatically by the library. In the previous example, the `map` continuation has a pointer to the `Promise` that is pending.
 
-Benchmarks
-===========
+## Benchmarks
 
 This library scores better than the main `Future` implementations available on the JVM in multiple scenarios, both in terms of throughput and memory footprint.
 
 To run the benchmarks, use the `run.sh` script under the `future-benchmark` folder. It also outputs results for Java's, Scala's, and Twitter's `Future` implementations for comparison.
 
-FAQ
-====
+## FAQ
 
 **Why create a new `Future` implementation?**
 
@@ -325,12 +315,10 @@ The name is in honor of the great saxophonist [John Coltrane](http://www.johncol
 
 Several techniques were used to optimize this library. For an overview, please refer to [CONTRIBUTING.md](https://github.com/traneio/future/blob/master/CONTRIBUTING.md#analyzing-performance).
 
-Code of Conduct
----------------
+## Code of Conduct
 
 Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms. See [CODE_OF_CONDUCT.md](https://github.com/traneio/future/blob/master/CODE_OF_CONDUCT.md) for details.
 
-License
--------
+## License
 
 See the [LICENSE](https://github.com/traneio/future/blob/master/LICENSE.txt) file for details.
