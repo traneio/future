@@ -28,7 +28,7 @@ Please refer to the Javadoc for detailed information about the library and its f
 
 [![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
 
-## The `Future` abstraction
+## The Future abstraction
 
 `Future` is an abstraction to deal with asynchronicity without having to use callbacks directly or blocking threads. The primary usage for `Futures` on the JVM is to perform IO operations, which are asynchronous by nature. 
 
@@ -153,7 +153,7 @@ public void processRequest(Request request, Connection conn) {
 }
 ```
 
-## Recursive `Future`s
+## Recursive Futures
 
 Given the optimization that this library implements to avoid thread context switch, compositions are not stack-safe by default. It is necessary to wrap recursive computations with a `Tailrec` call:
 
@@ -207,7 +207,7 @@ Future<User> user = futurePool.isolate(userRepo.get(userId));
 
 `isolate` is just a shortcut for `async` + `Future.flatten`.
 
-## `Local`s
+## Locals
 
 It is not possible to use `ThreadLocal`s with `Future` because the data it holds become invalid when the computation reaches an asynchronous boundary. The thread returns to its thread pool to execute other computations, and the continuations are performed by the thread that sets the result of the `Promise`.
 
