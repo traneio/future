@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/traneio/future.svg?branch=master)](https://travis-ci.org/traneio/future)
 [![Code Coverage](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=coverage)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
 [![Tech Debt](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java)
 [![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
 [![Join the chat at https://gitter.im/traneio/future](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/traneio/future?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -18,7 +18,7 @@ The current version has only one implementation in Java, but the intent is to cr
 
 The library binaries are distributed through maven central. Click on the maven central badge for information on how to add the library dependency to your project:
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java)
 
 This project does not have a mailing list; please use our gitter channel:
 
