@@ -1,5 +1,7 @@
 package io.trane.future;
 
+import java.util.concurrent.Executors;
+
 import org.openjdk.jmh.annotations.Benchmark;
 
 import scala.Function1;
@@ -12,11 +14,11 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.Duration.Infinite;
 import scala.util.Try;
 
-public class ScalaFutureBenchmark {
+public class ScalaFixedSingleThreadFutureBenchmark {
 
   private static final String string = "s";
   private static final RuntimeException exception = new RuntimeException();
-  private static final ExecutionContext ec = scala.concurrent.ExecutionContext.global();
+  private static final ExecutionContext ec = scala.concurrent.ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1));
   private static final Future<String> constFuture = Future.successful(string);
   private static final Future<Void> constVoidFuture = Future.successful(null);
   private static final Function1<String, String> mapF = i -> string;
