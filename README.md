@@ -76,8 +76,7 @@ Future<Boolean> isValid =
   username.flatMap(username -> usernameService.isValid(username));
 ```
 
-The `flatMap` combinator is very flexible and comes from the monad abstraction. Although useful, learning monads and category theory is not a requirement to use `Future`s. Strictly speaking,
-`Future` isn't a monad since it uses eager evaluation and thus breaks referential transparency. Once a `Future` is created, it is already running. See the "Execution Model" section for more information.
+The `flatMap` combinator is very flexible and comes from the monad abstraction. Although useful, learning monads and category theory is not a requirement to use `Future`s.
 
 There are many other useful operators to deal with exceptions, collections of futures, and others. For a complete reference, please see the [javadocs](http://trane.io/apidocs/future-java/current/).
 
