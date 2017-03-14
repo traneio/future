@@ -5,7 +5,7 @@
 [![Code Coverage](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=coverage)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
 [![Tech Debt](https://sonarqube.com/api/badges/measure?key=io.trane:future&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=io.trane%3Afuture)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.trane/future-java)
-[![Javadoc](https://img.shields.io/badge/api-javadoc-green.svg)](http://trane.io/apidocs/future-java/current/)
+[![Javadocs](https://www.javadoc.io/badge/io.trane/future-java.svg)](https://www.javadoc.io/doc/io.trane/future-java)
 [![Join the chat at https://gitter.im/traneio/future](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/traneio/future?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This project is a high-performance implementation of the `Future` abstraction. The library was designed from scratch with a focus on reducing CPU usage and memory footprint, and having the [Twitter `Future`](https://github.com/twitter/util) as its main inspiration.

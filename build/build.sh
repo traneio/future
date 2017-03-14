@@ -29,25 +29,10 @@ then
 
 		mvn -B clean release:prepare --settings build/settings.xml -DreleaseVersion=$RELEASE_VERSION
 		mvn release:perform --settings build/settings.xml
-	    mvn install javadoc:javadoc
-
-		rm -rf docs/apidocs/future-java/$RELEASE_VERSION
-		rm -rf docs/apidocs/future-java/current
-
-		mkdir -p docs/apidocs/future-java/$RELEASE_VERSION
-		mkdir -p docs/apidocs/future-java/current
-
-		cp -r future-java/target/site/apidocs/* docs/apidocs/future-java/$RELEASE_VERSION
-		cp -r future-java/target/site/apidocs/* docs/apidocs/future-java/current
-
-		git add .
-		git commit -m "[skip ci] update javadocs"
-		git push
-
 	elif [[ $TRAVIS_BRANCH == "master" ]]
 	then
 		echo "Publishing a snapshot..."
-		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar javadoc:jar deploy --settings build/settings.xml
+		mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar deploy --settings build/settings.xml
 
 	else
 		echo "Publishing a branch snapshot..."
