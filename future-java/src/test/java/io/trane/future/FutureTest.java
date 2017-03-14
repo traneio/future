@@ -36,6 +36,20 @@ public class FutureTest {
     scheduler.shutdown();
   }
 
+  /*** true ***/
+
+  @Test
+  public void trueConst() throws CheckedFutureException {
+    assertEquals(true, get(Future.TRUE));
+  }
+  
+  /*** false ***/
+
+  @Test
+  public void falseConst() throws CheckedFutureException {
+    assertEquals(false, get(Future.FALSE));
+  }
+  
   /*** never ***/
 
   @Test

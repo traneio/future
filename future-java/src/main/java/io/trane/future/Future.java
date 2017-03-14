@@ -102,6 +102,16 @@ public interface Future<T> extends InterruptHandler {
    * A constant void future. Useful to represent completed side effects.
    */
   static final Future<Void> VOID = Future.value((Void) null);
+  
+  /**
+   * A constant `false` future.
+   */
+  static final Future<Boolean> FALSE = Future.value(false);
+  
+  /**
+   * A constant `true` future.
+   */
+  static final Future<Boolean> TRUE = Future.value(true);
 
   /**
    * Returns a future that is never satisfied.
