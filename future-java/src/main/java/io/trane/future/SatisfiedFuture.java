@@ -1,5 +1,6 @@
 package io.trane.future;
 
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -41,20 +42,20 @@ interface SatisfiedFuture<T> extends Future<T> {
   }
 
   @Override
-  default Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
+  default Future<T> delayed(final Duration delay, final ScheduledExecutorService scheduler) {
     final DelayedSatisfiedFuture<T> p = new DelayedSatisfiedFuture<>(this);
-    scheduler.schedule(p, delay, timeUnit);
+    scheduler.schedule(p, delay.toMillis(), TimeUnit.MILLISECONDS);
     return p;
   }
 
   @Override
-  default Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+  default Future<T> within(final Duration timeout, final ScheduledExecutorService scheduler,
       final Throwable exception) {
     return this;
   }
 
   @Override
-  default void join(final long timeout, final TimeUnit unit) {
+  default void join(final Duration timeout) {
   }
 }
 

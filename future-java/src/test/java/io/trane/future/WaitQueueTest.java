@@ -1,20 +1,15 @@
 package io.trane.future;
 
+import static org.junit.Assert.assertEquals;
+
+import java.time.Duration;
+
 import org.junit.Test;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Continuation;
-import io.trane.future.Future;
-import io.trane.future.Promise;
-
-import static org.junit.Assert.*;
-
-import java.util.concurrent.TimeUnit;
 
 public class WaitQueueTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ZERO);
   }
 
   private <T> Continuation<T, T> newContinuation() {

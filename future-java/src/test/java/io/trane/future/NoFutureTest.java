@@ -1,8 +1,10 @@
 package io.trane.future;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -120,7 +122,7 @@ public class NoFutureTest {
     long start = System.currentTimeMillis();
     long timeout = 10;
     try {
-      noFuture.get(timeout, TimeUnit.MILLISECONDS);
+      noFuture.get(Duration.ofMillis(timeout));
     } catch (TimeoutException ex) {
       assertTrue(System.currentTimeMillis() - start >= timeout);
       throw ex;
@@ -134,7 +136,7 @@ public class NoFutureTest {
       @Override
       public void run() {
         try {
-          noFuture.get(10, TimeUnit.DAYS);
+          noFuture.get(Duration.ofMinutes(1));
         } catch (CheckedFutureException e) {
           cause.set(e.getCause());
         }
@@ -150,7 +152,7 @@ public class NoFutureTest {
   public void join() throws CheckedFutureException {
     long start = System.currentTimeMillis();
     long timeout = 10;
-    noFuture.join(timeout, TimeUnit.MILLISECONDS);
+    noFuture.join(Duration.ofMillis(10));
     assertTrue(System.currentTimeMillis() - start >= timeout);
   }
 
@@ -161,19 +163,19 @@ public class NoFutureTest {
   
   @Test
   public void delayed() {
-    assertEquals(noFuture, noFuture.delayed(10, TimeUnit.MILLISECONDS, null));
+    assertEquals(noFuture, noFuture.delayed(Duration.ofMillis(10), null));
   }
 
   @Test(expected = TimeoutException.class)
   public void proxyTo() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
     noFuture.proxyTo(p);
-    p.get(10, TimeUnit.MILLISECONDS);
+    p.get(Duration.ofMillis(10));
   }
 
   @Test
   public void within() {
-    assertEquals(noFuture, noFuture.within(10, TimeUnit.MILLISECONDS, null));
+    assertEquals(noFuture, noFuture.within(Duration.ofMillis(10), null));
   }
 
 }

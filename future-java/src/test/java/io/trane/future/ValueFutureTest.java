@@ -5,7 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,7 +15,7 @@ import org.junit.Test;
 public class ValueFutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ZERO);
   }
 
   /*** map ***/
@@ -248,19 +248,19 @@ public class ValueFutureTest {
   @Test
   public void get() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
-    assertEquals(new Integer(1), future.get(1, TimeUnit.MILLISECONDS));
+    assertEquals(new Integer(1), future.get(Duration.ofMillis(1)));
   }
 
   @Test
   public void getZeroTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
-    assertEquals(new Integer(1), future.get(0, TimeUnit.MILLISECONDS));
+    assertEquals(new Integer(1), future.get(Duration.ZERO));
   }
 
   @Test
   public void getNegativeTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.value(1);
-    assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
+    assertEquals(new Integer(1), future.get(Duration.ofMillis(-1)));
   }
 
   /*** toString ***/

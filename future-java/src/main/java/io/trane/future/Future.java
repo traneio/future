@@ -1,12 +1,12 @@
 package io.trane.future;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -477,14 +477,13 @@ public interface Future<T> extends InterruptHandler {
    * production code**.
    * 
    * @param timeout  for how long the thread should wait for the result
-   * @param unit     time unit of the timeout
    * @return         the result if the future completes successfully or an exception if
    *                 the future completes with an exception.
    * @throws CheckedFutureException
    *           wrapper exception used when the result is a checked exception. If
    *           the exception is unchecked, it's thrown without this wrapper.
    */
-  T get(long timeout, TimeUnit unit) throws CheckedFutureException;
+  T get(Duration timeout) throws CheckedFutureException;
 
   /**
    * Blocks the current thread until this future is satisfied. This method
@@ -494,12 +493,11 @@ public interface Future<T> extends InterruptHandler {
    * throws if the future completes with an exception.
    * 
    * @param timeout  for how long the thread should wait for the result
-   * @param unit     time unit of the timeout
    * @throws CheckedFutureException
    *           wrapper exception used when the result is a checked exception. If
    *           the exception is unchecked, it's thrown without this wrapper.
    */
-  void join(long timeout, TimeUnit unit) throws CheckedFutureException;
+  void join(Duration timeout) throws CheckedFutureException;
 
   /**
    * Creates a future that is satisfied with void when this future completes.
@@ -518,7 +516,7 @@ public interface Future<T> extends InterruptHandler {
    * @param scheduler  used to schedule an internal task to be executed after delay.
    * @return           a future that assumes the state of this future after delay.
    */
-  Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler);
+  Future<T> delayed(final Duration delay, final ScheduledExecutorService scheduler);
 
   /**
    * Proxies the result of this future, successful or not, to a Promise.
@@ -537,8 +535,8 @@ public interface Future<T> extends InterruptHandler {
    * @return           a future that completes with the result of this future within the
    *                   timeout, a failed future otherwise.
    */
-  default Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
-    return within(timeout, timeUnit, scheduler, TimeoutException.stackless);
+  default Future<T> within(final Duration timeout, final ScheduledExecutorService scheduler) {
+    return within(timeout, scheduler, TimeoutException.stackless);
   }
 
   /**
@@ -552,7 +550,7 @@ public interface Future<T> extends InterruptHandler {
    * @return           a future that completes with the result of this future within the
    *                   timeout, a failed future otherwise.
    */
-  Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+  Future<T> within(final Duration timeout, final ScheduledExecutorService scheduler,
       final Throwable exception);
 
   /**

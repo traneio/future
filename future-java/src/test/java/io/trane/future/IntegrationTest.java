@@ -1,17 +1,13 @@
 package io.trane.future;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
 import org.junit.Test;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Promise;
 
 public class IntegrationTest {
 
@@ -38,7 +34,7 @@ public class IntegrationTest {
     case 3:
       return gen(depth / 2).flatMap(v -> gen(depth / 2));
     case 4:
-      return gen(depth - 1).delayed(random.nextInt(5), TimeUnit.MILLISECONDS, scheduler);
+      return gen(depth - 1).delayed(Duration.ofMillis(random.nextInt(5)), scheduler);
     case 5:
       return gen(depth - 1).ensure(() -> {
       });
@@ -49,7 +45,7 @@ public class IntegrationTest {
       gen(depth - 1).proxyTo(p);
       return p;
     case 8:
-      return gen(depth - 1).within(1, TimeUnit.SECONDS, scheduler);
+      return gen(depth - 1).within(Duration.ofSeconds(1), scheduler);
     default:
       throw new IllegalStateException();
     }
@@ -58,6 +54,6 @@ public class IntegrationTest {
   @Test
   public void integrationTest() throws CheckedFutureException {
     Future<Integer> gen = gen(200);
-    gen.join(20, TimeUnit.DAYS);
+    gen.join(Duration.ofMinutes(1));
   }
 }

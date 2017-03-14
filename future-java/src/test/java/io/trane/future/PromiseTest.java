@@ -5,13 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -19,19 +19,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Test;
 
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Continuation;
-import io.trane.future.Future;
-import io.trane.future.InterruptHandler;
-import io.trane.future.Local;
-import io.trane.future.Promise;
-import io.trane.future.Responder;
-import io.trane.future.TimeoutException;
-
 public class PromiseTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ZERO);
   }
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -261,7 +252,7 @@ public class PromiseTest {
         });
       }
       start.set(true);
-      int result = p.get(100, TimeUnit.MILLISECONDS);
+      int result = p.get(Duration.ofMillis(100));
       Thread.sleep(100);
       assertEquals(expected.get(), result);
     } finally {
@@ -580,9 +571,9 @@ public class PromiseTest {
     Promise<Integer> p = Promise.apply();
     long delay = 10;
     long start = System.currentTimeMillis();
-    Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> delayed = p.delayed(Duration.ofMillis(delay), scheduler);
     p.setValue(1);
-    int result = delayed.get(20, TimeUnit.MILLISECONDS);
+    int result = delayed.get(Duration.ofMillis(20));
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
@@ -592,10 +583,10 @@ public class PromiseTest {
     Promise<Integer> p = Promise.apply();
     long delay = 10;
     long start = System.currentTimeMillis();
-    Future<Integer> delayed = p.delayed(delay, TimeUnit.MILLISECONDS, scheduler).delayed(delay, TimeUnit.MILLISECONDS,
+    Future<Integer> delayed = p.delayed(Duration.ofMillis(delay), scheduler).delayed(Duration.ofMillis(delay),
         scheduler);
     p.setValue(1);
-    int result = delayed.get(20, TimeUnit.MILLISECONDS);
+    int result = delayed.get(Duration.ofMillis(20));
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
@@ -604,7 +595,7 @@ public class PromiseTest {
   public void delayedInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> future = p.delayed(10, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> future = p.delayed(Duration.ofMillis(100), scheduler);
 
     future.raise(ex);
     assertEquals(ex, intr.get());
@@ -643,13 +634,13 @@ public class PromiseTest {
   @Test
   public void withinMaxLongWait() {
     Future<Integer> future = Promise.apply();
-    assertEquals(future, future.within(Long.MAX_VALUE, TimeUnit.MILLISECONDS, scheduler, ex));
+    assertEquals(future, future.within(Duration.ofMillis(Long.MAX_VALUE), scheduler, ex));
   }
 
   @Test
   public void withinPromiseSuccess() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    Future<Integer> future = p.within(Duration.ofMillis(100), scheduler, ex);
     p.setValue(1);
     assertEquals(new Integer(1), get(future));
   }
@@ -657,7 +648,7 @@ public class PromiseTest {
   @Test(expected = TestException.class)
   public void withinPromiseFailure() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    Future<Integer> future = p.within(Duration.ofMillis(100), scheduler, ex);
     p.setException(ex);
     get(future);
   }
@@ -665,7 +656,7 @@ public class PromiseTest {
   @Test(expected = TimeoutException.class)
   public void withinPromiseTimeout() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
-    Future<Integer> future = p.within(10, TimeUnit.MILLISECONDS, scheduler, ex);
+    Future<Integer> future = p.within(Duration.ofMillis(100), scheduler, ex);
     get(future);
   }
 
@@ -673,7 +664,7 @@ public class PromiseTest {
   public void withinInterrupt() {
     AtomicReference<Throwable> intr = new AtomicReference<>();
     Promise<Integer> p = Promise.apply(intr::set);
-    Future<Integer> f = p.within(10, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = p.within(Duration.ofMillis(100), scheduler);
     f.raise(ex);
     assertEquals(ex, intr.get());
   }
@@ -688,7 +679,7 @@ public class PromiseTest {
       CountDownLatch latch = new CountDownLatch(1);
       es.submit(() -> {
         try {
-          p.get(100, TimeUnit.MILLISECONDS);
+          p.get(Duration.ofMillis(100));
           latch.countDown();
         } catch (CheckedFutureException e) {
         }
@@ -704,7 +695,7 @@ public class PromiseTest {
 
   @Test(expected = TimeoutException.class)
   public void getTimeout() throws CheckedFutureException {
-    (Promise.<Integer>apply()).get(10, TimeUnit.MILLISECONDS);
+    (Promise.<Integer>apply()).get(Duration.ofMillis(100));
   }
 
   @Test
@@ -714,7 +705,7 @@ public class PromiseTest {
       @Override
       public void run() {
         try {
-          (Promise.<Integer>apply()).get(10, TimeUnit.DAYS);
+          (Promise.<Integer>apply()).get(Duration.ofMinutes(1));
         } catch (CheckedFutureException e) {
           cause.set(e.getCause());
         }

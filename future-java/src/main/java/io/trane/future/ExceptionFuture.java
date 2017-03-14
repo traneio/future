@@ -1,6 +1,6 @@
 package io.trane.future;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -99,7 +99,7 @@ final class ExceptionFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+  public final T get(final Duration timeout) throws CheckedFutureException {
     if (ex instanceof RuntimeException)
       throw (RuntimeException) ex;
     if (ex instanceof Error)

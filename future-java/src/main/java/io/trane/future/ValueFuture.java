@@ -1,6 +1,6 @@
 package io.trane.future;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -102,7 +102,7 @@ final class ValueFuture<T> implements SatisfiedFuture<T> {
   }
 
   @Override
-  public final T get(final long timeout, final TimeUnit unit) {
+  public final T get(final Duration timeout) {
     return value;
   }
 

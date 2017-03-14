@@ -5,20 +5,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Responder;
-
 public class ExceptionFutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ZERO);
   }
 
   Exception ex = new TestException();
@@ -227,31 +223,31 @@ public class ExceptionFutureTest {
   @Test(expected = TestException.class)
   public void get() throws CheckedFutureException {
     Future<Integer> future = Future.exception(ex);
-    future.get(1, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(1));
   }
 
   @Test(expected = Error.class)
   public void getError() throws CheckedFutureException {
     Future<Integer> future = Future.exception(new Error());
-    future.get(1, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(1));
   }
 
   @Test(expected = CheckedFutureException.class)
   public void getCheckedException() throws CheckedFutureException {
     Future<Integer> future = Future.exception(new Exception());
-    future.get(1, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(1));
   }
 
   @Test(expected = TestException.class)
   public void getZeroTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.exception(ex);
-    assertEquals(new Integer(1), future.get(0, TimeUnit.MILLISECONDS));
+    assertEquals(new Integer(1), future.get(Duration.ZERO));
   }
 
   @Test(expected = TestException.class)
   public void getNegativeTimeout() throws CheckedFutureException {
     Future<Integer> future = Future.exception(ex);
-    assertEquals(new Integer(1), future.get(-1, TimeUnit.MILLISECONDS));
+    assertEquals(new Integer(1), future.get(Duration.ofMillis(-1)));
   }
 
   /*** toString ***/

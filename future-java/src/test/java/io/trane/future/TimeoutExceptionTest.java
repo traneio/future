@@ -1,10 +1,8 @@
 package io.trane.future;
 
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
-
-import io.trane.future.TimeoutException;
-
-import static org.junit.Assert.*;
 
 public class TimeoutExceptionTest {
 

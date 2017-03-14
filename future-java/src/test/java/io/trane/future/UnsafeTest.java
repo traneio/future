@@ -4,8 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import io.trane.future.Unsafe;
-
 public class UnsafeTest {
 
   class TestClass {

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +25,7 @@ import org.junit.Test;
 public class FutureTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(1, TimeUnit.SECONDS);
+    return future.get(Duration.ofMillis(1));
   }
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -108,14 +108,14 @@ public class FutureTest {
         if (i == 0)
           return Future.value(0);
         else
-          return tailrecLoopDelayed(Future.value(i - 1).delayed(1, TimeUnit.NANOSECONDS, scheduler));
+          return tailrecLoopDelayed(Future.value(i - 1).delayed(Duration.ofNanos(1), scheduler));
       });
     });
   }
 
   @Test
   public void tailrecDelayed() throws CheckedFutureException {
-    assertEquals(new Integer(0), tailrecLoopDelayed(Future.value(20000)).get(10, TimeUnit.SECONDS));
+    assertEquals(new Integer(0), tailrecLoopDelayed(Future.value(20000)).get(Duration.ofSeconds(10)));
   }
 
   Future<Integer> nonTailrecLoop(Future<Integer> f) {
@@ -137,7 +137,7 @@ public class FutureTest {
       if (i == 0)
         return Future.value(0);
       else
-        return nonTailrecLoop(Future.value(i - 1).delayed(1, TimeUnit.NANOSECONDS, scheduler));
+        return nonTailrecLoop(Future.value(i - 1).delayed(Duration.ofNanos(1), scheduler));
     });
   }
 
@@ -270,7 +270,7 @@ public class FutureTest {
       }
       start.set(true);
       List<Integer> expected = promises.stream().map(p -> p.hashCode()).collect(toList());
-      List<Integer> result = future.get(1, TimeUnit.SECONDS);
+      List<Integer> result = future.get(Duration.ofSeconds(1));
       assertArrayEquals(expected.toArray(), result.toArray());
     } finally {
       ex.shutdown();
@@ -301,7 +301,7 @@ public class FutureTest {
     Promise<Integer> p2 = Promise.apply();
     Future<List<Integer>> future = Future.collect(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    future.get(10, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(10));
   }
 
   /*** join ***/
@@ -381,7 +381,7 @@ public class FutureTest {
           p.setValue(p.hashCode());
         });
       }
-      future.get(1, TimeUnit.SECONDS);
+      future.get(Duration.ofSeconds(1));
     } finally {
       ex.shutdown();
     }
@@ -408,7 +408,7 @@ public class FutureTest {
     Promise<Integer> p2 = Promise.apply();
     Future<Void> future = Future.join(Arrays.asList(p1, p2, Future.value(3)));
     p1.setValue(1);
-    future.get(10, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(10));
   }
 
   /*** selectIndex **/
@@ -488,7 +488,7 @@ public class FutureTest {
     Promise<Integer> p1 = Promise.apply();
     Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
-    future.get(10, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(100));
   }
   
   /*** firstCompletedOf **/
@@ -568,7 +568,7 @@ public class FutureTest {
     Promise<Integer> p1 = Promise.apply();
     Promise<Integer> p2 = Promise.apply();
     Future<Integer> future = Future.firstCompletedOf(Arrays.asList(p1, p2));
-    future.get(10, TimeUnit.MILLISECONDS);
+    future.get(Duration.ofMillis(10));
   }
 
   /*** whileDo ***/
@@ -589,14 +589,14 @@ public class FutureTest {
 
   @Test(expected = TimeoutException.class)
   public void withinDefaultExceptionFailure() throws CheckedFutureException {
-    Future<Integer> f = (Promise.<Integer>apply()).within(1, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = (Promise.<Integer>apply()).within(Duration.ofMillis(1), scheduler);
     get(f);
   }
 
   @Test
   public void withinDefaultExceptionSuccess() throws CheckedFutureException {
     Promise<Integer> p = Promise.<Integer>apply();
-    Future<Integer> f = p.within(10, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = p.within(Duration.ofMillis(10), scheduler);
     p.setValue(1);
     assertEquals(new Integer(1), get(f));
   }

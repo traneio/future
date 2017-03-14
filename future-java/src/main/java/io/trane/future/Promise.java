@@ -1,5 +1,6 @@
 package io.trane.future;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -394,15 +395,15 @@ public abstract class Promise<T> implements Future<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public final T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+  public final T get(final Duration timeout) throws CheckedFutureException {
     final Object curr = state;
     if (curr instanceof Future && !(curr instanceof Continuation) && ((Future<T>) curr).isDefined())
-      return ((Future<T>) curr).get(0, TimeUnit.MILLISECONDS);
+      return ((Future<T>) curr).get(Duration.ZERO);
     else if (curr instanceof LinkedContinuation && ((LinkedContinuation<?, T>) curr).isDefined())
-      return ((LinkedContinuation<?, T>) curr).get(0, TimeUnit.MILLISECONDS);
+      return ((LinkedContinuation<?, T>) curr).get(Duration.ZERO);
     else {
-      join(timeout, unit);
-      return ((Future<T>) state).get(0, TimeUnit.MILLISECONDS);
+      join(timeout);
+      return ((Future<T>) state).get(Duration.ZERO);
     }
   }
 
@@ -418,11 +419,11 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+  public final void join(final Duration timeout) throws CheckedFutureException {
     final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
     ensure(latch);
     try {
-      if (!latch.await(timeout, unit))
+      if (!latch.await(timeout.toMillis(), TimeUnit.MILLISECONDS))
         throw new TimeoutException();
     } catch (final InterruptedException ex) {
       throw new CheckedFutureException(ex);
@@ -753,9 +754,9 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
+  public final Future<T> delayed(final Duration delay, final ScheduledExecutorService scheduler) {
     final DelayedPromise p = new DelayedPromise();
-    scheduler.schedule(p, delay, timeUnit);
+    scheduler.schedule(p, delay.toMillis(), TimeUnit.MILLISECONDS);
     return p;
   }
 
@@ -784,10 +785,10 @@ public abstract class Promise<T> implements Future<T> {
     private final ScheduledFuture<?> task;
     private final Throwable exception;
 
-    public WithinPromise(final InterruptHandler handler, final long timeout, final TimeUnit timeUnit,
+    public WithinPromise(final InterruptHandler handler, final Duration timeout,
         final ScheduledExecutorService scheduler, final Throwable exception) {
       this.handler = handler;
-      this.task = scheduler.schedule(this, timeout, timeUnit);
+      this.task = scheduler.schedule(this, timeout.toMillis(), TimeUnit.MILLISECONDS);
       this.exception = exception;
     }
 
@@ -815,12 +816,12 @@ public abstract class Promise<T> implements Future<T> {
   }
 
   @Override
-  public final Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+  public final Future<T> within(final Duration timeout, final ScheduledExecutorService scheduler,
       final Throwable exception) {
-    if (timeout == Long.MAX_VALUE)
+    if (timeout.toMillis() == Long.MAX_VALUE)
       return this;
 
-    final WithinPromise<T> p = new WithinPromise<>(this, timeout, timeUnit, scheduler, exception);
+    final WithinPromise<T> p = new WithinPromise<>(this, timeout, scheduler, exception);
     respond(p);
     return p;
   }
@@ -907,8 +908,8 @@ final class LinkedContinuation<T, R> {
     return continuation.continuation(c);
   }
 
-  final R get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    return continuation.get(timeout, unit);
+  final R get(final Duration timeout) throws CheckedFutureException {
+    return continuation.get(timeout);
   }
 
   @Override

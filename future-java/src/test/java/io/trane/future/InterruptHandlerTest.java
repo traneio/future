@@ -1,12 +1,11 @@
 package io.trane.future;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
-import io.trane.future.InterruptHandler;
+import org.junit.Test;
 
 public class InterruptHandlerTest {
 

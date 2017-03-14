@@ -1,13 +1,11 @@
 package io.trane.future;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
-
-import io.trane.future.Local;
 
 public class LocalTest {
 

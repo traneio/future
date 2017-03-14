@@ -1,7 +1,7 @@
 package io.trane.future;
 
+import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -85,15 +85,15 @@ class NoFuture<T> implements Future<T> {
   }
 
   @Override
-  public T get(final long timeout, final TimeUnit unit) throws CheckedFutureException {
-    join(timeout, unit);
+  public T get(final Duration timeout) throws CheckedFutureException {
+    join(timeout);
     throw new TimeoutException();
   }
 
   @Override
-  public void join(final long timeout, final TimeUnit unit) throws CheckedFutureException {
+  public void join(final Duration timeout) throws CheckedFutureException {
     try {
-      Thread.sleep(unit.toMillis(timeout));
+      Thread.sleep(timeout.toMillis());
     } catch (final InterruptedException e) {
       throw new CheckedFutureException(e);
     }
@@ -106,7 +106,7 @@ class NoFuture<T> implements Future<T> {
   }
 
   @Override
-  public Future<T> delayed(final long delay, final TimeUnit timeUnit, final ScheduledExecutorService scheduler) {
+  public Future<T> delayed(final Duration delay, final ScheduledExecutorService scheduler) {
     return this;
   }
 
@@ -115,7 +115,7 @@ class NoFuture<T> implements Future<T> {
   }
 
   @Override
-  public Future<T> within(final long timeout, final TimeUnit timeUnit, final ScheduledExecutorService scheduler,
+  public Future<T> within(final Duration timeout, final ScheduledExecutorService scheduler,
       final Throwable exception) {
     return this;
   }

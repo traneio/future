@@ -3,17 +3,13 @@ package io.trane.future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
 import org.junit.Test;
-
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.Promise;
 
 public class SatisfiedFutureTest {
 
@@ -26,7 +22,7 @@ public class SatisfiedFutureTest {
   }
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(0, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ZERO);
   }
 
   /*** ensure ***/
@@ -103,7 +99,7 @@ public class SatisfiedFutureTest {
     Future<Integer> future = Future.value(1);
     long delay = 10;
     long start = System.currentTimeMillis();
-    int result = future.delayed(delay, TimeUnit.MILLISECONDS, scheduler).get(200, TimeUnit.MILLISECONDS);
+    int result = future.delayed(Duration.ofMillis(delay), scheduler).get(Duration.ofMillis(200));
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
@@ -112,13 +108,13 @@ public class SatisfiedFutureTest {
 
   @Test(expected = TestException.class)
   public void withinFailure() throws CheckedFutureException {
-    Future<Integer> f = Future.<Integer>exception(ex).within(1, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = Future.<Integer>exception(ex).within(Duration.ofMillis(1), scheduler);
     get(f);
   }
 
   @Test
   public void withinSuccess() throws CheckedFutureException {
-    Future<Integer> f = Future.value(1).within(1, TimeUnit.MILLISECONDS, scheduler);
+    Future<Integer> f = Future.value(1).within(Duration.ofMillis(1), scheduler);
     assertEquals(new Integer(1), get(f));
   }
 
@@ -127,6 +123,6 @@ public class SatisfiedFutureTest {
   @Test
   public void join() throws CheckedFutureException {
     Future<Integer> future = Future.exception(ex);
-    future.join(0, TimeUnit.MILLISECONDS);
+    future.join(Duration.ZERO);
   }
 }

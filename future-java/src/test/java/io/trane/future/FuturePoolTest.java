@@ -3,6 +3,7 @@ package io.trane.future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -15,14 +16,10 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
-import io.trane.future.CheckedFutureException;
-import io.trane.future.Future;
-import io.trane.future.FuturePool;
-
 public class FuturePoolTest {
 
   private <T> T get(Future<T> future) throws CheckedFutureException {
-    return future.get(100, TimeUnit.MILLISECONDS);
+    return future.get(Duration.ofMillis(100));
   }
 
   @Test
