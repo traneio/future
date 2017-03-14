@@ -1,6 +1,6 @@
 package io.trane.future;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import java.util.function.Function;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -33,7 +33,7 @@ public class TraneIOFutureBenchmark {
 
   @Benchmark
   public String mapConst() throws CheckedFutureException {
-    return constFuture.map(mapF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return constFuture.map(mapF).get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -41,7 +41,7 @@ public class TraneIOFutureBenchmark {
     Future<String> f = constFuture;
     for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -49,7 +49,7 @@ public class TraneIOFutureBenchmark {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.map(mapF);
     p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -59,12 +59,12 @@ public class TraneIOFutureBenchmark {
     for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
   public String flatMapConst() throws CheckedFutureException {
-    return constFuture.flatMap(flatMapF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return constFuture.flatMap(flatMapF).get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -72,7 +72,7 @@ public class TraneIOFutureBenchmark {
     Future<String> f = constFuture;
     for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -80,7 +80,7 @@ public class TraneIOFutureBenchmark {
     Promise<String> p = Promise.<String>apply();
     Future<String> f = p.flatMap(flatMapF);
     p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -90,12 +90,12 @@ public class TraneIOFutureBenchmark {
     for (int i = 0; i < N.n; i++)
       f = f.flatMap(flatMapF);
     p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
   public Void ensureConst() throws CheckedFutureException {
-    return constVoidFuture.ensure(ensureF).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return constVoidFuture.ensure(ensureF).get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -103,7 +103,7 @@ public class TraneIOFutureBenchmark {
     Future<Void> f = constVoidFuture;
     for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -111,7 +111,7 @@ public class TraneIOFutureBenchmark {
     Promise<Void> p = Promise.<Void>apply();
     Future<Void> f = p.ensure(ensureF);
     p.setValue(null);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -121,14 +121,14 @@ public class TraneIOFutureBenchmark {
     for (int i = 0; i < N.n; i++)
       f = f.ensure(ensureF);
     p.setValue(null);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
   public String setValue() throws CheckedFutureException {
     Promise<String> p = Promise.<String>apply();
     p.setValue(string);
-    return p.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return p.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   @Benchmark
@@ -138,7 +138,7 @@ public class TraneIOFutureBenchmark {
     for (int i = 0; i < N.n; i++)
       f = f.map(mapF);
     p.setValue(string);
-    return f.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return f.get(Duration.ofMillis(Long.MAX_VALUE));
   }
 
   private Future<Integer> loop(int i) {
@@ -152,6 +152,6 @@ public class TraneIOFutureBenchmark {
 
   @Benchmark
   public Integer recursiveConst() throws CheckedFutureException {
-    return loop(N.n).get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+    return loop(N.n).get(Duration.ofMillis(Long.MAX_VALUE));
   }
 }
