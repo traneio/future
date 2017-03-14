@@ -599,6 +599,16 @@ public class FutureTest {
     assertEquals(iterations, callCount.get());
   }
 
+  /*** delay ***/
+
+  @Test
+  public void delay() throws CheckedFutureException {
+    long delay = 10;
+    long start = System.currentTimeMillis();
+    Future.delay(Duration.ofMillis(delay), scheduler).get(Duration.ofMillis(200));
+    assertTrue(System.currentTimeMillis() - start >= delay);
+  }
+
   /*** within ***/
 
   @Test(expected = TimeoutException.class)

@@ -358,6 +358,18 @@ public interface Future<T> extends InterruptHandler {
   }
 
   /**
+   * Returns a void future that is satisfied after the specified delay.
+   * It's a shortcut for `Future.VOID.delayed(delay, scheduler)`
+   * 
+   * @param delay      for how long the future must be delayed
+   * @param scheduler  a scheduler for internal tasks
+   * @return           the void future that is satisfied after the delay
+   */
+  public static Future<Void> delay(final Duration delay, ScheduledExecutorService scheduler) {
+    return Future.VOID.delayed(delay, scheduler);
+  }
+
+  /**
    * Maps the result of this future to another value.
    *
    * @param f   the mapping function.
