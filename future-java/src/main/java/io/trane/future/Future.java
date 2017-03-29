@@ -102,12 +102,12 @@ public interface Future<T> extends InterruptHandler {
    * A constant void future. Useful to represent completed side effects.
    */
   static final Future<Void> VOID = Future.value((Void) null);
-  
+
   /**
    * A constant `false` future.
    */
   static final Future<Boolean> FALSE = Future.value(false);
-  
+
   /**
    * A constant `true` future.
    */
@@ -136,6 +136,23 @@ public interface Future<T> extends InterruptHandler {
   public static <T> Future<T> apply(final Supplier<T> s) {
     try {
       return new ValueFuture<>(s.get());
+    } catch (final Throwable ex) {
+      return new ExceptionFuture<>(ex);
+    }
+  }
+
+  /**
+   * Applies the provided supplier and flattens the result. This method is useful
+   * to apply a supplier safely without having to catch possible synchronous exceptions
+   * that the supplier may throw.
+   * 
+   * @param s     a supplier that may throw an exception
+   * @return the  future produced by the supplier or a failed future if the supplier 
+   *              throws a synchronous exception (not a failed Future)
+   */
+  public static <T> Future<T> flatApply(final Supplier<Future<T>> s) {
+    try {
+      return s.get();
     } catch (final Throwable ex) {
       return new ExceptionFuture<>(ex);
     }

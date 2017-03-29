@@ -42,14 +42,14 @@ public class FutureTest {
   public void trueConst() throws CheckedFutureException {
     assertEquals(true, get(Future.TRUE));
   }
-  
+
   /*** false ***/
 
   @Test
   public void falseConst() throws CheckedFutureException {
     assertEquals(false, get(Future.FALSE));
   }
-  
+
   /*** never ***/
 
   @Test
@@ -69,6 +69,21 @@ public class FutureTest {
   @Test(expected = ArithmeticException.class)
   public void applyException() throws CheckedFutureException {
     Future<Integer> future = Future.apply(() -> 1 / 0);
+    get(future);
+  }
+
+  /*** flatApply ***/
+
+  @Test
+  public void flatApplyValue() throws CheckedFutureException {
+    Integer value = 1;
+    Future<Integer> future = Future.flatApply(() -> Future.value(value));
+    assertEquals(value, get(future));
+  }
+
+  @Test(expected = ArithmeticException.class)
+  public void flatApplyException() throws CheckedFutureException {
+    Future<Integer> future = Future.flatApply(() -> Future.value(1 / 0));
     get(future);
   }
 
@@ -504,7 +519,7 @@ public class FutureTest {
     Future<Integer> future = Future.selectIndex(Arrays.asList(p1, p2));
     future.get(Duration.ofMillis(100));
   }
-  
+
   /*** firstCompletedOf **/
 
   @Test(expected = IllegalArgumentException.class)
