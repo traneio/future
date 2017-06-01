@@ -656,8 +656,17 @@ public class PromiseTest {
   @Test(expected = TimeoutException.class)
   public void withinPromiseTimeout() throws CheckedFutureException {
     Promise<Integer> p = Promise.apply();
-    Future<Integer> future = p.within(Duration.ofMillis(100), scheduler, ex);
+    Future<Integer> future = p.within(Duration.ofMillis(10), scheduler, ex);
     get(future);
+  }
+  
+  @Test
+  public void withinPromiseTimeoutInterrupt() throws CheckedFutureException {
+    AtomicReference<Throwable> intr = new AtomicReference<>();
+    Promise<Integer> p = Promise.apply(intr::set);
+    Future<Integer> future = p.within(Duration.ofMillis(10), scheduler, ex);
+    future.join(Duration.ofMillis(20));
+    assertTrue(intr.get() != null);
   }
 
   @Test

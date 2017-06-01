@@ -806,6 +806,7 @@ public abstract class Promise<T> implements Future<T> {
 
     @Override
     public final void run() {
+      handler.raise(exception);
       becomeIfEmpty(Future.exception(exception));
     }
 
