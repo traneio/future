@@ -767,6 +767,22 @@ public class PromiseTest {
     assertEquals(new Integer(2), get(f1));
     assertEquals(new Integer(3), get(f2));
   }
+  
+  @Test
+  public void linkedContinuationWithLocal() throws CheckedFutureException {
+    Local<String> l = Local.apply();
+    l.set(Optional.of("a"));
+    Promise<Integer> p1 = Promise.apply();
+    Promise<Integer> p2 = Promise.apply();
+    l.set(Optional.of("b"));
+    @SuppressWarnings("unchecked")
+    Continuation<Integer, Integer> c = (Continuation<Integer, Integer>) p1.map(i -> i + 1);
+    c.become(p2);
+    Future<Optional<String>> f = p2.map(i -> l.get());
+    p2.setValue(1);
+    assertEquals(new Integer(1), get(p2));
+    assertEquals(Optional.of("a"), get(f));
+  }
 
   @Test
   public void map() throws CheckedFutureException {

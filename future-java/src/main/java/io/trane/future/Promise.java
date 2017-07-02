@@ -219,8 +219,23 @@ public abstract class Promise<T> implements Future<T> {
    * @param result  the future to become.
    * @return        if the operation was successful
    */
-  @SuppressWarnings("unchecked")
+
   public final boolean becomeIfEmpty(final Future<T> result) {
+    final Optional<?>[] savedContext = getSavedContext();
+    Optional<?>[] originalContext;
+    if (savedContext != null && (originalContext = Local.save()) != savedContext) {
+      Local.restore(savedContext);
+      try {
+        return trySetState(result);
+      } finally {
+        Local.restore(originalContext);
+      }
+    } else
+      return trySetState(result);
+  }
+
+  @SuppressWarnings("unchecked")
+  public final boolean trySetState(final Future<T> result) {
     try {
       while (true) {
         final Object curr = state;
@@ -235,7 +250,7 @@ public abstract class Promise<T> implements Future<T> {
           return true;
         } else if (cas(curr, result)) {
           if (curr != null)
-            flush((WaitQueue<T>) curr, result);
+            ((WaitQueue<T>) curr).flush(result);
           return true;
         }
       }
@@ -263,20 +278,6 @@ public abstract class Promise<T> implements Future<T> {
       } else if (cas(curr, result))
         return (WaitQueue<T>) curr;
     }
-  }
-
-  private final void flush(final WaitQueue<T> queue, final Future<T> result) {
-    final Optional<?>[] savedContext = getSavedContext();
-    Optional<?>[] originalContext;
-    if (savedContext != null && (originalContext = Local.save()) != savedContext) {
-      Local.restore(savedContext);
-      try {
-        queue.flush(result);
-      } finally {
-        Local.restore(originalContext);
-      }
-    } else
-      queue.flush(result);
   }
 
   @SuppressWarnings("unchecked")
