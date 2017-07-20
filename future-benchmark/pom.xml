@@ -29,7 +29,7 @@
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>util-core_2.12</artifactId>
-      <version>6.41.0</version>
+      <version>6.45.0</version>
     </dependency>
     <dependency>
       <groupId>io.trane</groupId>
