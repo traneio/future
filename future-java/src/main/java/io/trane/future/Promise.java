@@ -3,10 +3,10 @@ package io.trane.future;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -408,14 +408,28 @@ public abstract class Promise<T> implements Future<T> {
     }
   }
 
-  private static final class ReleaseOnRunLatch extends CountDownLatch implements Runnable {
-    public ReleaseOnRunLatch() {
-      super(1);
+  // Inpired by Scala Future's CompletionLatch
+  private static final class ReleaseOnRunLatch extends AbstractQueuedSynchronizer implements Runnable {
+
+    private static final long serialVersionUID = -2448584187877095292L;
+
+    @Override
+    protected int tryAcquireShared(int arg) {
+      if (getState() != 0)
+        return 1;
+      else
+        return -1;
+    }
+
+    @Override
+    protected boolean tryReleaseShared(int arg) {
+      setState(1);
+      return true;
     }
 
     @Override
     public final void run() {
-      super.countDown();
+      releaseShared(1);
     }
   }
 
@@ -424,7 +438,7 @@ public abstract class Promise<T> implements Future<T> {
     final ReleaseOnRunLatch latch = new ReleaseOnRunLatch();
     ensure(latch);
     try {
-      if (!latch.await(timeout.toMillis(), TimeUnit.MILLISECONDS))
+      if (!latch.tryAcquireSharedNanos(1, timeout.toNanos()))
         throw new TimeoutException();
     } catch (final InterruptedException ex) {
       throw new CheckedFutureException(ex);
