@@ -1,6 +1,6 @@
 package io.trane.future.scala
 
-import io.trane.future.{ Future => JFuture }
+import io.trane.future.{ Future => JFuture, Promise => JPromise }
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
@@ -101,10 +101,6 @@ object Future {
       builder.result()
     }
 
-  implicit class ToScala[T](val fut: JFuture[T]) extends AnyVal {
-    def toScala: Future[T] = new Future(fut)
-  }
-
   implicit def toAwaitable[T](fut: Future[T]): Awaitable[T] =
     new Awaitable[T] {
       override def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
@@ -117,34 +113,34 @@ object Future {
     }
 }
 
-class Future[+T](val toJava: JFuture[T @uncheckedVariance]) extends AnyVal {
+class Future[+T](private[trane] val underlying: JFuture[T @uncheckedVariance]) extends AnyVal {
 
   def onComplete[U](f: Try[T] => U): Unit =
-    toJava.respond(new Responder[T] {
+    underlying.respond(new Responder[T] {
       def onException(ex: Throwable) = f(Failure(ex))
       def onValue(v: T) = f(Success(v))
     })
 
-  def isCompleted: Boolean = toJava.isDefined()
+  def isCompleted: Boolean = underlying.isDefined()
 
   def value: Option[Try[T]] =
-    if (toJava.isDefined())
-      Some(Try(toJava.get(java.time.Duration.ofMillis(0))))
+    if (underlying.isDefined())
+      Some(Try(underlying.get(java.time.Duration.ofMillis(0))))
     else
       None
 
   def failed: Future[Throwable] =
     new Future(
-      toJava.transformWith(new Transformer[T, JFuture[Throwable]] {
+      underlying.transformWith(new Transformer[T, JFuture[Throwable]] {
         override def onValue(value: T) = JFuture.exception(new NoSuchElementException("Future.failed not completed with a throwable."))
         override def onException(ex: Throwable) = JFuture.value(ex)
       }))
 
-  def foreach[U](f: T => U): Unit = toJava.onSuccess(v => f(v))
+  def foreach[U](f: T => U): Unit = underlying.onSuccess(v => f(v))
 
   def transform[S](s: T => S, f: Throwable => Throwable): Future[S] =
     new Future(
-      toJava.transformWith(new Transformer[T, JFuture[S]] {
+      underlying.transformWith(new Transformer[T, JFuture[S]] {
         override def onValue(value: T) = JFuture.value(s(value))
         override def onException(ex: Throwable) = JFuture.exception(f(ex))
       }))
@@ -156,7 +152,7 @@ class Future[+T](val toJava: JFuture[T @uncheckedVariance]) extends AnyVal {
         case Failure(ex) => JFuture.exception(ex)
       }
     new Future[S](
-      toJava.transformWith(new Transformer[T, JFuture[S]] {
+      underlying.transformWith(new Transformer[T, JFuture[S]] {
         override def onValue(value: T) = toJFuture(f(Success(value)))
         override def onException(ex: Throwable) = toJFuture(f(Failure(ex)))
       }))
@@ -164,18 +160,18 @@ class Future[+T](val toJava: JFuture[T @uncheckedVariance]) extends AnyVal {
 
   def transformWith[S](f: Try[T] => Future[S]): Future[S] =
     new Future(
-      toJava.transformWith(new Transformer[T, JFuture[S]] {
-        override def onValue(value: T) = f(Success(value)).toJava
-        override def onException(ex: Throwable) = f(Failure(ex)).toJava
+      underlying.transformWith(new Transformer[T, JFuture[S]] {
+        override def onValue(value: T) = f(Success(value)).underlying
+        override def onException(ex: Throwable) = f(Failure(ex)).underlying
       }))
 
-  def map[S](f: T => S): Future[S] = new Future[S](toJava.map(v => f(v)))
+  def map[S](f: T => S): Future[S] = new Future[S](underlying.map(v => f(v)))
 
   def flatMap[S](f: T => Future[S]): Future[S] =
-    new Future[S](toJava.flatMap[S](v => f(v).toJava))
+    new Future[S](underlying.flatMap[S](v => f(v).underlying))
 
   def flatten[S](implicit ev: T <:< Future[S]): Future[S] =
-    new Future(JFuture.flatten(toJava.asInstanceOf[JFuture[JFuture[S]]]))
+    new Future(JFuture.flatten(underlying.asInstanceOf[JFuture[JFuture[S]]]))
 
   def filter(p: T => Boolean): Future[T] =
     map { r => if (p(r)) r else throw new NoSuchElementException("Future.filter predicate is not satisfied") }
@@ -183,29 +179,29 @@ class Future[+T](val toJava: JFuture[T @uncheckedVariance]) extends AnyVal {
   final def withFilter(p: T => Boolean): Future[T] = filter(p)
 
   def collect[S](pf: PartialFunction[T, S]): Future[S] =
-    new Future[S](toJava.map {
+    new Future[S](underlying.map {
       r => pf.applyOrElse(r, (t: T) => throw new NoSuchElementException("Future.collect partial function is not defined at: " + t))
     })
 
   def recover[U >: T](pf: PartialFunction[Throwable, U]): Future[U] =
     new Future(
-      toJava.transformWith(new Transformer[T, JFuture[U]] {
+      underlying.transformWith(new Transformer[T, JFuture[U]] {
         override def onValue(value: T) = JFuture.value(value)
         override def onException(ex: Throwable) = JFuture.value(pf(ex))
       }))
 
   def recoverWith[U >: T](pf: PartialFunction[Throwable, Future[U]]): Future[U] =
     new Future(
-      toJava.transformWith(new Transformer[T, JFuture[U]] {
+      underlying.transformWith(new Transformer[T, JFuture[U]] {
         override def onValue(value: T) = JFuture.value(value)
-        override def onException(ex: Throwable) = pf(ex).toJava
+        override def onException(ex: Throwable) = pf(ex).underlying
       }))
 
   def zip[U](that: Future[U]): Future[(T, U)] =
-    new Future(toJava.biMap[U, (T, U)](that.toJava, (a, b) => (a, b)))
+    new Future(underlying.biMap[U, (T, U)](that.underlying, (a, b) => (a, b)))
 
   def zipWith[U, R](that: Future[U])(f: (T, U) => R): Future[R] =
-    new Future(toJava.biMap[U, R](that.toJava, (a, b) => f(a, b)))
+    new Future(underlying.biMap[U, R](that.underlying, (a, b) => f(a, b)))
 
   def fallbackTo[U >: T](that: Future[U]): Future[U] =
     recoverWith(PartialFunction(_ => that))
@@ -220,16 +216,16 @@ class Future[+T](val toJava: JFuture[T @uncheckedVariance]) extends AnyVal {
   }
 
   def andThen[U](pf: PartialFunction[Try[T], U]): Future[T] =
-    new Future(toJava.respond(new Responder[T] {
+    new Future(underlying.respond(new Responder[T] {
       def onException(ex: Throwable) = pf.applyOrElse[Try[T], Any](Failure(ex), Predef.identity[Try[T]])
       def onValue(v: T) = pf.applyOrElse[Try[T], Any](Success(v), Predef.identity[Try[T]])
     }))
 
   def ready(atMost: Duration)(implicit permit: CanAwait) = {
-    toJava.join(java.time.Duration.ofMillis(atMost.toMillis))
+    underlying.join(java.time.Duration.ofMillis(atMost.toMillis))
     this
   }
 
   def result(atMost: Duration)(implicit permit: CanAwait): T =
-    toJava.get(java.time.Duration.ofMillis(atMost.toMillis))
+    underlying.get(java.time.Duration.ofMillis(atMost.toMillis))
 }
