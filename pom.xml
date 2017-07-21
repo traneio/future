@@ -39,6 +39,7 @@
 
   <modules>
     <module>future-java</module>
+    <module>future-scala</module>
     <module>future-benchmark</module>
   </modules>
 

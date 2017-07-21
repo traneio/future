@@ -36,11 +36,6 @@
       <artifactId>future-java</artifactId>
       <version>0.2.2-SNAPSHOT</version>
     </dependency>
-    <dependency>
-      <groupId>io.trane</groupId>
-      <artifactId>future-scala</artifactId>
-      <version>0.2.2-SNAPSHOT</version>
-    </dependency>
   </dependencies>
 
   <properties>
