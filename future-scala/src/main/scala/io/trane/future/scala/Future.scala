@@ -50,7 +50,7 @@ object Future {
 
   private[this] def toJList[A, M[X] <: TraversableOnce[X]](in: M[Future[A]]) = {
     import scala.collection.JavaConverters._
-    in.toSeq.asJava.asInstanceOf[java.util.List[JFuture[A]]]
+    in.toSeq.map(_.toJava).asJava.asInstanceOf[java.util.List[JFuture[A]]]
   }
 
   def sequence[A, M[X] <: TraversableOnce[X]](in: M[Future[A]])(implicit cbf: CanBuildFrom[M[Future[A]], A, M[A]]): Future[M[A]] = {
@@ -58,8 +58,10 @@ object Future {
       val builder = cbf()
       val size = jList.size
       var i = 0
-      while (i < size)
+      while (i < size) {
         builder += jList.get(i)
+        i += 1;
+      }
       builder.result()
     }
   }
