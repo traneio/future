@@ -229,5 +229,9 @@ class Future[+T](private[trane] val underlying: JFuture[T @uncheckedVariance]) e
   }
 
   def result(atMost: Duration)(implicit permit: CanAwait): T =
-    underlying.get(java.time.Duration.ofMillis(atMost.toMillis))
+    underlying.get(java.time.Duration.ofMillis(toMillis(atMost)))
+    
+  private final def toMillis(d: Duration) = 
+    if(d.isFinite()) d.toMillis
+    else Long.MaxValue
 }
