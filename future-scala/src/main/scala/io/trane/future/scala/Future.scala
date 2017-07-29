@@ -12,7 +12,6 @@ import scala.reflect.ClassTag
 import scala.collection.generic.CanBuildFrom
 import java.util.Collection
 import scala.concurrent.Awaitable
-import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.CanAwait
 import scala.annotation.unchecked.uncheckedVariance
@@ -101,17 +100,6 @@ object Future {
       val builder = cbf()
       jList.forEach(builder += _)
       builder.result()
-    }
-
-  implicit def toAwaitable[T](fut: Future[T]): Awaitable[T] =
-    new Awaitable[T] {
-      override def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
-        fut.ready(atMost)
-        this
-      }
-
-      override def result(atMost: Duration)(implicit permit: CanAwait): T =
-        fut.result(atMost)
     }
 }
 
@@ -222,16 +210,4 @@ class Future[+T](private[trane] val underlying: JFuture[T @uncheckedVariance]) e
       def onException(ex: Throwable) = pf.applyOrElse[Try[T], Any](Failure(ex), Predef.identity[Try[T]])
       def onValue(v: T) = pf.applyOrElse[Try[T], Any](Success(v), Predef.identity[Try[T]])
     }))
-
-  def ready(atMost: Duration)(implicit permit: CanAwait) = {
-    underlying.join(java.time.Duration.ofMillis(atMost.toMillis))
-    this
-  }
-
-  def result(atMost: Duration)(implicit permit: CanAwait): T =
-    underlying.get(java.time.Duration.ofMillis(toMillis(atMost)))
-    
-  private final def toMillis(d: Duration) = 
-    if(d.isFinite()) d.toMillis
-    else Long.MaxValue
 }
