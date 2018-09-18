@@ -58,6 +58,24 @@ public class FuturePoolTest {
     }
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void asyncFailure() throws CheckedFutureException {
+    ExecutorService es = Executors.newCachedThreadPool();
+    try {
+      FuturePool pool = FuturePool.apply(es);
+      Thread originalThread = Thread.currentThread();
+
+      Future<Integer> future = pool.async(() -> {
+        assertNotEquals(originalThread, Thread.currentThread());
+        throw new IllegalStateException();
+      });
+
+      get(future);
+    } finally {
+      es.shutdown();
+    }
+  }
+
   @Test(expected = RejectedExecutionException.class)
   public void asyncRejected() throws CheckedFutureException {
     ExecutorService es = new RejectExecutorService();

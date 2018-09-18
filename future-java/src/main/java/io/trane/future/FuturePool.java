@@ -87,6 +87,11 @@ final class AsyncPromise<T> extends Promise<T> implements Runnable {
 
   @Override
   public final void run() {
-    setValue(s.get());
+    try {
+      setValue(s.get());
+    } catch (final Throwable error) {
+      NonFatalException.verify(error);
+      setException(error);
+    }
   }
 }
