@@ -272,6 +272,8 @@ public abstract class Promise<T> implements Future<T> {
         return ((Promise<T>) curr).safeFlush(result);
       else if (curr instanceof LinkedContinuation)
         return ((LinkedContinuation<?, T>) curr).safeFlush(result);
+      else if (curr instanceof SatisfiedFuture)
+        return null;
       else if (result instanceof Promise) {
         ((Promise<T>) result).compress().link(this);
         return null;
