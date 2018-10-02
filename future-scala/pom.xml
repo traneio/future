@@ -34,6 +34,7 @@
 				<executions>
 					<execution>
 						<goals>
+							<goal>doc-jar</goal>
 							<goal>compile</goal>
 							<goal>testCompile</goal>
 						</goals>
