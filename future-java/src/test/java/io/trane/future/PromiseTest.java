@@ -573,7 +573,7 @@ public class PromiseTest {
     long start = System.currentTimeMillis();
     Future<Integer> delayed = p.delayed(Duration.ofMillis(delay), scheduler);
     p.setValue(1);
-    int result = delayed.get(Duration.ofMillis(20));
+    int result = delayed.get(Duration.ofMillis(40));
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
@@ -586,7 +586,7 @@ public class PromiseTest {
     Future<Integer> delayed = p.delayed(Duration.ofMillis(delay), scheduler).delayed(Duration.ofMillis(delay),
         scheduler);
     p.setValue(1);
-    int result = delayed.get(Duration.ofMillis(20));
+    int result = delayed.get(Duration.ofMillis(40));
     assertTrue(System.currentTimeMillis() - start >= delay);
     assertEquals(1, result);
   }
