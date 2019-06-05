@@ -174,17 +174,17 @@ class Future[+T](private[trane] val underlying: JFuture[T @uncheckedVariance]) e
     })
 
   def recover[U >: T](pf: PartialFunction[Throwable, U]): Future[U] =
-    new Future(
-      underlying.transformWith(new Transformer[T, JFuture[U]] {
-        override def onValue(value: T) = JFuture.value(value)
-        override def onException(ex: Throwable) = JFuture.value(pf(ex))
-      }))
+    transform(_.recover(pf))
 
   def recoverWith[U >: T](pf: PartialFunction[Throwable, Future[U]]): Future[U] =
     new Future(
       underlying.transformWith(new Transformer[T, JFuture[U]] {
         override def onValue(value: T) = JFuture.value(value)
-        override def onException(ex: Throwable) = pf(ex).underlying
+        override def onException(ex: Throwable) =
+          if (!pf.isDefinedAt(ex)) JFuture.exception(ex)
+          else try pf(ex).underlying catch {
+            case t: Throwable => JFuture.exception(t)
+          }
       }))
 
   def zip[U](that: Future[U]): Future[(T, U)] =
